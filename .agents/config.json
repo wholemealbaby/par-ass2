@@ -1,0 +1,11 @@
+{
+  "tools": {
+    "github": {
+      "type": "cli",
+      "command_prefix": "bash .agents/scripts/"
+    }
+  },
+  "defaults": {
+    "repo": "OWNER/REPO"
+  }
+}
