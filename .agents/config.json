@@ -2,7 +2,8 @@
   "tools": {
     "github": {
       "type": "cli",
-      "command_prefix": "bash .agents/scripts/"
+      "command_prefix": "bash .agents/scripts/",
+      "config": ".agents/skills/github_config.json"
     }
   },
   "defaults": {
