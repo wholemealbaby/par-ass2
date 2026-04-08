@@ -41,14 +41,6 @@ def generate_launch_description():
         parameters=[] 
     )
 
-    nav2_node = Node(
-        package='aiil_nav2', # Uses aiil_nav2 bringup launch file
-        executable='bringup_launch', 
-        name='nav2_node',
-        output='screen',
-        parameters=[]
-    )
-
     find_object_node = Node(
         package='find_object_2d',
         executable='find_object_2d',
@@ -61,6 +53,5 @@ def generate_launch_description():
         marker_detection_node,
         path_tracing_node,
         slam_toolbox_node,
-        nav2_node,
         find_object_node
     ])
