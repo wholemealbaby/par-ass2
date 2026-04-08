@@ -39,7 +39,7 @@ def generate_launch_description():
     )
 
     nav2_node = Node(
-        package='nav2_bringup',
+        package='aiil_gazebo', # Uses aiil_gazebo nav2 bringup launch file
         executable='bringup_launch', 
         name='nav2_node',
         output='screen',
@@ -54,6 +54,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        navigation_node,
+        marker_detection_node,
+        path_tracing_node,
         slam_toolbox_node,
         nav2_node,
         find_object_node
