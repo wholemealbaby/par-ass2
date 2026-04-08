@@ -1,5 +1,5 @@
-.env
-.venv
-venv
-.agents/skills/github_config.json
-.agents/skills/github_config.json
+*__pycache__/
+build/
+install/
+log/
+share/
