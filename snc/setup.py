@@ -2,7 +2,8 @@ from setuptools import find_packages, setup
 from glob import glob
 import os
 
-package_name = 'snc'
+# Read package name from environment variable with fallback
+package_name = os.environ.get('SNC_PACKAGE_NAME', 'snc')
 
 setup(
     name=package_name,

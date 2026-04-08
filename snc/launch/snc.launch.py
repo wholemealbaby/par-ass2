@@ -1,20 +1,23 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
+import os
 
 def generate_launch_description():
+    # Read package name from environment variable with fallback
+    package_name = os.environ.get('SNC_PACKAGE_NAME', 'snc')
 
     # Node 1: Navigation Node
     navigation_node = Node(
-        package='snc',
+        package=package_name,
         executable='navigation_node',
         name='navigation_node',
         output='screen',
         parameters=[]
-    )     
+    )
 
     # Node 2: Marker Detection Node
     marker_detection_node = Node(
-        package='snc',
+        package=package_name,
         executable='marker_detection_node',
         name='marker_detection_node',
         output='screen',
@@ -23,7 +26,7 @@ def generate_launch_description():
 
     # Node 3: Path Tracing Node
     path_tracing_node = Node(
-        package='snc',
+        package=package_name,
         executable='path_tracing_node',
         name='path_tracing_node',
         output='screen',
