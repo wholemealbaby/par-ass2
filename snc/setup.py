@@ -24,6 +24,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'navigation_node = snc.navigation_node:main',
+            'marker_detection_node = snc.marker_detection_node:main',
+            'path_tracing_node = snc.path_tracing_node:main',
         ],
     },
 )
