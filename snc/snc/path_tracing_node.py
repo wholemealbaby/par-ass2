@@ -34,6 +34,9 @@ class PathTracingNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.breadcrumbs = []  # List to store the breadcrumb waypoints
+        self.last_recorded_pose = None
+        self.last_recorded_yaw = None
+        self.return_triggered = False # Flag to indicate if return home has been triggered, stops pose sampling when true
 
         # Return home trigger
         self.sub_home_trigger = self.create_subscription(
