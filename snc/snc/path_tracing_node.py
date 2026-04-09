@@ -62,6 +62,8 @@ class PathTracingNode(Node):
             PATH_RETURN_BUFFER_SIZE
         )
 
+        self.wait_for_robot_pose()
+
     def sample_pose_callback(self):
         """Timer callback to periodically sample the robot's pose and update the path tracing. Skips if return home has been triggered.
         """
@@ -132,7 +134,7 @@ class PathTracingNode(Node):
         self.get_logger().info('Home trigger received, starting path tracing')
     
     def wait_for_robot_pose(self):
-        self.get_logger().info("Waiting for map to base_link transform...")
+        self.get_logger().info("Pre flight check: Waiting for (robot pose) map to base_link transform...")
         
         # Block until the transform is available or 5 seconds pass
         while not self.tf_buffer.can_transform('map', 'base_link', rclpy.time.Time(), timeout=Duration(seconds=5.0)):
