@@ -25,6 +25,7 @@ class PathTracingNode(Node):
         # Load parameters
         self.pose_sample_interval_s = self.get_parameter('pose_sample_interval_s').get_parameter_value().double_value
         self.waypoint_spacing_min = self.get_parameter('waypoint_spacing_min').get_parameter_value().double_value
+        self.waypoint_rotation_min = self.get_parameter('waypoint_rotation_min').get_parameter_value().double_value
 
         # Timer to sample the robot's pose at regular intervals
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
