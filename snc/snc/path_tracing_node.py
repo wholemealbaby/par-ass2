@@ -13,6 +13,9 @@ from constants import (
     PATH_EXPLORE_TOPIC,
     PATH_RETURN_TOPIC
 )
+import math
+from geometry_msgs.msg import Transform
+import tf_transformations 
 
 class PathTracingNode(Node):
     def __init__(self):
@@ -84,7 +87,27 @@ class PathTracingNode(Node):
 
         except TransformException as e:
             self.get_logger().warn(f"Failed to get robot pose despite TF being available: {e}")
-        
+
+
+    def get_yaw_from_transform(self, t: Transform):
+        """
+        Extracts the yaw (Z-axis rotation) from a geometry_msgs/(Transform.
+        """
+        # Extract quaternion components 
+        quaternion = (
+            t.rotation.x,
+            t.rotation.y,
+            t.rotation.z,
+            t.rotation.w
+        )
+
+        # Convert quaternion to roll, pitch, yaw
+        # returns a list
+        euler = tf_transformations.euler_from_quaternion(quaternion)
+
+        # Return the yaw
+        return euler[2]
+    
     def home_trigger_callback(self, msg):
         self.get_logger().info('Home trigger received, starting path tracing')
     
