@@ -4,7 +4,8 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Empty
 from nav_msgs.msg import Path
-from tf2_ros import TransformListener, Buffer
+from geometry_msgs.msg import PoseStamped
+from tf2_ros import TransformListener, Buffer, TransformException
 from constants import (
     PATH_EXPLORE_BUFFER_SIZE,
     PATH_RETURN_BUFFER_SIZE,
@@ -62,8 +63,10 @@ class PathTracingNode(Node):
         )
 
     def sample_pose_callback(self):
-        """Timer callback to periodically sample the robot's pose and update the path tracing
+        """Timer callback to periodically sample the robot's pose and update the path tracing. Skips if return home has been triggered.
         """
+        if self.return_triggered:
+            return  # Skip sampling if return home has been triggered
         # check transform is possible
         if not self.tf_buffer.can_transform('map', 'base_link', rclpy.time.Time()):
             # Log intermittently to avoid spamming the console
@@ -76,18 +79,31 @@ class PathTracingNode(Node):
             current_x = t.transform.translation.x
             current_y = t.transform.translation.y
 
-            # Check if we have moved enough to care
-            if self.last_recorded_pose is not None:
-                dist = math.sqrt((current_x - self.last_recorded_pose[0])**2 + 
+            # Check if waypoint we minimums are satisfied before storing
+            if self.last_recorded_pose is not None and self.last_recorded_yaw is not None:
+                delta_dist = math.sqrt((current_x - self.last_recorded_pose[0])**2 + 
                                 (current_y - self.last_recorded_pose[1])**2)
+                delta_yaw = abs(self.get_yaw_from_transform(t) - self.last_recorded_yaw)
                 
-                if dist < self.distance_threshold:
-                    return # Skip recording this time
+                # Skip if waypoint minimums aren't met
+                if delta_dist < self.waypoint_spacing_min and delta_yaw < self.waypoint_rotation_min:
+                    return
+
+            # Convert to pose stamped
+            pose = PoseStamped()
+            pose.header.stamp = self.get_clock().now().to_msg()
+            pose.header.frame_id = 'map'
+            pose.pose.position.x = current_x
+            pose.pose.position.y = current_y
+            pose.pose.position.z = 0.0
+            pose.pose.orientation = t.transform.rotation
 
             # Save the waypoint
-            self.breadcrumbs.append(t)
-            self.last_recorded_pose = (current_x, current_y)
+            self.breadcrumbs.append(pose)
+            self.last_recorded_pos = (current_x, current_y)
+            self.last_recorded_yaw = self.get_yaw_from_transform(t)
             self.get_logger().info(f"Stored waypoint {len(self.breadcrumbs)}")
+            self.pub_path_return.publish(Path(header=pose.header, poses=self.breadcrumbs))
 
         except TransformException as e:
             self.get_logger().warn(f"Failed to get robot pose despite TF being available: {e}")
