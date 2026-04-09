@@ -57,27 +57,27 @@ class PathTracingNode(Node):
     def sample_pose_callback(self):
         """Timer callback to periodically sample the robot's pose and update the path tracing
         """
-        # try:
-        #     # Get current position
-        #     t = self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
-        #     current_x = t.transform.translation.x
-        #     current_y = t.transform.translation.y
+        try:
+            # Get current position
+            t = self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
+            current_x = t.transform.translation.x
+            current_y = t.transform.translation.y
 
-        #     # Check if we have moved enough to care
-        #     if self.last_recorded_pose is not None:
-        #         dist = math.sqrt((current_x - self.last_recorded_pose[0])**2 + 
-        #                         (current_y - self.last_recorded_pose[1])**2)
+            # Check if we have moved enough to care
+            if self.last_recorded_pose is not None:
+                dist = math.sqrt((current_x - self.last_recorded_pose[0])**2 + 
+                                (current_y - self.last_recorded_pose[1])**2)
                 
-        #         if dist < self.distance_threshold:
-        #             return # Skip recording this time
+                if dist < self.distance_threshold:
+                    return # Skip recording this time
 
-        #     # Save the waypoint
-        #     self.breadcrumbs.append(t)
-        #     self.last_recorded_pose = (current_x, current_y)
-        #     self.get_logger().info(f"Stored waypoint {len(self.breadcrumbs)}")
+            # Save the waypoint
+            self.breadcrumbs.append(t)
+            self.last_recorded_pose = (current_x, current_y)
+            self.get_logger().info(f"Stored waypoint {len(self.breadcrumbs)}")
 
-        # except TransformException:
-        #     pass # Handle startup lag
+        except TransformException:
+            pass # Handle startup lag
         
     def home_trigger_callback(self, msg):
         self.get_logger().info('Home trigger received, starting path tracing')
