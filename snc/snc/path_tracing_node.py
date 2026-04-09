@@ -57,6 +57,12 @@ class PathTracingNode(Node):
     def sample_pose_callback(self):
         """Timer callback to periodically sample the robot's pose and update the path tracing
         """
+        # check transform is possible
+        if not self.tf_buffer.can_transform('map', 'base_link', rclpy.time.Time()):
+            # Log intermittently to avoid spamming the console
+            self.get_logger().warn("Waiting for TF to become available...", throttle_duration_sec=10.0)
+            return
+
         try:
             # Get current position
             t = self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
@@ -76,8 +82,8 @@ class PathTracingNode(Node):
             self.last_recorded_pose = (current_x, current_y)
             self.get_logger().info(f"Stored waypoint {len(self.breadcrumbs)}")
 
-        except TransformException:
-            pass # Handle startup lag
+        except TransformException as e:
+            self.get_logger().warn(f"Failed to get robot pose despite TF being available: {e}")
         
     def home_trigger_callback(self, msg):
         self.get_logger().info('Home trigger received, starting path tracing')
