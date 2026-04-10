@@ -17,6 +17,6 @@ hazard_names_map = {
 HAZARD_SIGNAL_TOPIC = '/snc/hazard_signal'
 ROBOT_POSE_TOPIC = '/snc/robot_pose'
 RETURN_WAYPOINTS_TOPIC = '/snc/return_waypoints'
-
+HOME_TRIGGER_BUFFER_SIZE = 1
 PATH_EXPLORE_BUFFER_SIZE = 10
 PATH_RETURN_BUFFER_SIZE = 10
