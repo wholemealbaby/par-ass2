@@ -3,8 +3,8 @@
     marker_confidence_threshold: 0.8 
 /navigation_node:
   ros__parameters:
-    waypoint_spacing_min: 0.15 # Minimum distance to publish a new waypoint
     spin_duration_s: 2.0             
 /path_tracing_node:
   ros__parameters:
+    waypoint_spacing_min: 0.15 # Minimum distance to publish a new waypoint
     pose_sample_interval_s: 0.5 # Time interval to sample the robot's pose for path tracing
