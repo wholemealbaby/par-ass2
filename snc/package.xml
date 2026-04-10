@@ -19,7 +19,6 @@
   <depend>nav2_*</depend>
   <depend>slam_toolbox</depend>
   <depend>find_object_2d</depend>
-  <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
 
 
