@@ -31,13 +31,10 @@ class PathTracingNode(Node):
         self.waypoint_spacing_min = self.get_parameter('waypoint_spacing_min').get_parameter_value().double_value
         self.waypoint_rotation_min = self.get_parameter('waypoint_rotation_min').get_parameter_value().double_value
 
-        # Timer to sample the robot's pose at regular intervals
-        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
-        self.counter = 0
-        
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.breadcrumbs = []  # List to store the breadcrumb waypoints
+        self.explore_breadcrumbs = []  # List to store the breadcrumb waypoints for the explore path
+        self.return_breadcrumbs = []   # List to store the breadcrumb waypoints for the return path
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
         self.return_triggered = False # Flag to indicate if return home has been triggered, stops pose sampling when true
@@ -49,15 +46,12 @@ class PathTracingNode(Node):
             self.home_trigger_callback,
             HOME_TRIGGER_BUFFER_SIZE
         )
-
-        # Path exploration subscription for waypoints
-        self.sub_path_explorer = self.create_subscription(
+        # Publisher for explore waypoints
+        self.pub_path_explore = self.create_publisher(
             Path,
             PATH_EXPLORE_TOPIC,
-            self.path_explorer_callback,
             PATH_EXPLORE_BUFFER_SIZE
         )
-
         # Publisher for return waypoints
         self.pub_path_return = self.create_publisher(
             Path,
