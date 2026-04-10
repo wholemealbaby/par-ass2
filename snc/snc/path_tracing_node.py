@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import rclpy
+from rclpy.duration import Duration
 from rclpy.node import Node
 from std_msgs.msg import Empty
 from nav_msgs.msg import Path
