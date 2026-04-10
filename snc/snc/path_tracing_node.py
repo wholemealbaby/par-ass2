@@ -6,7 +6,7 @@ from std_msgs.msg import Empty
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
-from constants import (
+from snc.constants import (
     PATH_EXPLORE_BUFFER_SIZE,
     PATH_RETURN_BUFFER_SIZE,
     HOME_TRIGGER_BUFFER_SIZE,
