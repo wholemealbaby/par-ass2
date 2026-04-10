@@ -27,6 +27,9 @@ class PathTracingNode(Node):
         self.get_logger().info('Path tracing node launched')
         
         # Load parameters
+        self.declare_parameter('pose_sample_interval_s', 0.5)
+        self.declare_parameter('waypoint_spacing_min', 0.15)
+        self.declare_parameter('waypoint_rotation_min', 15)
         self.pose_sample_interval_s = self.get_parameter('pose_sample_interval_s').get_parameter_value().double_value
         self.waypoint_spacing_min = self.get_parameter('waypoint_spacing_min').get_parameter_value().double_value
         self.waypoint_rotation_min = self.get_parameter('waypoint_rotation_min').get_parameter_value().double_value
