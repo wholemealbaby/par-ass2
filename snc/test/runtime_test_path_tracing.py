@@ -159,40 +159,31 @@ class PathTracingRuntimeTest(Node):
         return True
 
     def run_test(self):
-        """Run the runtime test for specified duration"""
-        self.get_logger().info(f'Starting runtime test for {self.test_duration} seconds...')
-        
-        start_time = time.time()
-        while time.time() - start_time < self.test_duration and not self.interrupted:
-            rclpy.spin_once(self, timeout_sec=0.1)
-            
-            # Check if we should continue (every 5 seconds)
-            if int(time.time() - start_time) % 5 == 0 and time.time() - start_time > 0:
-                self.get_logger().info(f'Test running for {int(time.time() - start_time)} seconds...')
-                
-        # Final validation
-        if self.interrupted:
-            self.get_logger().info('Test interrupted by user. Performing validation on current data...')
-        else:
-            self.get_logger().info('Test period completed. Performing final validation...')
-        
-        success = self.validate_paths()
-        
-        # Summary
-        self.get_logger().info('\n=== TEST SUMMARY ===')
-        self.get_logger().info(f'Explore paths: {self.explore_path_count}')
-        self.get_logger().info(f'Return paths: {self.return_path_count}')
-        self.get_logger().info(f'Home triggers: {self.home_trigger_count}')
-        self.get_logger().info(f'Test duration: {self.test_duration}s')
-        
-        if self.interrupted:
-            self.get_logger().info('⚠ Test was interrupted by user')
-        elif success:
-            self.get_logger().info('✓ Test completed successfully')
-        else:
-            self.get_logger().info('✗ Test had validation issues')
-            
-        return success
+       """Run the runtime test until interrupted by keyboard signal"""
+       self.get_logger().info('Starting runtime test - will run until interrupted by Ctrl+C...')
+       
+       # Run indefinitely until interrupted
+       while not self.interrupted:
+           rclpy.spin_once(self, timeout_sec=0.1)
+           
+       # Final validation when interrupted
+       self.get_logger().info('Test interrupted by user. Performing final validation on current data...')
+       
+       success = self.validate_paths()
+       
+       # Summary
+       self.get_logger().info('\n=== TEST SUMMARY ===')
+       self.get_logger().info(f'Explore paths: {self.explore_path_count}')
+       self.get_logger().info(f'Return paths: {self.return_path_count}')
+       self.get_logger().info(f'Home triggers: {self.home_trigger_count}')
+       self.get_logger().info('Test duration: indefinite (until interrupted)')
+       
+       if success:
+           self.get_logger().info('✓ Test completed successfully')
+       else:
+           self.get_logger().info('✗ Test had validation issues')
+           
+       return success
 
     def signal_handler(self, signum, frame):
         """Handle keyboard interrupt signal"""
