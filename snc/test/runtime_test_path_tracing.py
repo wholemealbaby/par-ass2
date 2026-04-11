@@ -12,6 +12,8 @@ from std_msgs.msg import Empty
 import time
 import sys
 import os
+import signal
+import threading
 
 # Add the snc module to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -61,6 +63,9 @@ class PathTracingRuntimeTest(Node):
         # Test duration and timeout
         self.test_duration = 30.0  # seconds
         self.start_time = time.time()
+        
+        # Flag to indicate if the test was interrupted
+        self.interrupted = False
         
         self.get_logger().info('Path tracing runtime test initialized')
         self.get_logger().info(f'Subscribed to topics:')
@@ -158,7 +163,7 @@ class PathTracingRuntimeTest(Node):
         self.get_logger().info(f'Starting runtime test for {self.test_duration} seconds...')
         
         start_time = time.time()
-        while time.time() - start_time < self.test_duration:
+        while time.time() - start_time < self.test_duration and not self.interrupted:
             rclpy.spin_once(self, timeout_sec=0.1)
             
             # Check if we should continue (every 5 seconds)
@@ -166,7 +171,11 @@ class PathTracingRuntimeTest(Node):
                 self.get_logger().info(f'Test running for {int(time.time() - start_time)} seconds...')
                 
         # Final validation
-        self.get_logger().info('Test period completed. Performing final validation...')
+        if self.interrupted:
+            self.get_logger().info('Test interrupted by user. Performing validation on current data...')
+        else:
+            self.get_logger().info('Test period completed. Performing final validation...')
+        
         success = self.validate_paths()
         
         # Summary
@@ -176,12 +185,21 @@ class PathTracingRuntimeTest(Node):
         self.get_logger().info(f'Home triggers: {self.home_trigger_count}')
         self.get_logger().info(f'Test duration: {self.test_duration}s')
         
-        if success:
+        if self.interrupted:
+            self.get_logger().info('⚠ Test was interrupted by user')
+        elif success:
             self.get_logger().info('✓ Test completed successfully')
         else:
             self.get_logger().info('✗ Test had validation issues')
             
         return success
+
+    def signal_handler(self, signum, frame):
+        """Handle keyboard interrupt signal"""
+        self.interrupted = True
+        self.get_logger().info('Received interrupt signal. Stopping test...')
+        # Cancel the timer if it exists
+        return True
 
 
 def main():
@@ -189,6 +207,9 @@ def main():
     
     # Create test node
     test_node = PathTracingRuntimeTest()
+    
+    # Register signal handler for SIGINT (Ctrl+C)
+    signal.signal(signal.SIGINT, test_node.signal_handler)
     
     try:
         # Run the test
@@ -201,8 +222,8 @@ def main():
         # Return exit code based on success
         return 0 if success else 1
         
-    except KeyboardInterrupt:
-        test_node.get_logger().info('Test interrupted by user')
+    except Exception as e:
+        test_node.get_logger().error(f'Unexpected error occurred: {e}')
         test_node.destroy_node()
         rclpy.shutdown()
         return 1
