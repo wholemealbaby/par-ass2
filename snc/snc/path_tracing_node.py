@@ -89,8 +89,6 @@ class PathTracingNode(Node):
         current_y = pose.pose.position.y
         if pose == SAMPLE_SKIPPED or pose == SAMPLE_FAILED:
             return
-        self.last_recorded_pos = (current_x, current_y)
-        self.last_recorded_yaw = self.get_yaw_from_transform(t)
         # Save the waypoint to the appropriate breadcrumb list and publish the path
         if self.return_triggered:
             self.explore_breadcrumbs.append(pose)
@@ -131,6 +129,9 @@ class PathTracingNode(Node):
         pose.pose.position.z = 0.0
         pose.pose.orientation = t.transform.rotation
 
+        # Update last recorded pose and yaw
+        self.last_recorded_pos = (current_x, current_y)
+        self.last_recorded_yaw = self.get_yaw_from_transform(t)
         return pose
 
 
