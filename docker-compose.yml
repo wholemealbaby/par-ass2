@@ -1,0 +1,7 @@
+# /docker-compose.yml
+services:
+  rmit_aiilworkspace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # This automatically merges with the robot's /home/husarion/compose.yaml
