@@ -63,7 +63,7 @@ class PathTracingNode(Node):
             PATH_RETURN_BUFFER_SIZE
         )
 
-        self.wait_for_robot_pose()
+        #self.wait_for_robot_pose()
 
         # Timer to sample the robot's pose at regular intervals
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
