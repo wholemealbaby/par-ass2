@@ -33,17 +33,15 @@ from snc.path_tracing_core import (
 
 
 class PathTracingNode(Node):
-    def __init__(self, logger=None, params=None):
+    def __init__(self, params=None):
         """
         Initialize the PathTracingNode.
         
         Args:
-            logger: Optional logger instance to use
             params: Optional dictionary of parameters to override defaults
         """
         super().__init__('path_tracing_node')
         self.get_logger().info('Path tracing node launched')
-        self._logger = logger
 
         # Configure parameters with defaults
         params = params or {}
