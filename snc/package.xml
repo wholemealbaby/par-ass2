@@ -19,9 +19,8 @@
   <depend>nav2_*</depend>
   <depend>slam_toolbox</depend>
   <depend>find_object_2d</depend>
-  <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
-
+  <depend>tf_transformations</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
