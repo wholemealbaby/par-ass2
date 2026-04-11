@@ -135,16 +135,16 @@ class PathTracingNode(Node):
         return pose
 
 
-    def get_yaw_from_transform(self, t: Transform):
+    def get_yaw_from_transform(self, t):
         """
-        Extracts the yaw (Z-axis rotation) from a geometry_msgs/(Transform.
+        Extracts the yaw (Z-axis rotation) from a geometry_msgs/TransformStamped.
         """
-        # Extract quaternion components 
+        # Extract quaternion components from the transform
         quaternion = (
-            t.rotation.x,
-            t.rotation.y,
-            t.rotation.z,
-            t.rotation.w
+            t.transform.rotation.x,
+            t.transform.rotation.y,
+            t.transform.rotation.z,
+            t.transform.rotation.w
         )
 
         # Convert quaternion to roll, pitch, yaw
