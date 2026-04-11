@@ -98,6 +98,7 @@ class PathTracingNode(Node):
 
         pose = self.get_robot_pose_in_map_frame()
         if pose == SAMPLE_SKIPPED or pose == SAMPLE_FAILED:
+            self.get_logger().debug(f"Pose sampling skipped or failed (skipped={pose == SAMPLE_SKIPPED}, failed={pose == SAMPLE_FAILED})")
             return
             
         # Save the waypoint to the appropriate breadcrumb list and publish the path
