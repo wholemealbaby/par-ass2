@@ -13,9 +13,8 @@ class MarkerDetectionNode(Node):
         self.counter = 0
 
     def timer_callback(self):
-        self.counter += 1
-        self.get_logger().info(f'Marker detection node spinning ({self.counter})')
-
+        pass
+        
 
 def main():
     rclpy.init()
