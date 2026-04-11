@@ -183,7 +183,7 @@ class PathTracingNode(Node):
         # Return the yaw
         return euler[2]
     
-    def home_trigger_callback(self):
+    def home_trigger_callback(self, msg):
         self.get_logger().info('Home trigger received, starting path tracing')
         self.return_triggered = True
         self.last_recorded_pose = None
