@@ -85,6 +85,8 @@ class PathTracingNode(Node):
             return
 
         pose = self.get_robot_pose_in_map_frame()
+        current_x = pose.pose.position.x
+        current_y = pose.pose.position.y
         if pose == SAMPLE_SKIPPED or pose == SAMPLE_FAILED:
             return
         self.last_recorded_pos = (current_x, current_y)
