@@ -1,7 +1,11 @@
 # /docker-compose.yml
 services:
   rmit_aiilworkspace:
+    container_name: g30_snc  # <--- Change this
+    image: g30_snc:v1
     build:
       context: .
       dockerfile: Dockerfile
+    tty: true
+    stdin_open: true
     # This automatically merges with the robot's /home/husarion/compose.yaml
