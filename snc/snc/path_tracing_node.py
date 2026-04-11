@@ -8,12 +8,14 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
 from snc.constants import (
-    PATH_EXPLORE_BUFFER_SIZE,
-    PATH_RETURN_BUFFER_SIZE,
+    EXPLORE_BREADCRUMBS_BUFFER_SIZE,
+    RETURN_BREADCRUMBS_BUFFER_SIZE,
     HOME_TRIGGER_BUFFER_SIZE,
+    RETURN_HOME_TRAJECTORY_BUFFER_SIZE, 
+    RETURN_HOME_TRAJECTORY_TOPIC,
     HOME_TRIGGER_TOPIC,
-    PATH_EXPLORE_TOPIC,
-    PATH_RETURN_TOPIC
+    EXPLORE_BREADCRUMBS_TOPIC,
+    RETURN_BREADCRUMBS_TOPIC
 )
 import math
 from geometry_msgs.msg import Transform
@@ -22,13 +24,12 @@ import tf_transformations
 
 # Import core functions for easier testing
 from snc.path_tracing_core import (
-    calculate_distance,
-    calculate_yaw_delta,
     should_record_waypoint,
     construct_pose_stamped,
     get_yaw_from_transform,
     SAMPLE_FAILED,
-    SAMPLE_SKIPPED
+    SAMPLE_SKIPPED,
+    calculate_return_trajectory
 )
 
 
@@ -51,8 +52,9 @@ class PathTracingNode(Node):
         
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.explore_breadcrumbs = []  # List to store the breadcrumb waypoints for the explore path
-        self.return_breadcrumbs = []   # List to store the breadcrumb waypoints for the return path
+        self.explore_breadcrumbs = []  # List to store the breadcrumbs for the explore path
+        self.return_breadcrumbs = []   # List to store the breadcrumbs for the return path
+        self.return_path = None # Variable to store the final return path once complete
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
         self.return_triggered = False # Flag to indicate if return home has been triggered, stops pose sampling when true
@@ -64,19 +66,24 @@ class PathTracingNode(Node):
             self.home_trigger_callback,
             HOME_TRIGGER_BUFFER_SIZE
         )
-        # Publisher for explore waypoints
+        # Publisher for explore breadcrumbs
         self.pub_path_explore = self.create_publisher(
             Path,
-            PATH_EXPLORE_TOPIC,
-            PATH_EXPLORE_BUFFER_SIZE
+            EXPLORE_BREADCRUMBS_TOPIC,
+            EXPLORE_BREADCRUMBS_BUFFER_SIZE
         )
-        # Publisher for return waypoints
+        # Publisher for return breadcrumbs
         self.pub_path_return = self.create_publisher(
             Path,
-            PATH_RETURN_TOPIC,
-            PATH_RETURN_BUFFER_SIZE
+            RETURN_BREADCRUMBS_TOPIC,
+            RETURN_BREADCRUMBS_BUFFER_SIZE
         )
-
+        # Publisher for final return trajectory
+        self.pub_return_home_trajectory = self.create_publisher(
+            Path,
+            RETURN_HOME_TRAJECTORY_TOPIC,
+            RETURN_HOME_TRAJECTORY_BUFFER_SIZE
+        )
         # Timer to sample the robot's pose at regular intervals
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
     
@@ -176,11 +183,19 @@ class PathTracingNode(Node):
         # Return the yaw
         return euler[2]
     
-    def home_trigger_callback(self, msg):
+    def home_trigger_callback(self):
         self.get_logger().info('Home trigger received, starting path tracing')
         self.return_triggered = True
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
+        return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs)
+        if return_trajectory is not None:
+            self.return_path = Path(header=return_trajectory[0].header, poses=return_trajectory)
+        else:
+            self.get_logger().error("Failed to calculate return trajectory, no path will be published")
+        self.pub_return_home_trajectory.publish(self.return_path)
+
+        
     
     def wait_for_robot_pose(self):
         """Wait for the robot pose transform to become available."""
