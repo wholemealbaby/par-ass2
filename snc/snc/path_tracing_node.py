@@ -179,6 +179,8 @@ class PathTracingNode(Node):
     def home_trigger_callback(self, msg):
         self.get_logger().info('Home trigger received, starting path tracing')
         self.return_triggered = True
+        self.last_recorded_pose = None
+        self.last_recorded_yaw = None
     
     def wait_for_robot_pose(self):
         """Wait for the robot pose transform to become available."""
