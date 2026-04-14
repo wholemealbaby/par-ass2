@@ -16,6 +16,21 @@ hazard_names_map = {
     "Radioactive": 11,
     "Corrosive": 12
 }
+hazard_image_map = {
+    "start": 1,
+    "Flammable Gas": 2,
+    "Poison": 3,
+    "Non-flammable Gas": 4,
+    "Flammable Solid": 5,
+    "Oxidizer": 6,
+    "Inhalation Hazard": 7,
+    "Corrosive": 8,
+    "Organic Peroxide": 9,
+    "Dangerous When Wet": 10,
+    "Explosive": 11,
+    "Radioactive": 12,
+    "Spontaneously Combustible": 13,
+}
 
 START_CHALLENGE_TOPIC = '/snc_start'
 START_CHALLENGE_INTERFACE = Empty
