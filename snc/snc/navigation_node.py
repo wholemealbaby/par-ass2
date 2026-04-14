@@ -12,11 +12,13 @@ from rclpy.executors import MultiThreadedExecutor
 from tf2_ros import Buffer, TransformListener, TransformException
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from nav_msgs.msg import OccupancyGrid
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
-# Costmap constants
-INSCRIBED = 253
-LETHAL = 254
-UNKNOWN = 255
+# OccupancyGrid constants
+MAP_UNKNOWN = -1
+MAP_FREE = 0
+MAP_OCCUPIED_THRESHOLD = 50
 
 class NavigationNode(Node):
     def __init__(self):
@@ -30,6 +32,22 @@ class NavigationNode(Node):
         self.global_frame = 'map'
         self.robot_base_frame = 'base_link'
         
+        map_qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durablity=DurabilityPolicy.TRANSIENT_LOCAL,    
+        )
+        
+        self.map_sub = self.create_subscription(
+            OccupancyGrid,
+            '/map',
+            self.map_callback,
+            map_qos    
+        )
+        
+        self.latest_map = None
+
         self.declare_parameter('planner_frequency', 1.0)
         self.planner_frequency = self.get_parameter('planner_frequency').value
         
@@ -76,10 +94,27 @@ class NavigationNode(Node):
                 pass
             
         self.get_logger().info('Global costmap is available')
+            
+        self.get_logger().info('Waiting for occupancy grid /map...')
+        while rclpy.ok():
+            executor.spin_once(timeout_sec=0.1)
+            if (
+                self.latest_map is not None
+                and self.latest_map.info.width > 0
+                and self.latest_map.info.height > 0
+                and len(self.latest_map.data) == self.latest_map.info.width * self.latest_map.info.height  
+            ):
+                break
+            
+        self.get_logger().info('Occupancy grid is available')
+
         self.get_logger().info('All required nodes/information are ready. Start exploration.')
         
-    def is_cell_traversable(self, cost):
-        return 0 <= int(cost) < INSCRIBED
+    def map_callback(self, msg: OccupancyGrid):
+        self.latest_map = msg
+
+    def is_cell_traversable(self, value):
+        return 0 <= int(value) < MAP_OCCUPIED_THRESHOLD
 
     def cell_has_unknown_neighbours(self, grid, x, y, width, height):
         for dx in (-1, 0, 1):
@@ -89,7 +124,7 @@ class NavigationNode(Node):
                 nx, ny = x + dx, y + dy
 
                 if 0 <= nx < width and 0 <= ny < height:
-                    if(int(grid[ny, nx]) == UNKNOWN):
+                    if(int(grid[ny, nx]) == MAP_UNKNOWN):
                         return True
         return False
 
@@ -141,13 +176,12 @@ class NavigationNode(Node):
         if curr_pose is None:
             return
         
-        try:
-            costmap = self.navigator.getGlobalCostmap()
-        except Exception as ex:
-            self.get_logger().warn(f'Could not read global costmap: {ex}')
+        map_msg = self.latest_map
+        if map_msg is None:
+            self.get_logger().warn('No occupancy grid available yet')
             return
         
-        goal_pose = self.find_frontier_goal(costmap, curr_pose)
+        goal_pose = self.find_frontier_goal(map_msg, curr_pose)
         
         if goal_pose is None:
             self.no_frontier_count += 1
@@ -159,7 +193,9 @@ class NavigationNode(Node):
                 if self.plan_timer is not None:
                     self.plan_timer.cancel()
 
-                return
+            return
+        
+        self.no_frontier_count = 0
         
         self.get_logger().info(f'Sending frontier goal: x={goal_pose.pose.position.x:.2f}, '
                                f'y={goal_pose.pose.position.y:.2f}'
@@ -167,11 +203,11 @@ class NavigationNode(Node):
         self.navigator.goToPose(goal_pose)
         self.goal_active = True
         
-    def find_frontier_goal(self, costmap_msg, robot_pose):
-        width = costmap_msg.metadata.size_x
-        height = costmap_msg.metadata.size_y
-        res = costmap_msg.metadata.resolution
-        origin = costmap_msg.metadata.origin.position
+    def find_frontier_goal(self, map_msg, robot_pose):
+        width = map_msg.info.width
+        height = map_msg.info.height
+        res = map_msg.info.resolution
+        origin = map_msg.info.origin.position
         
         # Invalid costmap size --> cannot find frontier goal
         if width == 0 or height == 0:
@@ -188,15 +224,15 @@ class NavigationNode(Node):
             self.get_logger().warn('Robot pose is outside the global costmap bounds')
             return None
 
-        if not self.cell_has_unknown_neighbours(grid, start_x, start_y, width, height):
+        if not self.is_cell_traversable(grid[start_y, start_x]):
             found = False
             for radius in range(1, 6):
                 for dx in range(-radius, radius + 1):
                     for dy in range(-radius, radius + 1):
                         nx, ny = start_x + dx, start_y + dy
                         if 0 <= nx < width and 0 <= ny < height:
-                            cost = grid[ny, nx]
-                            if self.is_cell_traversable(cost):
+                            if self.is_cell_traversable(grid[ny, nx]):
+                                start_x, start_y = nx, ny
                                 found = True
                                 break
                     if found == True:
