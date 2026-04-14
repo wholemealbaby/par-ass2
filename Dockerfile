@@ -15,6 +15,7 @@ RUN apt update && apt install -y \
 
 # 3. Ensure the Python transformations3d is available to the ROS environment
 RUN pip install --no-cache-dir transforms3d --break-system-packages
+RUN pip install --no-cache-dir pynput --break-system-packages
 
 WORKDIR /ros2_ws
 
