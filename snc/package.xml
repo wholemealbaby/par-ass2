@@ -21,7 +21,6 @@
   <depend>find_object_2d</depend>
   <depend>visualization_msgs</depend>
   <depend>tf_transformations</depend>
-  <depend>pynput</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
