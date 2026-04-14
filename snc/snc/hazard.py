@@ -1,49 +1,79 @@
-import rclpy
-from rclpy.node import Node
-from find_object_2d.msg import ObjectsStamped
 import math
 from constants import HAZARD_SPEC_IDS_MAP, HAZARD_IMAGE_MAP
 
+import math
+from geometry_msgs.msg import PoseStamped
+
 class Hazard:
-    def __init__(self, msg):
-        """Create a hazard object from a ObjectStamped message.
-        Note that find object 2d often disguises ObjectStamped messages
-        as Float32MultiArray interfaces"""
+    def __init__(self, data_slice: list, header):
+        """
+        Create a hazard object from a slice of the ObjectStamped data.
+        
+        :param data_slice: A list of 12 floats representing one object
+        :param header: The header from the original ObjectsStamped/Float32MultiArray message
+        """
+        # Basic Identity (Indices 0, 1, 2)
+        self.object_id = int(data_slice[0])
+        self.name = HAZARD_IMAGE_MAP.get(self.object_id, "unknown")
+        self.id = HAZARD_SPEC_IDS_MAP.get(self.name, -1) 
+        
+        self.width = data_slice[1]
+        self.height = data_slice[2]
 
-        # ID of the object in the find_object_2d session
-        self.object_id = int(data[i])
-        self.name = HAZARD_IMAGE_MAP[self.object_id]
-        # ID of the hazard in the assignment specification
-        self.id = HAZARD_SPEC_IDS_MAP[self.name] 
-        self.width = data[i+1]
-        self.height = data[i+2]
+        # Position (Indices 9 and 10)
+        dx = data_slice[9]
+        dy = data_slice[10]
 
-       # Position (from homography translation)
-        dx = obj_data[i+9]
-        dy = obj_data[i+10]
-
-        # Rotation (Yaw) to Quaternion
-        # h11 and h21 give us the rotation components
-        h11 = obj_data[i+3]
-        h21 = obj_data[i+6]
+        # Rotation (Indices 3 and 6)
+        h11 = data_slice[3]
+        h21 = data_slice[6]
         yaw = math.atan2(h21, h11)
 
-        # Construct the PoseStamped object
+        # Construct PoseStamped
         ps = PoseStamped()
+        ps.header = header  # Carry over timestamp and frame_id
         
-        # Sync header with the camera frame and time of detection
-        ps.header = incoming_header
-        
-        # Position
         ps.pose.position.x = float(dx)
         ps.pose.position.y = float(dy)
         ps.pose.position.z = 0.0
         
-        # Orientation (Quaternion for 2D Yaw)
+        # Yaw to Quaternion conversion
         ps.pose.orientation.x = 0.0
         ps.pose.orientation.y = 0.0
         ps.pose.orientation.z = math.sin(yaw / 2.0)
         ps.pose.orientation.w = math.cos(yaw / 2.0)
+        
         self.camera_pose_stamped = ps
 
+class Hazards:
+    def __init__(self, msg):
+        """
+        Container for all hazards detected in a single ROS 2 message.
+        
+        :param msg: The incoming ObjectsStamped message
+        """
+        # Metadata from the message header
+        self.header = msg.header
+        self.timestamp = msg.header.stamp
+        self.frame_id = msg.header.frame_id
+        
+        # The list of individual Hazard objects
+        self.list = []
+        
+        # Parse the raw data (multiples of 12)
+        raw_data = msg.objects.data
+        for i in range(0, len(raw_data), 12):
+            obj_slice = raw_data[i : i + 12]
+            # Create Hazard instance and add to list
+            self.list.append(Hazard(obj_slice, self.header))
+            
+        # Quick-access metadata
+        self.count = len(self.list)
+        self.any_detected = self.count > 0
 
+    def get_hazard_by_id(self, spec_id):
+        """Helper to find a specific hazard by its assignment ID"""
+        for h in self.list:
+            if h.id == spec_id:
+                return h
+        return None
