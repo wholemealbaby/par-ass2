@@ -49,7 +49,7 @@ class ExplorationNode(Node):
 
         self.declare_parameter('planner_frequency', 1.0)
         self.declare_parameter('status_frequency', 1.0)
-        self.declare_parameter('mission_timeout_sec', 240.0)
+        self.declare_parameter('exploration_timeout_sec', 240.0)
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 5)
@@ -57,7 +57,7 @@ class ExplorationNode(Node):
 
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
-        self.mission_timeout_sec = float(self.get_parameter('mission_timeout_sec').value)
+        self.exploration_timeout_sec = float(self.get_parameter('exploration_timeout_sec').value)
         self.spin_angular_speed = float(self.get_parameter('spin_angular_speed').value)
         self.spin_angle_deg = float(self.get_parameter('spin_angle_deg').value)
         self.min_frontier_cluster_size = int(self.get_parameter('min_frontier_cluster_size').value)
@@ -275,7 +275,7 @@ class ExplorationNode(Node):
         response.message = f'Unsupported command: {request.command}'
         return response
 
-    # ---------- mission control ----------
+    # ---------- exploration control ----------
     def start_exploration(self):
         self.started = True
         self.goal_active = False
@@ -369,7 +369,7 @@ class ExplorationNode(Node):
 
         if self.exploration_start_time is not None:
             elapsed = (self.get_clock().now() - self.exploration_start_time).nanoseconds / 1e9
-            if elapsed >= self.mission_timeout_sec:
+            if elapsed >= self.exploration_timeout_sec:
                 self.trigger_return_home('4-minute timeout reached')
                 return
 
