@@ -11,6 +11,7 @@ import math
 import sys
 import os
 import rclpy
+from geometry_msgs.msg import PoseStamped, Quaternion
 
 # Add the snc module to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -21,6 +22,10 @@ from snc.path_tracing_core import (
     should_record_waypoint,
     construct_pose_stamped,
     get_yaw_from_transform,
+    reverse_waypoint_list,
+    invert_quaternions,
+    thin_waypoint_list,
+    calculate_return_trajectory,
     SAMPLE_FAILED,
     SAMPLE_SKIPPED
 )
@@ -239,8 +244,8 @@ class TestPathTracingCore(unittest.TestCase):
         mock_transform.transform.rotation.z = 0.0
         mock_transform.transform.rotation.w = 1.0
         
-        # Mock tf_transformations.euler_from_quaternion
-        with patch('snc.path_tracing_core.tf_transformations.euler_from_quaternion') as mock_euler:
+        # Mock euler_from_quaternion (imported directly from tf_transformations)
+        with patch('snc.path_tracing_core.euler_from_quaternion') as mock_euler:
             mock_euler.return_value = [0.0, 0.0, 0.0]  # roll, pitch, yaw
             
             yaw = get_yaw_from_transform(mock_transform)
@@ -262,8 +267,8 @@ class TestPathTracingCore(unittest.TestCase):
         mock_transform.transform.rotation.z = math.sin(math.radians(45))
         mock_transform.transform.rotation.w = math.cos(math.radians(45))
         
-        # Mock tf_transformations.euler_from_quaternion
-        with patch('snc.path_tracing_core.tf_transformations.euler_from_quaternion') as mock_euler:
+        # Mock euler_from_quaternion (imported directly from tf_transformations)
+        with patch('snc.path_tracing_core.euler_from_quaternion') as mock_euler:
             mock_euler.return_value = [0.0, 0.0, math.radians(90)]
             
             yaw = get_yaw_from_transform(mock_transform)
@@ -284,7 +289,7 @@ class TestPathTracingCore(unittest.TestCase):
         mock_transform.transform.rotation.z = math.sin(math.radians(-22.5))
         mock_transform.transform.rotation.w = math.cos(math.radians(-22.5))
         
-        with patch('snc.path_tracing_core.tf_transformations.euler_from_quaternion') as mock_euler:
+        with patch('snc.path_tracing_core.euler_from_quaternion') as mock_euler:
             mock_euler.return_value = [0.0, 0.0, math.radians(-45)]
             
             yaw = get_yaw_from_transform(mock_transform)
@@ -299,6 +304,169 @@ class TestPathTracingCore(unittest.TestCase):
         # Test exactly at rotation threshold
         self.assertEqual(calculate_yaw_delta(math.radians(15), 0.0), math.radians(15))
 
+    def test_reverse_waypoint_list(self):
+        """Test reversing a list of waypoints."""
+        # Create mock waypoints
+        waypoint1 = Mock()
+        waypoint1.header = Mock()
+        waypoint1.pose = Mock()
+        waypoint1.pose.position = Mock()
+        waypoint1.pose.position.x = 1.0
+        waypoint1.pose.position.y = 2.0
+        
+        waypoint2 = Mock()
+        waypoint2.header = Mock()
+        waypoint2.pose = Mock()
+        waypoint2.pose.position = Mock()
+        waypoint2.pose.position.x = 3.0
+        waypoint2.pose.position.y = 4.0
+        
+        waypoint3 = Mock()
+        waypoint3.header = Mock()
+        waypoint3.pose = Mock()
+        waypoint3.pose.position = Mock()
+        waypoint3.pose.position.x = 5.0
+        waypoint3.pose.position.y = 6.0
+        
+        waypoints = [waypoint1, waypoint2, waypoint3]
+        
+        # Test reversal
+        reversed_waypoints = reverse_waypoint_list(waypoints)
+        
+        # Check that the list is reversed
+        self.assertEqual(reversed_waypoints[0], waypoint3)
+        self.assertEqual(reversed_waypoints[1], waypoint2)
+        self.assertEqual(reversed_waypoints[2], waypoint1)
+        
+        # Check that original list is unchanged
+        self.assertEqual(waypoints[0], waypoint1)
+        self.assertEqual(waypoints[1], waypoint2)
+        self.assertEqual(waypoints[2], waypoint3)
+
+    def test_invert_quaternions(self):
+        """Test inverting quaternions for waypoints."""
+        # Create mock waypoints with known quaternions
+        waypoint1 = Mock()
+        waypoint1.header = Mock()
+        waypoint1.pose = Mock()
+        waypoint1.pose.position = Mock()
+        waypoint1.pose.position.x = 1.0
+        waypoint1.pose.position.y = 2.0
+        waypoint1.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)  # Identity quaternion
+
+        waypoint2 = Mock()
+        waypoint2.header = Mock()
+        waypoint2.pose = Mock()
+        waypoint2.pose.position = Mock()
+        waypoint2.pose.position.x = 3.0
+        waypoint2.pose.position.y = 4.0
+        waypoint2.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.7071, w=0.7071)  # 90 degree rotation around Z
+
+        waypoints = [waypoint1, waypoint2]
+        
+        # Test inversion
+        inverted_waypoints = invert_quaternions(waypoints)
+        
+        # Check that the list has the same length
+        self.assertEqual(len(inverted_waypoints), 2)
+        
+        # Check that original list is unchanged
+        self.assertEqual(waypoints[0].pose.orientation.z, 0.0)
+        self.assertEqual(waypoints[1].pose.orientation.z, 0.7071)
+
+    def test_thin_waypoint_list(self):
+        """Test thinning a list of waypoints based on distance."""
+        # Create mock waypoints with known positions
+        waypoint1 = Mock()
+        waypoint1.pose = Mock()
+        waypoint1.pose.position = Mock()
+        waypoint1.pose.position.x = 0.0
+        waypoint1.pose.position.y = 0.0
+        
+        waypoint2 = Mock()
+        waypoint2.pose = Mock()
+        waypoint2.pose.position = Mock()
+        waypoint2.pose.position.x = 0.1  # Close to waypoint1
+        waypoint2.pose.position.y = 0.1
+        
+        waypoint3 = Mock()
+        waypoint3.pose = Mock()
+        waypoint3.pose.position = Mock()
+        waypoint3.pose.position.x = 2.0  # Far from waypoint2
+        waypoint3.pose.position.y = 2.0
+        
+        waypoint4 = Mock()
+        waypoint4.pose = Mock()
+        waypoint4.pose.position = Mock()
+        waypoint4.pose.position.x = 3.0  # Far from waypoint3
+        waypoint4.pose.position.y = 3.0
+        
+        waypoints = [waypoint1, waypoint2, waypoint3, waypoint4]
+        
+        # Test thinning with a threshold that should keep waypoints 1, 3, and 4
+        thinned_waypoints = thin_waypoint_list(waypoints, 1.0)
+        
+        # Should keep first waypoint, skip intermediate close waypoints, keep distant waypoints
+        self.assertEqual(len(thinned_waypoints), 3)
+        self.assertEqual(thinned_waypoints[0], waypoint1)
+        self.assertEqual(thinned_waypoints[1], waypoint3)
+        self.assertEqual(thinned_waypoints[2], waypoint4)
+        
+        # Test with very small threshold (should keep everything)
+        thinned_waypoints_small = thin_waypoint_list(waypoints, 0.01)
+        self.assertEqual(len(thinned_waypoints_small), 4)
+        
+        # Test with empty list
+        empty_result = thin_waypoint_list([], 1.0)
+        self.assertEqual(len(empty_result), 0)
+        
+        # Test with single waypoint
+        single_result = thin_waypoint_list([waypoint1], 1.0)
+        self.assertEqual(len(single_result), 1)
+        self.assertEqual(single_result[0], waypoint1)
+
+    def test_calculate_return_trajectory(self):
+       """Test calculating return trajectory from breadcrumbs."""
+       # Create mock waypoints
+       waypoint1 = Mock()
+       waypoint1.header = Mock()
+       waypoint1.pose = Mock()
+       waypoint1.pose.position = Mock()
+       waypoint1.pose.position.x = 1.0
+       waypoint1.pose.position.y = 2.0
+       waypoint1.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)  # Identity quaternion
+
+       waypoint2 = Mock()
+       waypoint2.header = Mock()
+       waypoint2.pose = Mock()
+       waypoint2.pose.position = Mock()
+       waypoint2.pose.position.x = 3.0
+       waypoint2.pose.position.y = 4.0
+       waypoint2.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.7071, w=0.7071)  # 90 degree rotation around Z
+
+       breadcrumbs = [waypoint1, waypoint2]
+       
+       # Test return trajectory calculation
+       return_trajectory = calculate_return_trajectory(breadcrumbs)
+       
+       # The return trajectory should be:
+       # 1. Reversed breadcrumbs (so waypoints are in reverse order)
+       # 2. With inverted quaternions
+       # 3. Thinned with a 0.5 meter spacing
+       
+       # Since we're testing integration of the 3 functions, we just verify it returns a list
+       # and has the expected basic structure
+       self.assertIsInstance(return_trajectory, list)
+       
+       # Test with empty breadcrumbs
+       empty_result = calculate_return_trajectory([])
+       self.assertEqual(len(empty_result), 0)
+       
+       # Test with single breadcrumb
+       single_result = calculate_return_trajectory([waypoint1])
+       self.assertIsInstance(single_result, list)
+       self.assertEqual(len(single_result), 1)
+
 
 if __name__ == '__main__':
-    unittest.main()
+   unittest.main()

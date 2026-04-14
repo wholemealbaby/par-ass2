@@ -19,8 +19,8 @@ import threading
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from snc.constants import (
-    PATH_EXPLORE_TOPIC,
-    PATH_RETURN_TOPIC,
+    EXPLORE_BREADCRUMBS_TOPIC,
+    RETURN_BREADCRUMBS_TOPIC,
     HOME_TRIGGER_TOPIC
 )
 
@@ -40,14 +40,14 @@ class PathTracingRuntimeTest(Node):
         # Subscribe to path topics
         self.explore_sub = self.create_subscription(
             Path,
-            PATH_EXPLORE_TOPIC,
+            EXPLORE_BREADCRUMBS_TOPIC,
             self.explore_path_callback,
             10
         )
         
         self.return_sub = self.create_subscription(
             Path,
-            PATH_RETURN_TOPIC,
+            RETURN_BREADCRUMBS_TOPIC,
             self.return_path_callback,
             10
         )
@@ -69,8 +69,8 @@ class PathTracingRuntimeTest(Node):
         
         self.get_logger().info('Path tracing runtime test initialized')
         self.get_logger().info(f'Subscribed to topics:')
-        self.get_logger().info(f'  - {PATH_EXPLORE_TOPIC}')
-        self.get_logger().info(f'  - {PATH_RETURN_TOPIC}')
+        self.get_logger().info(f'  - {EXPLORE_BREADCRUMBS_TOPIC}')
+        self.get_logger().info(f'  - {RETURN_BREADCRUMBS_TOPIC}')
         self.get_logger().info(f'  - {HOME_TRIGGER_TOPIC}')
 
     def explore_path_callback(self, msg):
