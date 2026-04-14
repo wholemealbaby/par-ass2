@@ -69,7 +69,7 @@ class ExplorationNode(Node):
 
         self.state = STATE_IDLE
         self.started = False
-        self.mission_start_time = None
+        self.exploration_start_time = None
         self.hazard_ids = set()
         self.pending_resume_after_spin = False
 
@@ -186,7 +186,7 @@ class ExplorationNode(Node):
             return
         if self.state in [STATE_EXPLORING, STATE_SPINNING]:
             return
-        self.start_mission()
+        self.start_exploration()
 
     def hazard_signal_callback(self, _msg: Empty):
         if self.state != STATE_EXPLORING:
@@ -205,6 +205,7 @@ class ExplorationNode(Node):
     def hazards_callback(self, msg: MarkerArray):
         # Example for MarkerArray: use marker.id as unique hazard ID.
         # Replace this logic if /hazards has a different message type.
+        # TODO: Add mapping logic for the markers.
         before = len(self.hazard_ids)
         for marker in msg.markers:
             self.hazard_ids.add(int(marker.id))
@@ -234,11 +235,11 @@ class ExplorationNode(Node):
             return response
 
         if cmd == 'START':
-            self.start_mission()
+            self.start_exploration()
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
-            response.message = 'Mission started'
+            response.message = 'Exploration started'
             return response
 
         if cmd == 'STOP':
@@ -247,7 +248,7 @@ class ExplorationNode(Node):
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
-            response.message = 'Mission stopped'
+            response.message = 'Exploration stopped'
             return response
 
         if cmd == 'RESUME':
@@ -256,7 +257,7 @@ class ExplorationNode(Node):
                 response.success = True
                 response.state = self.state
                 response.hazards_found = len(self.hazard_ids)
-                response.message = 'Mission resumed'
+                response.message = 'Exploration resumed'
                 return response
 
         if cmd == 'TELEOP':
@@ -275,17 +276,17 @@ class ExplorationNode(Node):
         return response
 
     # ---------- mission control ----------
-    def start_mission(self):
+    def start_exploration(self):
         self.started = True
         self.goal_active = False
         self.no_frontier_count = 0
         self.pending_resume_after_spin = False
 
-        if self.mission_start_time is None:
-            self.mission_start_time = self.get_clock().now()
+        if self.exploration_start_time is None:
+            self.exploration_start_time = self.get_clock().now()
 
         self.state = STATE_EXPLORING
-        self.get_logger().info('Exploration started')
+        self.get_logger().info('Exploration started....')
 
     def trigger_return_home(self, reason: str):
         self.get_logger().info(f'Triggering return-home: {reason}')
@@ -366,8 +367,8 @@ class ExplorationNode(Node):
         if self.state != STATE_EXPLORING:
             return
 
-        if self.mission_start_time is not None:
-            elapsed = (self.get_clock().now() - self.mission_start_time).nanoseconds / 1e9
+        if self.exploration_start_time is not None:
+            elapsed = (self.get_clock().now() - self.exploration_start_time).nanoseconds / 1e9
             if elapsed >= self.mission_timeout_sec:
                 self.trigger_return_home('4-minute timeout reached')
                 return
