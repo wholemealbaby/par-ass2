@@ -1,135 +1,99 @@
 #!/usr/bin/env python3
 
-import threading
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from std_msgs.msg import Empty, String
-
-from pynput import keyboard
-
+import sys
+import select
+import termios
+import tty
 
 class TriggerListener(Node):
-    """ROS 2 node that listens for keyboard shortcuts and publishes trigger messages."""
-
     def __init__(self):
         super().__init__('trigger_listener')
 
-        self.get_logger().info('Trigger listener node launched')
-        self.get_logger().info('Contingency Keyboard Shortcuts:\n'
-            'Trigger Start: Shift + S\n'
-            'Trigger Teleop: Shift + T\n'
-            'Trigger Return Home: Shift + Home')
-
-        # QoS profile with RELIABLE reliability for critical triggers
-        qos_profile = QoSProfile(
-            reliability=ReliabilityPolicy.RELIABLE,
-            depth=1
+        self.get_logger().info('Trigger listener node launched (TTY Mode)')
+        self.get_logger().info(
+            '\nContingency Keyboard Shortcuts:\n'
+            'S : Trigger Start\n'
+            'T : Trigger Teleop\n'
+            'H : Trigger Return Home\n'
+            'Space : Emergency Stop\n'
+            'Press Ctrl+C to exit'
         )
 
-        # Publishers for trigger topics
-        self.pub_start = self.create_publisher(
-            Empty, '/trigger_start', qos_profile
-        )
-        self.pub_teleop = self.create_publisher(
-            Empty, '/trigger_teleop', qos_profile
-        )
-        self.pub_home = self.create_publisher(
-            Empty, '/trigger_home', qos_profile
-        )
-        self.pub_status = self.create_publisher(
-            String, '/snc_status', qos_profile
-        )
+        qos_profile = QoSProfile(reliability=ReliabilityPolicy.RELIABLE, depth=1)
 
-        # Keyboard listener in background thread
-        self.listener = keyboard.Listener(
-            on_press=self.on_key_press,
-            on_release=self.on_key_release
-        )
-        self.listener.start()
+        self.pub_start = self.create_publisher(Empty, '/trigger_start', qos_profile)
+        self.pub_teleop = self.create_publisher(Empty, '/trigger_teleop', qos_profile)
+        self.pub_home = self.create_publisher(Empty, '/trigger_home', qos_profile)
+        self.pub_status = self.create_publisher(String, '/snc_status', qos_profile)
 
-        self.get_logger().info('Keyboard listener started. Press Shift+S, Shift+T, Shift+H, or Spacebar.')
+        # Save terminal settings to restore later
+        self.settings = termios.tcgetattr(sys.stdin)
+        
+        # Create a timer to check for keyboard input periodically
+        self.timer = self.create_timer(0.1, self.check_keyboard)
 
-    def on_key_press(self, key):
-        """Handle key press events."""
-        try:
-            # Check for capital letters (Shift + key)
-            if hasattr(key, 'char') and key.char is not None:
-                if key.char.isupper():
-                    self.handle_uppercase_key(key.char)
-            elif key == keyboard.Key.space:
+    def get_key(self):
+        """Reads a single keypress from stdin."""
+        tty.setraw(sys.stdin.fileno())
+        select.select([sys.stdin], [], [], 0)
+        key = sys.stdin.read(1)
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
+        return key
+
+    def check_keyboard(self):
+        if select.select([sys.stdin], [], [], 0)[0]:
+            key = self.get_key()
+            if key == 'S':
+                self.trigger_start()
+            elif key == 'T':
+                self.trigger_teleop()
+            elif key == 'H':
+                self.trigger_home()
+            elif key == ' ':
                 self.handle_emergency_stop()
-        except AttributeError:
-            pass
-
-    def on_key_release(self, key):
-        """Handle key release events (not used but required by pynput)."""
-        pass
-
-    def handle_uppercase_key(self, char):
-        """Handle uppercase letter key presses."""
-        if char == 'S':
-            self.trigger_start()
-        elif char == 'T':
-            self.trigger_teleop()
-        elif char == 'H':
-            self.trigger_home()
+            elif key == '\x03': # Ctrl+C
+                rclpy.shutdown()
 
     def trigger_start(self):
-        """Publish start trigger."""
-        msg = Empty()
-        self.pub_start.publish(msg)
-        status_msg = String()
-        status_msg.data = "STATUS: Start Trigger Received"
-        self.pub_status.publish(status_msg)
-        self.get_logger().info("STATUS: Start Trigger Received")
+        self.pub_start.publish(Empty())
+        self.publish_status("STATUS: Start Trigger Received")
 
     def trigger_teleop(self):
-        """Publish teleop trigger."""
-        msg = Empty()
-        self.pub_teleop.publish(msg)
-        status_msg = String()
-        status_msg.data = "STATUS: Teleop Mode Requested"
-        self.pub_status.publish(status_msg)
-        self.get_logger().info("STATUS: Teleop Mode Requested")
+        self.pub_teleop.publish(Empty())
+        self.publish_status("STATUS: Teleop Mode Requested")
 
     def trigger_home(self):
-        """Publish home trigger."""
-        msg = Empty()
-        self.pub_home.publish(msg)
-        status_msg = String()
-        status_msg.data = "STATUS: Return Home Triggered"
-        self.pub_status.publish(status_msg)
-        self.get_logger().info("STATUS: Return Home Triggered")
+        self.pub_home.publish(Empty())
+        self.publish_status("STATUS: Return Home Triggered")
 
     def handle_emergency_stop(self):
-        """Publish emergency stop message."""
-        status_msg = String()
-        status_msg.data = "EMERGENCY: OPERATOR STOP"
-        self.pub_status.publish(status_msg)
-        self.get_logger().warn("EMERGENCY: OPERATOR STOP")
+        self.publish_status("EMERGENCY: OPERATOR STOP", warn=True)
 
-    def destroy_node(self):
-        """Clean up resources when node is destroyed."""
-        self.get_logger().info('Shutting down trigger listener...')
-        self.listener.stop()
-        super().destroy_node()
-
+    def publish_status(self, text, warn=False):
+        msg = String()
+        msg.data = text
+        self.pub_status.publish(msg)
+        if warn:
+            self.get_logger().warn(text)
+        else:
+            self.get_logger().info(text)
 
 def main():
-    """Main entry point for the trigger listener node."""
     rclpy.init()
-
     node = TriggerListener()
-
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().info('Keyboard interrupt received')
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
     finally:
+        # Crucial: Reset terminal settings so your shell isn't broken
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, node.settings)
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
