@@ -36,7 +36,7 @@ class NavigationNode(Node):
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
             reliability=ReliabilityPolicy.RELIABLE,
-            durablity=DurabilityPolicy.TRANSIENT_LOCAL,    
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,    
         )
         
         self.map_sub = self.create_subscription(
@@ -214,7 +214,7 @@ class NavigationNode(Node):
             return None
 
         # Reshape the flat 1D data into a grid
-        grid = np.array(costmap_msg.data).reshape((height, width))
+        grid = np.array(map_msg.data).reshape((height, width))
         
         # Convert robot world coordinates to map indices
         start_x = int((robot_pose.pose.position.x - origin.x) / res)
