@@ -16,6 +16,10 @@ class TriggerListener(Node):
         super().__init__('trigger_listener')
 
         self.get_logger().info('Trigger listener node launched')
+        self.get_logger().info('Contingency Keyboard Shortcuts:\n'
+            'Trigger Start: Shift + S\n'
+            'Trigger Teleop: Shift + T\n'
+            'Trigger Return Home: Shift + Home')
 
         # QoS profile with RELIABLE reliability for critical triggers
         qos_profile = QoSProfile(
