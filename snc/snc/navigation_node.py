@@ -13,8 +13,7 @@ class NavigationNode(Node):
         self.counter = 0
 
     def timer_callback(self):
-        self.counter += 1
-        self.get_logger().info(f'Navigation node spinning ({self.counter})')
+        pass
 
 
 def main():

@@ -17,24 +17,38 @@ from snc.constants import (
 )
 import math
 from geometry_msgs.msg import Transform
-import tf_transformations 
+import tf_transformations
 
-SAMPLE_FAILED = 0
-SAMPLE_SKIPPED = 2
+
+# Import core functions for easier testing
+from snc.path_tracing_core import (
+    calculate_distance,
+    calculate_yaw_delta,
+    should_record_waypoint,
+    construct_pose_stamped,
+    get_yaw_from_transform,
+    SAMPLE_FAILED,
+    SAMPLE_SKIPPED
+)
+
 
 class PathTracingNode(Node):
-    def __init__(self):
+    def __init__(self, params=None):
+        """
+        Initialize the PathTracingNode.
+        
+        Args:
+            params: Optional dictionary of parameters to override defaults
+        """
         super().__init__('path_tracing_node')
         self.get_logger().info('Path tracing node launched')
-        
-        # Load parameters
-        self.declare_parameter('pose_sample_interval_s', 0.5)
-        self.declare_parameter('waypoint_spacing_min', 0.15)
-        self.declare_parameter('waypoint_rotation_min', 15)
-        self.pose_sample_interval_s = self.get_parameter('pose_sample_interval_s').get_parameter_value().double_value
-        self.waypoint_spacing_min = self.get_parameter('waypoint_spacing_min').get_parameter_value().double_value
-        self.waypoint_rotation_min = self.get_parameter('waypoint_rotation_min').get_parameter_value().double_value
 
+        # Configure parameters with defaults
+        params = params or {}
+        self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
+        self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
+        self.waypoint_rotation_min = math.radians(params.get('waypoint_rotation_min', 15))
+        
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.explore_breadcrumbs = []  # List to store the breadcrumb waypoints for the explore path
@@ -63,8 +77,6 @@ class PathTracingNode(Node):
             PATH_RETURN_BUFFER_SIZE
         )
 
-        self.wait_for_robot_pose()
-
         # Timer to sample the robot's pose at regular intervals
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
     
@@ -86,23 +98,34 @@ class PathTracingNode(Node):
 
         pose = self.get_robot_pose_in_map_frame()
         if pose == SAMPLE_SKIPPED or pose == SAMPLE_FAILED:
+            self.get_logger().debug(f"Pose sampling skipped or failed (skipped={pose == SAMPLE_SKIPPED}, failed={pose == SAMPLE_FAILED})")
             return
-        self.last_recorded_pos = (current_x, current_y)
-        self.last_recorded_yaw = self.get_yaw_from_transform(t)
+            
         # Save the waypoint to the appropriate breadcrumb list and publish the path
         if self.return_triggered:
-            self.explore_breadcrumbs.append(pose)
-            self.get_logger().info(f"Stored explore waypoint {len(self.explore_breadcrumbs)}")
-            self.pub_path_explore.publish(Path(header=pose.header, poses=self.explore_breadcrumbs))
-        else:
             self.return_breadcrumbs.append(pose)
             self.get_logger().info(f"Stored return waypoint {len(self.return_breadcrumbs)}")
             self.pub_path_return.publish(Path(header=pose.header, poses=self.return_breadcrumbs))
+        else:
+            self.explore_breadcrumbs.append(pose)
+            self.get_logger().info(f"Stored explore waypoint {len(self.explore_breadcrumbs)}")
+            self.pub_path_explore.publish(Path(header=pose.header, poses=self.explore_breadcrumbs))
 
-    def get_robot_pose_in_map_frame(self):
+    def get_robot_pose_in_map_frame(self, tf_buffer=None, clock=None):
+        """
+        Get the robot's pose in the map frame.
+        
+        Args:
+            tf_buffer: Optional tf buffer to use (for testing)
+            clock: Optional clock to use (for testing)
+            
+        Returns:
+            PoseStamped object or SAMPLE_FAILED/SAMPLE_SKIPPED constants
+        """
         try:
             # Get current position
-            t = self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
+            t = tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time()) \
+                if tf_buffer else self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
         except TransformException as e:
             self.get_logger().warn(f"Failed to get robot pose despite TF being available: {e}")
             return SAMPLE_FAILED
@@ -110,38 +133,40 @@ class PathTracingNode(Node):
         current_x = t.transform.translation.x
         current_y = t.transform.translation.y
 
-        # Check if waypoint we minimums are satisfied before storing
+        # Check if waypoint minimums are satisfied before storing
         if self.last_recorded_pose is not None and self.last_recorded_yaw is not None:
-            delta_dist = math.sqrt((current_x - self.last_recorded_pose[0])**2 + 
-                            (current_y - self.last_recorded_pose[1])**2)
-            delta_yaw = abs(self.get_yaw_from_transform(t) - self.last_recorded_yaw)
-            
-            # Skip if waypoint minimums aren't met
-            if delta_dist < self.waypoint_spacing_min and delta_yaw < self.waypoint_rotation_min:
+            # Use the core module function for waypoint filtering logic
+            yaw = get_yaw_from_transform(t)
+            if not should_record_waypoint(
+                current_x=current_x,
+                current_y=current_y,
+                current_yaw=yaw,
+                last_recorded_pose=self.last_recorded_pose,
+                last_recorded_yaw=self.last_recorded_yaw,
+                waypoint_spacing_min=self.waypoint_spacing_min,
+                waypoint_rotation_min=self.waypoint_rotation_min
+            ):
                 return SAMPLE_SKIPPED
 
-        # Convert to pose stamped
-        pose = PoseStamped()
-        pose.header.stamp = self.get_clock().now().to_msg()
-        pose.header.frame_id = 'map'
-        pose.pose.position.x = current_x
-        pose.pose.position.y = current_y
-        pose.pose.position.z = 0.0
-        pose.pose.orientation = t.transform.rotation
+        # Convert to pose stamped using the core module function
+        pose = construct_pose_stamped(t, clock or self.get_clock(), 'map')
 
+        # Update last recorded pose and yaw
+        self.last_recorded_pose = (current_x, current_y)
+        self.last_recorded_yaw = get_yaw_from_transform(t)
         return pose
 
 
-    def get_yaw_from_transform(self, t: Transform):
+    def get_yaw_from_transform(self, t):
         """
-        Extracts the yaw (Z-axis rotation) from a geometry_msgs/(Transform.
+        Extracts the yaw (Z-axis rotation) from a geometry_msgs/TransformStamped.
         """
-        # Extract quaternion components 
+        # Extract quaternion components from the transform
         quaternion = (
-            t.rotation.x,
-            t.rotation.y,
-            t.rotation.z,
-            t.rotation.w
+            t.transform.rotation.x,
+            t.transform.rotation.y,
+            t.transform.rotation.z,
+            t.transform.rotation.w
         )
 
         # Convert quaternion to roll, pitch, yaw
@@ -153,8 +178,12 @@ class PathTracingNode(Node):
     
     def home_trigger_callback(self, msg):
         self.get_logger().info('Home trigger received, starting path tracing')
+        self.return_triggered = True
+        self.last_recorded_pose = None
+        self.last_recorded_yaw = None
     
     def wait_for_robot_pose(self):
+        """Wait for the robot pose transform to become available."""
         self.get_logger().info("Pre flight check: Waiting for (robot pose) map to base_link transform...")
         
         # Block until the transform is available or 5 seconds pass

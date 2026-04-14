@@ -1,0 +1,443 @@
+Programming Autonomous Robots
+COSC2781 (PG) | COSC2814 (UG) | Semester 1 2026
+ROS2 Search & Navigation Challenge (v1.1)
+Assessment Type Group Assessment. Grades for UG and PG are the same in this assessment.
+ROS Proficiency Due Date 11.59pm, Sunday 22 March 2026 (Week 3)
+Demonstrations Thursday Week 6 Workshop (before final submission)
+Report Due Date 11.59pm, Sunday 19 April 2026 (Week 6)
+Silence Period From 5.00pm, Friday 17 April 2026 (Week 6)
+Due Date 11.59pm, Sunday 26 April 2025 (Week 7)
+Silence Policy From 5.00pm, Thursday 23 April 2025 (Week 7)
+Demonstrations Thursday Week 7 Workshop (before final submission)
+Weight 25% of the final course mark
+Submission Online via Canvas. Submission instructions are provided on Canvas.
+Change Log
+v1.1
+• Revised due-dates
+1 Overview
+In this assignment you will become familiar with working with the ROSBot Pro 3.0 (and Pro 2.0), developing
+autonomous robot software, and using ROS2 Jazzy/Humble. You will need to combine multiple common ROS2
+software packages (such as mapping, navigation and vision processing), and you will also need to write your
+own ROS2 nodes to augment existing ROS2 software, to enable the ROSBot to successfully complete the Search
+& Navigation Challenge. You may use simulation to initially develop and test your ROS2 software, however,
+your work will be assessed and evaluated on the physical ROSBot. You will be assessed on your ability to
+demonstrate a proficiency with ROS2, your proficiency in safely operating the physical ROSBot, your ability to
+choose and integrate with suitable existing ROS2 autonomous software, your own ROS2 node implementations,
+and the speed and accuracy at which your software completes the challenge on the real ROSBot.
+The Search & Navigation Challenge is inspired by autonomous
+robotics for Urban Search and Rescue (USAR) and the RoboCup
+Rescue Robot League. In USAR after a disaster occurs, an au-
+tonomous robot can explore an unknown environment, such as a
+1
+partially collapsed building, and locate trapped or unconscious
+human victims of the disaster. The robot builds a map as it
+explores and places markers in the map of where the victim’s
+locations. This map is given to First Responders who use it to
+go into the building and rescue the victims.
+In this assignment you will enable the ROSBot to:
+1. Explore an unknown location
+2. Locate a series of pre-defined objects
+3. Place the objects in the map
+4. Return the robot to it’s starting position
+5. Plot the path the robot took on the map
+6. Complete the challenge as fast and as accurately as possible
+Before starting work on your implementation, you will also be required to demonstrate your proficiency in ROS2
+on TheConstruct, and your proficiency in safely operating the physical ROSBot with ROS2 software.
+1.1 Group Work
+You are required to work in groups of 3 where possible, and groups of 2 for odd numbers. No other group sizes
+are permitted. There may be both UG and PG students in the same group. This is because of:
+1. The limited availability of the physical robots.
+2. To reduce wear-and-tear and prevent over-use of the robots.
+3. Safety, in ensuring appropriate monitoring of the robots during autonomous operation.
+Note that there are no specific grades for group work in this assessment. As post-graduate and final year
+undergraduate students, you are expected to have suitable group work skills. The work of the assessment is
+distributed between the students with individual contributions. We expect that you are able to communicate
+openly and effectively with your group members, resolve issues, and function coherently as a team. However, in
+the event of group-work issues, individual grades may be allocated. Therefore, we advise that your group uses
+suitable group work tools (such as MS Teams and a Git Repository) to track your individual contributions.
+We also recommend that you work closely together on the assignment, developing the code together, so that
+each member of the team has a good understanding of how all of the parts of your final software system work.
+This understanding will greatly help you in the project.
+1.2 Learning Outcomes
+This assessment relates to the following course learning outcomes:
+CLO1 Discuss and Critically Analyse and a variety of software architectures and algorithms for solving
+typical problems in the context of autonomous robot systems; Discuss and Critically Analyse the strengths
+and limitations of these architectures and algorithms.
+CLO2 Discuss and Critically Analyse the challenges of designing and developing software for a variety of
+robot systems of different complexities, including noise, uncertainty, and computational power.
+CLO4 Use pre-existing robot software to solve common problems on simulated and real-world robots; De-
+velop and Implemented new algorithms and software for solving problems on simulated and real-world
+robots; Integrate this software in the ROS framework.
+1.3 Use of Artificial Intelligence (AI) Tools in this Assessment
+Perhaps compared to other courses, the use of AI tools and Generative AI in this course is generally quite open.
+This being noted, it remains the case that the majority of your work in this assessment should be your
+own work , and not plagiarised from other sources, or sourced from the use of Artificial Intelligence (AI) tools.
+Therefore, the use AI tools are restricted in certain ways for this assessment task.
+In this assessment task, you may use AI tools to support you in developing basic ROS2 boilerplate software,
+generating ideas, planning, and/or drafting. You may find it helpful to use AI Tools for:
+1. Boiler-plate ROS code, such as node templates
+2. Boiler-plate ROS package and configuration files
+3. Ensuring ROS syntax is correct, such as topic types
+4. Debugging code compilation errors
+2
+We also suggest reviewing the Course AI Policy on Canvas for hazards and pitfalls in using AI tools in this
+assessment. Any use of such tools must be acknowledged and referenced. Work that is significantly produced by
+AI tools, or where AI tools are used to complete this assessment without attribution may result in an allegation
+of academic misconduct.
+For the purposes of openness, transparency, and academic integrity, you must submit a log of your use of
+generative AI tools during this assessment. This also means you should think about how you track your AI use.
+Each tool has a way of exporting your interaction history. The below links describe how to export your logs
+from different AI tools:
+• ChatGPT
+• Claude
+• Gemini
+Suspected use of AI tools without a log may result in grade penalises and/or misconduct proceedings.
+2 ROS2 Proficiency
+Before starting work on your implementation, you are required to demonstrate your proficiency in ROS2 through
+the TheConstruct modules, and in using ROS2 software to work safely with the ROSBot.
+In Weeks 1-3, you will complete modules on TheConstruct. Completion of these modules contributes to your
+grades in this assessment, to encourage you to get an early start on ROS2. You should complete the below
+Quizzes on the ‘ROS2 Basics in 5 Days (Python)’ TheConstruct module by 11.59pm, Sunday 22 March
+2026 (Week 3). Note that each unit also has a "knowledge check". Quizzes are different. The quizzes are
+accessible by selecting the relevant chapter from the notebook.
+• Unit 3: Understanding ROS2 Topics (chapter 3.10)
+• Unit 4: Understanding ROS2 Services (chapter 4.9)
+• Unit 7: Understanding ROS2 Actions (chapter 7.9)
+Additionally in Weeks 1-3, as part the workshops you will become familiar with using ROS2 on the ROSBot.
+Safe use of all equipment is very important, and proficient use of the ROSBot’s is necessary for completing
+this assessment. To ensure both, you must individually demonstrate your proficiency in using the ROSBot,
+by 11.59pm, Sunday 22 March 2026 (Week 3), without assistance from staff or other students. The
+proficiency exercise is listed on the AIIL Bitbucket repository wiki. You can demonstrate this proficiency to
+any course staff during Week 2 and 3 classes. Please note that failure to complete this proficiency exercises
+is considered a safety issue, and may result in access being removed to the labs, re-completion of inductions,
+and may prevent meeting mandatory course safety requirements.
+3 Search and Navigation Challenge
+Your groups must create autonomous robot software in a single ROS2 package that enables the ROSBot to
+successfully complete a Search & Navigation Challenge as fast and accurately as possible. The capability of
+your ROS2 package will be measured during a timed completion of the challenge in an unknown space.
+The Search & Navigation Challenge will be conducted as follows:
+1. The ROSBot will be placed into a closed space (such as a room or maze)
+• You will not know the exact location and layout of the space will prior to the challenge.
+• The size of the closed space will be set so that the ROSBot is capable of traversing the space in the
+set time limit.
+• Fixed static obstacles, clearly visible to the ROSBot laser may be placed within the space.
+• No dynamic obstacles will be present.
+2. Five (5) hazard markers will be selected from the available set, and placed around the space.
+• The location of the hazard markers will be at a height clearly visible to the ROSBot camera at a
+distance of at least 10cm.
+• The hazard markers will be fixed to a flat card.
+• See Section 3.3 for a description of the markers.
+3. You will launch the software in your ROS package.
+• The marking script that monitors the required topics (see Section 3.5) will be launched and connect
+to the ROSBot topics.
+3
+• After all software is launched, you may not interact with the ROSBot, terminals, or software, unless
+otherwise directed.
+• While your software is running, it must report it’s status via a status topic (see Section 3.5).
+4. The ROSBot will be signalled to start using the Start Marker, described in Section 3.4.
+5. The ROSBot must explore the closed space, completing the following tasks:
+(a) Create and publish an accurate map of the closed space, see Section 3.5 for topic details.
+(b) Locate all 5 hazard markers.
+(c) Publish the location of all of the hazard markers in map relative coordinates, see Section 3.5 for topic
+details.
+(d) Publish the path the robot travels in the closed space in map relative coordinates, see Section 3.5 for
+topic details.
+6. Once all hazard markers have been located, or via a manual trigger sent after at most 4 minutes have
+elapsed, the ROSBot must return to its starting location (at any orientation) by retracing the path it took
+to explore the environment, see Section 3.9.
+7. During the challenge, contingencies may be invoked as described in Section 3.10.
+8. The challenge ends if:
+(a) The ROSBot returns to it’s original location and stops for at least 5 seconds.
+(b) 7 minutes have elapsed.
+(c) You (the students) or the assessor request the challenge to end.
+(d) The ROSBot touches a wall.
+(e) A safety concern is identified.
+(f) There is external interaction with the ROSBot or software.
+Your group will need to write three ROS2 nodes:
+1. Navigation logic, described in Section 3.7.
+2. Hazard Marker detection and placement, described in Section 3.8.
+3. Position Tracking and Return to Home Logic, to track the path of the robot, described in Section 3.9.
+Each student in the group is responsible for one node. This doesn’t preclude working together, as software
+integration is needed to support all nodes working together. You may also need to write additional ROS2 nodes
+to support functionality not covered in the three required nodes.
+Groups of 2 should implement nodes #1 and #2 as above. In addition node #2 must include the component
+of node #3 to track and publish the robot’s path in exploration.
+3.1 Autonomy
+Your ROS2 software for the challenge must be fully autonomous. The only interaction with the software is
+through the Start Marker, status triggers, and contingencies (see Section 3.10).
+3.2 Real-Robot Evaluation
+All evaluations of the successful implementation and performance of your ROS2 nodes and software for the
+challenge, must be conducted on the real ROSBot robots in the AI Innovation Lab (14.11.01) and/or Cyber
+Security Lab (14.11.38). While you may use simulation (such as on TheConstruct) to initially develop and test
+your software, the evaluation will only be conducted on the real-robot.
+3.3 Hazard Markers
+The hazard markers are selected from the symbols used in the RoboCup Rescue Robot League. The markers
+are available on the Canvas Assignment module. This collection contains more markers than the 5 that will
+be used during the Search & Navigation Challenge. Your software should be capable of identifying all of the
+markers, as you will not know prior to the challenge the exact set of markers that will be used.
+To ensure the correct identification of the hazard markers, you must use the following IDs when publishing the
+hazard marker locations.
+4
+Hazard Marker ID
+Unknown 0
+Explosive 1
+Flammable Gas 2
+Non-Flammable Gas 3
+Dangerous When Wet 4
+Flammable Solid 5
+Spontaneously Combustible 6
+Oxidizer 7
+Organic Peroxide 8
+Inhalation Hazard 9
+Poison 10
+Radioactive 11
+Corrosive 12
+3.4 Start Marker
+The start marker is used to indicate to the ROSBot that it should commence the Search & Navigation Challenge.
+This marker is available on the Canvas Assignment module. Note that the start marker must not be published
+on the hazard markers topic.
+3.5 Published topics
+You are required to publish the following topics. Output from these topics will be captured during the challenge.
+Element Topic Message Type
+Map /map nav_msgs/msg/OccupancyGrid
+Hazard Markers /hazards visualization_msgs/msgs/Marker
+Robot Path (Explore) /path_explore nav_msgs/msgs/Path
+Robot Path (Return Home) /path_return nav_msgs/msgs/Path
+Status /snc_status std_msgs/msgs/String
+Take care of these additional notes on the information to publish:
+• The ID of the hazard markers should be set according to the table in Section 3.3.
+• The hazard markers and robot paths must be published in the map frame. This is important. ROS2
+allows you to publish these elements in any frame, and if you are viewing these through RViz/Foxglove, the
+visualisation software will transform these elements into other frames for visualisation purposes only. Part
+of the challenge of this assignment is computing correct frame transforms. Thus the marking collection
+script will assume a map frame of reference regardless of the published frame.
+• The contents of the status message should be a simple string indicating what the robot is attempting to
+do at any point in time. This is used for both yourselves and the assessor to understand the robot state.
+Exact message formats are not specified.
+3.6 Trigger Topics
+To support contingencies in completing part of this assessment, your code may support the following triggers.
+These triggers will be called by the assessor to invoke a contingency. We have chosen to implement these triggers
+as topics (publisher/subscriber) model rather than Services for simplicity of implementation.
+Element Topic Message Type Purpose
+Start Marker /trigger_start std_msgs/msgs/Empty Contingency if visually recognising the start
+marker fails.
+Teleop /trigger_teleop std_msgs/msgs/Empty Contingency to teleoperate (manually drive)
+the robot for exploring the map if the explo-
+ration node fails.
+Return Home /trigger_home std_msgs/msgs/Empty Contingency to terminate exploration and
+have the robot return to home following it’s
+exploration path if this functionality is not au-
+tomatically triggered.
+5
+3.7 ROS2 Node #1: Navigation Logic
+You must write your own ROS2 node to enable the navigation of the ROSBot within the closed space, in
+searching for the Hazard Markers. This logic might include:
+• Start navigation when the marker is shown.
+• Determining where (and how) to move about the space.
+• Stopped (and spinning on the spot) to locate hazard markers.
+• Stopping to more accurately place a hazard marker in the map.
+• Returning to the starting location.
+You will need various elements of the ROS2 Nav2 stack. There is no single elements of the Nav2 stack that
+does exactly what is needed for the Search & Navigation Challenge. Thus, you will need to devise your own
+algorithm. There are three recommended approaches to begin with:
+1. Use the Occupancy grid to look for unknown regions of the map.
+2. Use the Explore Lite package.
+3. Use the wall-following example from TheConstruct.
+Regardless of what method you choose, a valid implementation of this component, must show functionality
+beyond just executing an existing algorithm.
+3.8 ROS2 Node #2: Hazard Marker Detection and Placement
+You must write your own ROS2 node to determine the map-relative coordinate of each hazard marker in the
+closed space by using the kinematics (that is, transform tree) of the ROSBot. The find_object_2d package
+will tell you if a hazard marker has been identified in the ROSBot camera image. However, the packages does
+not give the map-relative coordinates of the hazard marker. In fact, the find_object_2d only provides a
+bounding-box around the location of the detected object in the camera image.
+Instead, you will need to write your own computation to use the transform tree to deduce suitable map-relative
+coordinates of the hazard marker. There are three recommended approaches:
+• That front-facing IR range sensors. The range sensors measure points directly in front of the ROSbot,
+but only return a single value. These could be used to compute an estimate of the distance to the wall(s)
+in front of the ROSBot.
+• The laser. The laser provides distances from the robot to where each laser points intersects the environ-
+ment. You can use this to estimate the distance of the hazard markers from the robot, and hence the
+compute the desired coordinates via the transform tree.
+• The depth image. The depth image provides distances from the robot to where each pixel of the depth
+image intersects the environment. Similar to the laser to can ne used to determine the desired coordinates.
+Regardless of what method you choose, a valid implementation of this component, must use some form of
+secondary sensor input to the RGB camera to compute the hazard marker position.
+3.9 ROS2 Node #3: Robot Position Tracking and Return to Home
+You must write your own ROS2 node that:
+1. Tracks and publishes the path of the robot taken while exploring.
+2. Returns to the robot’s home (starting) position by following this path in reverse order.
+3. Tracks and publishes the path of the robot taken when returning to home.
+To track the robot’s path, you will need to periodically capture the location of the robot. Recall, that the
+robot’s map coordinate can be determined by using a kinematic transform between the robot frame and the
+map frame. Take care to publish the history of the robot’s path on the correct topic, as there are separate
+topics for exploring and returning to home.
+To implement the return-to-home logic, you could consider using:
+1. Nav2 Stack waypoint-list following.
+2. Nav2 Stack single waypoint target, with your own custom logic for selecting the next waypoint.
+3. Your own drive commands, such as PID control to reach each waypoint in sequence.
+For any of these approaches, you will need to carefully consider the detail of the history of the path the robot
+took in exploring. Too many points in this history will negatively impact the return-to-home logic, but too few
+points will fail to follow the original path.
+6
+Regardless of what method you choose, a valid implementation of this component, must attempt to follow the
+path that was explored to some extent. Simply navigating to the starting position is insufficient.
+3.10 Contingencies
+In the event of issues with some of the ROS2 nodes, the following contingencies are put in place so that
+functionality of other nodes can be demonstrated. Invoking a contingency may impact your grade and final
+competitive ranking. The contingencies use the Trigger Topics described in Section 3.6. The contingencies are:
+1. If the start marker cannot be visually identified, then the exploration phase of the robot can be commenced
+by using the ‘Start Marker‘ trigger.
+2. If the exploration ROS2 node does not satisfactorily explore the environment, then the exploration phase
+may be done via teleoperation (manually driving the ROSBot). This mode will be communicated to your
+code by the ‘Teleop‘ trigger, after which your group may launch a teleop ROS2 node, such as keyboard-
+teleop, or Foxglove Web-UI teleop.
+3. If the return-to-home logic is not automatically invoked, then it may be manually invoked using the
+‘Return Home‘ trigger.
+3.11 Collaboration and Maintenance
+We have regularly noted that this course only functions if all students (and staff) collaborative work including
+maintaining the equipment and AIIL space. Documentation and good maintenance can often be a thankless
+job, but is critical for all students successfully completing the assignment. Additionally, ROS2 Jazzy is new for
+this semester, so learning ROS2 is a process for everyone.
+Therefore, during the completion of this assessment you are asked to be a “good course citizen”. This includes:
+1. Generating and maintaining course documentation including (but not limited to) working in ROS2 Jazzy,
+the use of the ROSBot, the use of TheConstruct, and the status of each ROSBot. Documentation is
+maintained on BitBucket, and Canvas.
+2. Providing collaborative help and assistance to other students in the course (without directly enabling
+plagiarism) for shared information. This help should be recorded on the course MS Teams channels.
+3. Actively ensuring robot maintenance including regular charging of the ROSBots, general care of the
+ROSBots, and keeping the AIIL space clean and tidy.
+4. Timely reporting of incidents or faults in the AIIL including the general space and any AIIL equipment,
+ROSBots included.
+4 Challenge Demonstrations
+! The demonstration will happen before you make your final submission.
+The primary assessment of the Search & Navigation Challenge is in a common evaluation. This will be a
+live demonstration of the challenge during Thursday Week 7 Workshop (before final submission). The
+demonstration will happen before you make your final submission so that you have time after the demonstration
+to complete your final report.
+A schedule of all groups will be provided closer to the demonstrations. You should not assume that you will
+have a particular robot to use.
+The Search & Navigation Challenge will be conducted as described in Section 3, with the additional notes:
+• To facilitate time constraints of the expected number of groups, the demonstrations may commence earlier
+and run later than the scheduled times of the Thursday workshop.
+• Each group will have up to 2 attempts at the Search & Navigation Challenge, subject to time constraints.
+The best attempt will be used for assessment and final rankings.
+• If a group is unable to successfully complete a significant portion of the challenge they may be granted
+additional attempts, however, these will not count toward the final rankings.
+• The closed space may be modified between each attempt.
+• The hazard makers and locations may be changed between each attempt.
+7
+4.1 Final Rankings
+A small portion of the grade is for comparing the speed and accuracy of all groups. Each successful attempt
+will be considered across categories of:
+1. Speed.
+2. Accuracy of the Map.
+3. Accuracy of the placed Hazard Markers.
+4. Accuracy of the robot paths.
+5. Accuracy of the return-to-home path.
+6. Straight line distance of the robot’s finishing position to the start location, without intersecting walls.
+7. Number of invoked contingencies.
+To count toward the final ranking the attempt must demonstrate a reasonable completion for one of the three
+required nodes. That is, the node should at a minimum publish reasonable information (that is, not testing/fake
+data or widely inaccurate data) for nodes that publish data, and take reasonable movement for nodes that move
+the ROSBot. Except in the cases of individual grading, an attempt must:
+• Be a reasonable attempt for at least one node to be eligible for a rank.
+• Be a reasonable attempt for at least two nodes to be eligible for a rank in the top-66%.
+• Be a reasonable attempt for all three nodes to be eligible for a rank in the top-33%.
+These ranks are to inform and distinguish between the top performing (and HD) assessments. Final ranks may
+inform project allocations for high-demand and limited use robots, where only a limited number of groups may
+work with a particular platform.
+5 Evaluation Report
+The majority of grades, described in Section 7, are for the quality of your implementation. The challenge
+demonstration provides a fair and common evaluation for everyone, but it is not the only opportunity to
+evaluate your work. This is especially the case if your challenge demonstration performance isn’t strong. Thus,
+your group must submit and present an evaluation report, due by 11.59pm, Sunday 26 April 2025 (Week
+7), after the completion of the challenge demonstration.
+The purpose of your evaluation report is to show the qualify of your implementation, and will help inform
+your grades for the implementation components of the rubric. This means that irrespective of your challenge
+demonstration, you can receive high marks for the implementation. The effort in collecting good evidence to
+complete the evaluation report is as important as your code. A small number of marks is given for compiling the
+report itself, as this takes time and effort, but the report strongly informs the implementation rubric components
+and significant contributes to those marks. Of course, a good showing in the challenge demonstration will provide
+excellent evidence for your evaluation report.
+Your evaluation report must be a PDF of no more than 5 pages, and should be accompanied by video evidence.
+Video evidence should be uploaded to MS Teams before the due date, in a predetermined location listed on
+canvas. Your evaluation report and accompanying evidence should provide:
+• A brief summary of the ROS2 node(s) that you wrote, describing their functionality along with a brief
+technical summary of your ROS2 package and software including:
+– All ROS2 dependent libraries packages that are used in your software.
+– Description of launch files, custom configuration files, and training data of ML algorithms.
+• An analysis and evaluation of your software. This should include:
+– An evaluation of the performance of your software, both during the challenge demonstrations, and
+from your own independent testing.
+– Analysis and explanation for the strengths of your software.
+– Analysis and explanation of the limitations of your software, which may prevent your software com-
+pleting some aspect of the Search & Navigation Challenge.
+– Clear and accurate evidence that supports your analysis. That is, any claims in your analysis must
+be supported by evidence. Generalisations, invalid statements, or unsupported claims will be unlikely
+to received marks.
+• Citations to all reference material, including a brief summary of your use of AI Tools in this assessment.
+In collecting your evidence, we recommend that you think about:
+• Collecting evidence all the way through this assessment, not just in a rush towards the end.
+8
+• Evidence that you are outputting the required and correct data on the correct topics.
+• How you can collect evidence to prove that it is your work being evaluated.
+• How you can collect evidence that can be easily seen on video. For example, long and fast-scrolling
+terminal output is not good evidence, and we won’t be expected to ’interpret’ your terminal output.
+6 Submission
+Follow the instructions on Canvas to complete your submission for the Assignment.
+Assessment declaration: When you submit work electronically, you agree to the assessment declaration.
+6.1 Silence Period
+A silence policy will take effect from 5.00pm, Thursday 23 April 2025 (Week 7). This means no questions
+about this assignment will be answered, whether they are asked on the MS Teams, by email, or in person. Make
+sure you ask your questions with plenty of time for them to be answered. There may not be time to answer
+questions which are asked too close to the silence deadline.
+6.2 Late Submissions & Extensions
+A penalty of 10% per day is applied the grade for the assessment excluding the competitive rank, for late
+submissions of the evaluation report (that is, after 11.59pm, Sunday 26 April 2025 (Week 7)) up to 5 days, after
+which you will lose ALL the assignment marks. Extensions will be given only in exceptional cases. Refer to
+RMIT’s Special Consideration process for more information.
+Take special note that you are expected to spend significant time on-campus working with the real-robots during
+this assessment. Being unable to attend on-campus, unless accompanied by evidenced documentation sufficient
+under the Special Consideration policy, is generally not grounds for an extension or an assessment adjustment.
+Special Considerations given after grades have been released and/or solutions have been discussed will automat-
+ically result in an equivalent assessment, which may take a different form, assessing the same knowledge and
+skills of the assignment.
+7 Marking guidelines
+The marks are divided into three categories:
+• ROS2 Proficiency (4/25)
+• Implementation (15/25), broken down into 3 sub-sections:
+– Implementation of the ROS2 node #1 for Navigation Logic (5/25)
+– Implementation of the ROS2 node #2 for Hazard Marker Detection and Placement (5/25)
+– Implementation of the ROS2 node #3 for Robot Position Tracking and Return to Home (5/25)
+• Evaluation Report (2/25)
+• Final Ranking (4/25)
+The detailed breakdown of this marking guidelines is provided on the rubric linked on Canvas.
+All students in the group will receive the same grade, with the exception of grades for completing the ROS2 pro-
+ficiency exercises. While we encourage distribution of implementing the assessment among the group members,
+we expect all group members to work together collaboratively in completing this assessment and contribute to
+solving problems in all elements of this assessment. In the event of group-issues, your assessor may decide to
+award individual grades.
+For groups of 2, the grades for implementation are instead distributed as:
+• Implementation of the ROS2 node #1 for Navigation Logic (7.5/25)
+• Implementation of the ROS2 node #2 for Hazard Marker Detection and Placement (7.5/25)
+9
+8 Academic integrity and plagiarism (standard warning)
+Academic integrity is about the honest presentation of your academic work. It means acknowledging the work
+of others while developing your own insights, knowledge and ideas. You should take extreme care that you have:
+• Acknowledged words, data, diagrams, models, frameworks and/or ideas of others you have quoted (i.e.
+directly copied), summarised, paraphrased, discussed or mentioned in your assessment through the ap-
+propriate referencing methods
+• Provided a reference list of the publication details so your reader can locate the source if necessary. This
+includes material taken from Internet sites. If you do not acknowledge the sources of your material, you
+may be accused of plagiarism because you have passed off the work and ideas of another person without
+appropriate referencing, as if they were your own.
+RMIT University treats plagiarism as a very serious offence constituting misconduct. Plagiarism covers a variety
+of inappropriate behaviours, including:
+• Failure to properly document a source
+• Copyright material from the internet or databases
+• Collusion between students
+For further information on our policies and procedures, please refer to the RMIT Academic Integrity Website.
+The penalty for plagiarised assignments include zero marks for that assignment, or failure for this course. Please
+keep in mind that RMIT University uses plagiarism detection software.
+10
