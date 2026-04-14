@@ -1,4 +1,4 @@
-from std_msgs.msg import Empty, Float32MultiArray
+from std_msgs.msg import Empty, Float32MultiArray, String
 from nav_msgs.msg import Path
 
 hazard_names_map = {
@@ -44,3 +44,20 @@ ROBOT_POSE_TOPIC = '/snc/robot_pose'
 HOME_TRIGGER_TOPIC = '/trigger_home'
 HOME_TRIGGER_BUFFER_SIZE = 1
 HOME_TRIGGER_INTERFACE = Path
+
+# Trigger Listener Topics
+TRIGGER_START_TOPIC = '/trigger_start'
+TRIGGER_START_INTERFACE = Empty
+TRIGGER_START_BUFFER_SIZE = 1
+
+TRIGGER_TELEOP_TOPIC = '/trigger_teleop'
+TRIGGER_TELEOP_INTERFACE = Empty
+TRIGGER_TELEOP_BUFFER_SIZE = 1
+
+TRIGGER_HOME_TOPIC = '/trigger_home'
+TRIGGER_HOME_INTERFACE = Empty
+TRIGGER_HOME_BUFFER_SIZE = 1
+
+SNC_STATUS_TOPIC = '/snc_status'
+SNC_STATUS_INTERFACE = String
+SNC_STATUS_BUFFER_SIZE = 1

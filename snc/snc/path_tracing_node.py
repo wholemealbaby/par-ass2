@@ -8,14 +8,18 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
 from snc.constants import (
-    EXPLORE_BREADCRUMBS_BUFFER_SIZE,
-    RETURN_BREADCRUMBS_BUFFER_SIZE,
-    HOME_TRIGGER_BUFFER_SIZE,
+    TRIGGER_HOME_BUFFER_SIZE,
+    TRIGGER_HOME_INTERFACE,
+    TRIGGER_HOME_TOPIC,
     RETURN_HOME_TRAJECTORY_BUFFER_SIZE, 
     RETURN_HOME_TRAJECTORY_TOPIC,
-    HOME_TRIGGER_TOPIC,
+    RETURN_HOME_TRAJECTORY_INTERFACE,
     EXPLORE_BREADCRUMBS_TOPIC,
-    RETURN_BREADCRUMBS_TOPIC
+    EXPLORE_BREADCRUMBS_INTERFACE,
+    EXPLORE_BREADCRUMBS_BUFFER_SIZE,
+    RETURN_BREADCRUMBS_TOPIC,
+    RETURN_BREADCRUMBS_INTERFACE,
+    RETURN_BREADCRUMBS_BUFFER_SIZE
 )
 import math
 from geometry_msgs.msg import Transform
@@ -61,26 +65,26 @@ class PathTracingNode(Node):
 
         # Return home trigger
         self.sub_home_trigger = self.create_subscription(
-            Empty,
-            HOME_TRIGGER_TOPIC,
+            TRIGGER_HOME_INTERFACE,
+            TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
-            HOME_TRIGGER_BUFFER_SIZE
+            TRIGGER_HOME_BUFFER_SIZE
         )
         # Publisher for explore breadcrumbs
         self.pub_path_explore = self.create_publisher(
-            Path,
+            EXPLORE_BREADCRUMBS_INTERFACE,
             EXPLORE_BREADCRUMBS_TOPIC,
             EXPLORE_BREADCRUMBS_BUFFER_SIZE
         )
         # Publisher for return breadcrumbs
         self.pub_path_return = self.create_publisher(
-            Path,
+            RETURN_BREADCRUMBS_INTERFACE,
             RETURN_BREADCRUMBS_TOPIC,
             RETURN_BREADCRUMBS_BUFFER_SIZE
         )
         # Publisher for final return trajectory
         self.pub_return_home_trajectory = self.create_publisher(
-            Path,
+            RETURN_HOME_TRAJECTORY_INTERFACE,
             RETURN_HOME_TRAJECTORY_TOPIC,
             RETURN_HOME_TRAJECTORY_BUFFER_SIZE
         )
