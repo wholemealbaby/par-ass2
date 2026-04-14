@@ -1,4 +1,4 @@
-from std_msgs.msg import Empty, Float32MultiArray
+from std_msgs.msg import Empty, Float32MultiArray, String
 from nav_msgs.msg import Path
 
 hazard_names_map = {
