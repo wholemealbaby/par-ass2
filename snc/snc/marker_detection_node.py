@@ -53,7 +53,7 @@ class MarkerDetectionNode(Node):
     def objects_callback(self, msg):
         """Callback method to handle published object information."""
         # Use handler to decode object data
-        self.object_handler.add_objects_from_message(msg)
+        self.object_handler.add_object_from_msg(msg)
         if not self.start_marker_detected and self.object_handler.start_marker_detected:
             self.trigger_start()
         self.hazard_manager.update_from_objects(self.object_handler.objects)

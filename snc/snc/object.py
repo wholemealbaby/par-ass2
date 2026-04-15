@@ -66,16 +66,18 @@ class ObjectHandler:
     def __init__(self):
         self.objects = []
     
-    def add_object(self, data_slice: list, header) -> None:
+    def add_object_from_msg(self, msg) -> None:
         """
         Creates an Object instance and adds it to the internal list.
         """
-        if len(data_slice) == 12:
-            new_obj = DetectedObject(data_slice, header)
+        data = msg.objects.data 
+        header = msg.header
+
+        if len(data) == 12:
+            new_obj = DetectedObject(data, header)
             self.objects.append(new_obj)
         else:
-            # This handles cases where the array might be malformed
-            print(f"Warning: Received data_slice of length {len(data_slice)}, expected 12.")
+            raise ValueError(f"Expected 12 floats per object, got {len(data)}")
 
     def _validate_header(self, header) -> None:
         """Ensures the header contains necessary information
@@ -89,25 +91,6 @@ class ObjectHandler:
             raise ValueError("Header is missing timestamp")
         if not header.frame_id:
             raise ValueError("Header is missing frame_id")
-
-    def add_objects_from_message(self, msg) -> None:
-        """
-        Parses the incoming message (likely ObjectsStamped) and populates the list.
-        
-        Note: msg.objects.data is the Float32MultiArray part.
-        """
-        # Clear previous detections if you only want 'current' visible objects
-        self.objects = [] 
-        
-        # Access the underlying data array
-        # Adjust 'msg.objects.data' if your message structure is different
-        data = msg.objects.data 
-        header = msg.header
-
-        # Iterate through the flat array in steps of 12
-        for i in range(0, len(data), 12):
-            data_slice = data[i : i + 12]
-            self.add_object(data_slice, header)
         
     def start_marker_detected(self) -> bool:
         """Checks if the 'Start' object is among the detected objects."""
