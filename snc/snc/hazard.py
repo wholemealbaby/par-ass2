@@ -2,58 +2,22 @@ import math
 
 import numpy as np
 from snc.constants import HAZARD_MAP, OBJECT_MAP
-
+from snc.object import DetectedObject
+from std_msgs.msg import Header
 import math
 from geometry_msgs.msg import PoseStamped
 
-class Hazard:
-    def __init__(self, data_slice: list, header):
+class Hazard(DetectedObject):
+    def __init__(self, data_slice: list, header: Header):
         """
-        Create a hazard object from a slice of the ObjectStamped data.
+        Represents a detected hazard object, extending the DetectedObject class.
         
-        :param data_slice: A list of 12 floats representing one object
-        :param header: The header from the original ObjectsStamped/Float32MultiArray message
+        :param data_slice: 12 floats (ID, Width, Height, and 3x3 Matrix)
+        :param header: The header from the incoming ROS message
         """
-        # Basic Identity (Indices 0, 1, 2)
-        self.object_id = int(data_slice[0])
-        self.name = OBJECT_MAP.get(self.object_id, "unknown")
-        self.id = HAZARD_MAP.get(self.name, -1) 
-        
-        self.width = data_slice[1]
-        self.height = data_slice[2]
-
-        # Reconstruct the 3x3 Homography Matrix (Indices 3-11)
-        h = np.array(data_slice[3:12]).reshape(3, 3)
-
-        # Calculate Center Point in Camera Frame
-        # Define the center point of the reference image
-        ref_center = np.array([self.width / 2.0, self.height / 2.0, 1.0])
-        
-        # Map the reference center to the camera frame: camera_pt = H * ref_pt
-        cam_center = np.dot(h, ref_center)
-        
-        # Normalize by the third scale component (w)
-        actual_x = cam_center[0] / cam_center[2]
-        actual_y = cam_center[1] / cam_center[2]
-
-        # Rotation (Yaw)
-        yaw = math.atan2(h[1, 0], h[0, 0])
-
-        # Construct PoseStamped
-        ps = PoseStamped()
-        ps.header = header
-        
-        # NOTE: These are still in PIXEL units. 
-        # TODO: convert these to meters.
-        ps.pose.position.x = float(actual_x)
-        ps.pose.position.y = float(actual_y)
-        ps.pose.position.z = 0.0
-        
-        ps.pose.orientation.z = math.sin(yaw / 2.0)
-        ps.pose.orientation.w = math.cos(yaw / 2.0)
-        
-        self.camera_pose_stamped = ps
-
+        super().__init__(data_slice, header)
+        self.id = HAZARD_MAP.get(self.name, 0)  # Get hazard ID from name, default to 0 (Unknown)
+    
 class HazardManager:
 
     def __init__(self, msg):
@@ -96,16 +60,16 @@ class HazardManager:
                 return h
         return None
     
-    def get_hazard_by_id(self, spec_id):
+    def get_hazard_by_id(self, spec_id) -> Hazard:
         """Helper to find a specific hazard by its assignment ID"""
         for h in self.list:
             if h.id == spec_id:
                 return h
-        return None
+        raise ValueError(f"Hazard with ID {spec_id} not found")
 
-    def get_hazard_by_id(self, spec_id):
+    def get_hazard_by_id(self, spec_id) -> Hazard:
         """Helper to find a specific hazard by its assignment ID"""
         for h in self.list:
             if h.id == spec_id:
                 return h
-        return None
+        raise ValueError(f"Hazard with ID {spec_id} not found")
