@@ -5,13 +5,14 @@ This test verifies that the marker detection node correctly detects the "Start" 
 and publishes to the /start topic.
 
 The test:
-1. Publishes a Float32MultiArray message to /objects with a "Start" object
+1. Publishes an ObjectsStamped message to /objectsStamped with a "Start" object
 2. Subscribes to /start_challenge to verify the detection triggers the challenge start
 """
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32MultiArray, Empty
+from std_msgs.msg import Empty, Header
+from vision_msgs.msg import ObjectsStamped
 import time
 import sys
 import os
@@ -53,9 +54,9 @@ class DetectStartTest(Node):
             START_CHALLENGE_BUFFER_SIZE
         )
         
-        # Publisher for /objects topic
+        # Publisher for /objectsStamped topic
         self.objects_pub = self.create_publisher(
-            Float32MultiArray,
+            ObjectsStamped,
             OBJECTS_TOPIC,
             OBJECTS_BUFFER_SIZE
         )
@@ -79,7 +80,7 @@ class DetectStartTest(Node):
             self.get_logger().info('TEST PASSED: Start object detected successfully!')
             
     def publish_start_object(self):
-        """Publish a Float32MultiArray message with a "Start" object."""
+        """Publish an ObjectsStamped message with a "Start" object."""
         # Get the object ID for "Start" from OBJECT_MAP
         start_object_id = OBJECT_MAP.get("Start")
         if start_object_id is None:
@@ -89,33 +90,25 @@ class DetectStartTest(Node):
             
         self.get_logger().info(f'Publishing Start object with ID: {start_object_id}')
         
-        # Create a Float32MultiArray message representing one object
-        # Each object has 12 fields:
-        # [0] object_id (int as float)
-        # [1] width
-        # [2] height
-        # [3-11] Homograph Matrix
-        data = [
-            float(start_object_id),  # object_id
-            428.0,
-            417.0,
-            0.5845053791999817,
-            0.030834276229143143,
-            1.784709638741333e-05,
-            -0.026400074362754822,
-            0.5820954442024231,
-            -2.2954494852456264e-05,
-            234.96536254882812,
-            -25.670564651489258,
-            1.0
+        # Create an ObjectsStamped message
+        msg = ObjectsStamped()
+        msg.objects.data = [
+            float(start_object_id), # ID
+            428.0, 417.0,           # Width, Height
+            0.58, 0.03, 0.0,        # H11, H12, H13
+            -0.02, 0.58, 0.0,       # H21, H22, H23
+            234.9, -25.6, 1.0       # H31, H32, H33
         ]
         
-        msg = Float32MultiArray()
-        msg.data = data
+        # Add header
+        header = Header()
+        header.stamp = self.get_clock().now().to_msg()
+        header.frame_id = "camera"
+        msg.header = header
         
         # Publish the message
         self.objects_pub.publish(msg)
-        self.get_logger().info(f'Published Start object message: {data}')
+        self.get_logger().info(f'Published Start object message with header')
         
         # Cancel the timer after publishing
         if not self.timer.cancel():
