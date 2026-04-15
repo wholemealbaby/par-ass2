@@ -70,6 +70,14 @@ class Hazards:
         # Quick-access metadata
         self.count = len(self.list)
         self.any_detected = self.count > 0
+    
+    def get_hazard_by_name(self, name):
+        """Helper to find a specific hazard by its name"""
+        for h in self.list:
+            if h.name == name:
+                return h
+        return None
+
 
     def get_hazard_by_id(self, spec_id):
         """Helper to find a specific hazard by its assignment ID"""
