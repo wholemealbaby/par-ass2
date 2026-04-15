@@ -94,24 +94,20 @@ class DetectStartTest(Node):
         # [0] object_id (int as float)
         # [1] width
         # [2] height
-        # [3-8] rotation matrix (3x3, row-major, first 6 elements)
-        # [9] dx (x position)
-        # [10] dy (y position)
-        # [11] confidence
-        
-        # Identity rotation matrix (first 6 elements): [1, 0, 0, 1, 0, 0]
-        # Position at center: dx=0, dy=0
-        # High confidence: 0.99
+        # [3-11] Homograph Matrix
         data = [
             float(start_object_id),  # object_id
-            1.0,                     # width
-            1.0,                     # height
-            1.0, 0.0, 0.0,           # rotation matrix row 1 (h11, h12, h13)
-            0.0, 1.0, 0.0,           # rotation matrix row 2 (h21, h22, h23)
-            0.0, 0.0,                # rotation matrix row 3 (h31, h32)
-            0.0,                     # dx (x position)
-            0.0,                     # dy (y position)
-            0.99                     # confidence
+            428.0,
+            417.0,
+            0.5845053791999817,
+            0.030834276229143143,
+            1.784709638741333e-05,
+            -0.026400074362754822,
+            0.5820954442024231,
+            -2.2954494852456264e-05,
+            234.96536254882812,
+            -25.670564651489258,
+            1.0
         ]
         
         msg = Float32MultiArray()
