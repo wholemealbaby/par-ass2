@@ -12,7 +12,6 @@ The test:
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Empty, Header
-from vision_msgs.msg import ObjectsStamped
 import time
 import sys
 import os
@@ -23,6 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from snc.constants import (
     OBJECTS_TOPIC,
     OBJECTS_BUFFER_SIZE,
+    OBJECTS_INTERFACE,
     START_CHALLENGE_TOPIC,
     START_CHALLENGE_BUFFER_SIZE,
     OBJECT_MAP
@@ -56,7 +56,7 @@ class DetectStartTest(Node):
         
         # Publisher for /objectsStamped topic
         self.objects_pub = self.create_publisher(
-            ObjectsStamped,
+            OBJECTS_INTERFACE,
             OBJECTS_TOPIC,
             OBJECTS_BUFFER_SIZE
         )
@@ -91,7 +91,7 @@ class DetectStartTest(Node):
         self.get_logger().info(f'Publishing Start object with ID: {start_object_id}')
         
         # Create an ObjectsStamped message
-        msg = ObjectsStamped()
+        msg = OBJECTS_INTERFACE()
         msg.objects.data = [
             float(start_object_id), # ID
             428.0, 417.0,           # Width, Height
