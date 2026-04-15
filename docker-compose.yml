@@ -11,9 +11,3 @@ services:
     # This automatically merges with the robot's /home/husarion/compose.yaml
     # Remove orphaned containers when stopping/down
     stop_grace_period: 3s
-    # Auto-remove containers when they exit
-    auto_remove: false  # Set to true if you want containers auto-removed after exit
-
-# Global settings to remove orphaned containers
-x-defaults: &defaults
-  stop_grace_period: 3s
