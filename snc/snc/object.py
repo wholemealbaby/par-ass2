@@ -4,7 +4,7 @@ import numpy as np
 from std_msgs.msg import Header
 import math
 from geometry_msgs.msg import PoseStamped
-
+from snc.constants import HAZARD_MAP, OBJECT_MAP
 
 class DetectedObject:
     def __init__(self, data_slice: list, header: Header):
@@ -16,6 +16,7 @@ class DetectedObject:
         """
         self.header = header
         self.object_id = int(data_slice[0])
+        self.name = OBJECT_MAP.get(self.object_id, "Unknown")
         self.ref_width = data_slice[1]
         self.ref_height = data_slice[2]
 
