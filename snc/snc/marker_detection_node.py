@@ -18,7 +18,7 @@ class MarkerDetectionNode(Node):
         super().__init__('marker_detection_node')
         self.get_logger().info('Marker detection node launched')
         
-        self.sub_objects(
+        self.sub_objects = self.create_subscription(
             OBJECTS_INTERFACE,
             OBJECTS_TOPIC,
             self.objects_callback,
@@ -26,7 +26,7 @@ class MarkerDetectionNode(Node):
         )
         
         # Create publisher to /snc_start topic
-        self.pub_start_challenge(
+        self.pub_start_challenge = self.create_publisher(
             START_CHALLENGE_INTERFACE,
             START_CHALLENGE_TOPIC,
             START_CHALLENGE_BUFFER_SIZE,
