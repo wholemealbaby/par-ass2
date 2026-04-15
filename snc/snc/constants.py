@@ -1,7 +1,7 @@
 from std_msgs.msg import Empty, Float32MultiArray, String
 from nav_msgs.msg import Path
 
-hazard_spec_ids_map = {
+HAZARD_SPEC_IDS_MAP = {
     "Unknown": 0,
     "Explosive": 1,
     "Flammable Gas": 2,
@@ -16,7 +16,7 @@ hazard_spec_ids_map = {
     "Radioactive": 11,
     "Corrosive": 12
 }
-hazard_image_map = {
+HAZARD_IMAGE_MAP = {
     "Start": 1,
     "Flammable Gas": 2,
     "Poison": 3,
@@ -32,14 +32,14 @@ hazard_image_map = {
     "Spontaneously Combustible": 13,
 }
 # Create the reversals and update the original dictionaries
-hazard_spec_ids_map.update({v: k for k, v in hazard_spec_ids_map.items()})
-hazard_image_map.update({v: k for k, v in hazard_image_map.items()})
+HAZARD_SPEC_IDS_MAP.update({v: k for k, v in HAZARD_SPEC_IDS_MAP.items()})
+HAZARD_IMAGE_MAP.update({v: k for k, v in HAZARD_IMAGE_MAP.items()})
 
 START_CHALLENGE_TOPIC = '/snc_start'
 START_CHALLENGE_INTERFACE = Empty
 START_CHALLENGE_BUFFER_SIZE = 1
 
-OBJECTS_TOPIC = ""
+OBJECTS_TOPIC = "/objects"
 OBJECTS_BUFFER_SIZE = 20
 OBJECTS_INTERFACE = Float32MultiArray
 
