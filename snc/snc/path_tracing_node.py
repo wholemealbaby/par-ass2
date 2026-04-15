@@ -3,9 +3,7 @@
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
-from std_msgs.msg import Empty
 from nav_msgs.msg import Path
-from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
 from snc.constants import (
     TRIGGER_HOME_BUFFER_SIZE,
@@ -22,7 +20,6 @@ from snc.constants import (
     RETURN_BREADCRUMBS_BUFFER_SIZE
 )
 import math
-from geometry_msgs.msg import Transform
 import tf_transformations
 
 
