@@ -66,11 +66,11 @@ class ObjectHandler:
     def __init__(self):
         self.objects = []
     
-    def add_object_from_msg(self, msg) -> None:
+    def add_object(self, msg) -> None:
         """
         Creates an Object instance and adds it to the internal list.
         """
-        data = msg.data 
+        data = msg.objects.data 
         header = msg.header
 
         if len(data) == 12:
@@ -91,6 +91,18 @@ class ObjectHandler:
             raise ValueError("Header is missing timestamp")
         if not header.frame_id:
             raise ValueError("Header is missing frame_id")
+        
+    def add_object_from_msg(self, msg) -> None:
+        """
+        Creates an Object instance and adds it to the internal list.
+        """
+        data = msg.data 
+
+        if len(data) == 12:
+            new_obj = DetectedObject(data)
+            self.objects.append(new_obj)
+        else:
+            raise ValueError(f"Expected 12 floats per object, got {len(data)}")
         
     def start_marker_detected(self) -> bool:
         """Checks if the 'Start' object is among the detected objects."""
