@@ -36,9 +36,9 @@ class MarkerDetectionNode(Node):
         """Callback method to handle published object information."""
         # Decode into hazard objects
         self.hazards = Hazards(msg)
-        self.get_logger().info(f"Received {len(self.hazards.hazards)}"
-        f" hazards: {"\n".join(h.name for h in self.hazards.hazards)}")
-        for h in self.hazards.hazards:
+        self.get_logger().info(f"Received {len(self.hazards.list)}"
+        f" hazards: {"\n".join(h.name for h in self.hazards.list)}")
+        for h in self.hazards.list:
             if h.name == "Start":
                 self.get_logger().info("Start challenge marker detected! Publishing trigger...")
                 self.pub_start_challenge.publish(Empty())
