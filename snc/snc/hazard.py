@@ -1,5 +1,5 @@
 import math
-from constants import HAZARD_SPEC_IDS_MAP, HAZARD_IMAGE_MAP
+from snc.constants import HAZARD_SPEC_IDS_MAP, HAZARD_IMAGE_MAP
 
 import math
 from geometry_msgs.msg import PoseStamped

@@ -11,7 +11,7 @@ from snc.constants import (
     OBJECTS_INTERFACE,
 )
 from std_msgs.msg import Empty
-from hazard import Hazards
+from snc.hazard import Hazards
 
 class MarkerDetectionNode(Node):
     def __init__(self):
