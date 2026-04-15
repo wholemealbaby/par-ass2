@@ -24,7 +24,7 @@ from snc.constants import (
     OBJECTS_BUFFER_SIZE,
     START_CHALLENGE_TOPIC,
     START_CHALLENGE_BUFFER_SIZE,
-    HAZARD_IMAGE_MAP
+    OBJECT_MAP
 )
 
 
@@ -80,10 +80,10 @@ class DetectStartTest(Node):
             
     def publish_start_object(self):
         """Publish a Float32MultiArray message with a "Start" object."""
-        # Get the object ID for "Start" from HAZARD_IMAGE_MAP
-        start_object_id = HAZARD_IMAGE_MAP.get("Start")
+        # Get the object ID for "Start" from OBJECT_MAP
+        start_object_id = OBJECT_MAP.get("Start")
         if start_object_id is None:
-            self.get_logger().error('ERROR: "Start" not found in HAZARD_IMAGE_MAP')
+            self.get_logger().error('ERROR: "Start" not found in OBJECT_MAP')
             self.test_failed = True
             return
             
@@ -165,7 +165,7 @@ def main():
             print("\n" + "="*60)
             print("TEST RESULT: PASSED")
             print("="*60)
-            print(f"Start object (ID: {HAZARD_IMAGE_MAP.get('Start')}) was successfully detected")
+            print(f"Start object (ID: {OBJECT_MAP.get('Start')}) was successfully detected")
             print(f"Marker detection node published to {START_CHALLENGE_TOPIC}")
             print("="*60)
             test_node.destroy_node()
