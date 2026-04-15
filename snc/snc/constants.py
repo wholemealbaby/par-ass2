@@ -1,5 +1,6 @@
-from std_msgs.msg import Empty, Float32MultiArray, String
+from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
+from vision_msgs.msg import ObjectsStamped
 
 # Mapping of hazard names to their ID 
 # from the assignment specification
@@ -46,7 +47,7 @@ START_CHALLENGE_BUFFER_SIZE = 1
 
 OBJECTS_TOPIC = "/objectsStamped"
 OBJECTS_BUFFER_SIZE = 20
-OBJECTS_INTERFACE = Float32MultiArray
+OBJECTS_INTERFACE = ObjectsStamped
 
 RETURN_BREADCRUMBS_TOPIC = '/breadcrumbs_return'
 RETURN_BREADCRUMBS_BUFFER_SIZE = 10
