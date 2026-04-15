@@ -21,9 +21,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from snc.constants import (
     OBJECTS_TOPIC,
-    OBJECTS_INTERFACE,
+    OBJECTS_BUFFER_SIZE,
     START_CHALLENGE_TOPIC,
-    START_CHALLENGE_INTERFACE,
+    START_CHALLENGE_BUFFER_SIZE,
     HAZARD_IMAGE_MAP
 )
 
@@ -50,14 +50,14 @@ class DetectStartTest(Node):
             Empty,
             START_CHALLENGE_TOPIC,
             self.start_challenge_callback,
-            START_CHALLENGE_INTERFACE._TYPE_SUPPORT
+            START_CHALLENGE_BUFFER_SIZE
         )
         
         # Publisher for /objects topic
         self.objects_pub = self.create_publisher(
             Float32MultiArray,
             OBJECTS_TOPIC,
-            OBJECTS_INTERFACE._TYPE_SUPPORT
+            OBJECTS_BUFFER_SIZE
         )
         
         self.get_logger().info('Detect Start Test initialized')
