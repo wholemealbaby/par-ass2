@@ -44,7 +44,7 @@ class HazardManager:
             # Assuming Hazard inherits from or wraps Object
             hazard = Hazard(obj) 
             
-            self.list.append(hazard)
+            self.list.append(hazard, obj.header)
             new_names.add(hazard.name)
 
         # Update set and metadata
