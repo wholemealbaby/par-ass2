@@ -61,7 +61,7 @@ class DetectedObject:
         # Then use tf_buffer.transform(self.pose_stamped, target_frame)
         pass
 
-class ObjectManager:
+class ObjectHandler:
     def __init__(self):
         self.objects = []
     
