@@ -54,7 +54,7 @@ class DetectedObject:
         
         return ps
 
-    def get_map_pose(self, tf_buffer, target_frame="map", depth_value=1.0):
+    def get_map_pose(self, tf_buffer, target_frame="map", depth_value=1.0) -> PoseStamped:
         """
         Converts pixel coordinates to meters and transforms to the target frame.
         """
@@ -73,7 +73,7 @@ class ObjectHandler:
     def __init__(self):
         self.objects = []
     
-    def add_object(self, data_slice: list, header):
+    def add_object(self, data_slice: list, header) -> None:
         """
         Creates an Object instance and adds it to the internal list.
         """
@@ -84,7 +84,7 @@ class ObjectHandler:
             # This handles cases where the array might be malformed
             print(f"Warning: Received data_slice of length {len(data_slice)}, expected 12.")
 
-    def _validate_header(self, header):
+    def _validate_header(self, header) -> None:
         """Ensures the header contains necessary information
         including timestamp and frame_id.
         
@@ -97,7 +97,7 @@ class ObjectHandler:
         if not header.frame_id:
             raise ValueError("Header is missing frame_id")
 
-    def add_objects_from_message(self, msg):
+    def add_objects_from_message(self, msg) -> None:
         """
         Parses the incoming message (likely ObjectsStamped) and populates the list.
         
