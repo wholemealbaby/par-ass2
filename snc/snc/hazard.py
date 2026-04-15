@@ -50,18 +50,25 @@ class Hazards:
         """
         Container for all hazards detected in a single ROS 2 message.
         
-        :param msg: The incoming ObjectsStamped message
+        :param msg: The incoming Float32MultiArray message containing object data
         """
-        # Metadata from the message header
-        self.header = msg.header
-        self.timestamp = msg.header.stamp
-        self.frame_id = msg.header.frame_id
+        from std_msgs.msg import Header
+        from builtin_interfaces.msg import Time
+        
+        # Use a default header since Float32MultiArray doesn't have one
+        # The header is created with current time and empty frame_id
+        current_time = Time()
+        current_time.sec = 0
+        current_time.nanosec = 0
+        self.header = Header()
+        self.header.stamp = current_time
+        self.header.frame_id = ""
         
         # The list of individual Hazard objects
         self.list = []
         
-        # Parse the raw data (multiples of 12)
-        raw_data = msg.objects.data
+        # Parse the raw data (multiples of 12) from Float32MultiArray
+        raw_data = msg.data
         for i in range(0, len(raw_data), 12):
             obj_slice = raw_data[i : i + 12]
             # Create Hazard instance and add to list
