@@ -52,14 +52,14 @@ class MarkerDetectionNode(Node):
 
     def objects_callback(self, msg):
         """Callback method to handle published object information."""
+        self.get_logger().debug('Received objects message, processing...')
         # Use handler to decode object data
         self.object_handler.add_objects_from_message(msg)
         if not self.start_marker_detected and self.object_handler.start_marker_detected():
             self.trigger_start()
         self.hazard_manager.update_from_objects(self.object_handler.objects)
         hazards = self.hazard_manager.get_unique_hazards()
-        self.get_logger().info(f"Unique hazards detected: "
-                               f"{', '.join([h.name for h in hazards]) if hazards else 'None'}")
+        self.get_logger().info(f"Unique hazards detected: {hazards}")
         
     def timer_callback(self):
         pass
