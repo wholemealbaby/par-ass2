@@ -78,6 +78,29 @@ class Hazards:
                 return h
         return None
 
+    def get_unique_hazards(self):
+        """Return a list of unique hazard names detected."""
+        unique_names = set()
+        unique_hazards = []
+        for h in self.list:
+            if h.name not in unique_names:
+                unique_names.add(h.name)
+                unique_hazards.append(h)
+        return unique_hazards
+    
+    def get_hazard_by_object_id(self, object_id):
+        """Helper to find a specific hazard by its object ID"""
+        for h in self.list:
+            if h.object_id == object_id:
+                return h
+        return None
+    
+    def get_hazard_by_id(self, spec_id):
+        """Helper to find a specific hazard by its assignment ID"""
+        for h in self.list:
+            if h.id == spec_id:
+                return h
+        return None
 
     def get_hazard_by_id(self, spec_id):
         """Helper to find a specific hazard by its assignment ID"""
