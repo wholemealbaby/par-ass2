@@ -97,14 +97,18 @@ class ObjectHandler:
         Note: msg.objects.data is the Float32MultiArray part.
         """
         
-        # Access the underlying data array
-        # Adjust 'msg.objects.data' if your message structure is different
-        data = msg.objects.data 
+        # Give each object the same header
         header = msg.header
 
-        # Iterate through the flat array in steps of 12
-        for i in range(0, len(data), 12):
-            data_slice = data[i : i + 12]
+        for obj_msg in msg.objects:
+            # obj_msg.homography.data is the 9-element array [h11...h33]
+            # We prep the 12-element 'slice' your DetectedObject class expects
+            data_slice = [
+                float(obj_msg.id),
+                float(obj_msg.width),
+                float(obj_msg.height)
+            ] + list(obj_msg.homography.data)
+            
             self.add_object(data_slice, header)
         
     def start_marker_detected(self) -> bool:
