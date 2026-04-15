@@ -1,7 +1,9 @@
 from std_msgs.msg import Empty, Float32MultiArray, String
 from nav_msgs.msg import Path
 
-HAZARD_SPEC_IDS_MAP = {
+# Mapping of hazard names to their ID 
+# from the assignment specification
+HAZARD_MAP = {
     "Unknown": 0,
     "Explosive": 1,
     "Flammable Gas": 2,
@@ -16,7 +18,10 @@ HAZARD_SPEC_IDS_MAP = {
     "Radioactive": 11,
     "Corrosive": 12
 }
-HAZARD_IMAGE_MAP = {
+
+# This is the mapping from the object ID in the
+# Find Object 2D configuration to the hazard name.
+OBJECT_MAP = {
     "Start": 1,
     "Flammable Gas": 2,
     "Poison": 3,
@@ -32,8 +37,8 @@ HAZARD_IMAGE_MAP = {
     "Spontaneously Combustible": 13,
 }
 # Create the reversals and update the original dictionaries
-HAZARD_SPEC_IDS_MAP.update({v: k for k, v in HAZARD_SPEC_IDS_MAP.items()})
-HAZARD_IMAGE_MAP.update({v: k for k, v in HAZARD_IMAGE_MAP.items()})
+HAZARD_MAP.update({v: k for k, v in HAZARD_MAP.items()})
+OBJECT_MAP.update({v: k for k, v in OBJECT_MAP.items()})
 
 START_CHALLENGE_TOPIC = '/snc_start'
 START_CHALLENGE_INTERFACE = Empty

@@ -1,5 +1,7 @@
 import math
-from snc.constants import HAZARD_SPEC_IDS_MAP, HAZARD_IMAGE_MAP
+
+import numpy as np
+from snc.constants import HAZARD_MAP, OBJECT_MAP
 
 import math
 from geometry_msgs.msg import PoseStamped
@@ -14,55 +16,47 @@ class Hazard:
         """
         # Basic Identity (Indices 0, 1, 2)
         self.object_id = int(data_slice[0])
-        self.name = HAZARD_IMAGE_MAP.get(self.object_id, "unknown")
-        self.id = HAZARD_SPEC_IDS_MAP.get(self.name, -1) 
+        self.name = OBJECT_MAP.get(self.object_id, "unknown")
+        self.id = HAZARD_MAP.get(self.name, -1) 
         
         self.width = data_slice[1]
         self.height = data_slice[2]
 
-        # Position (Indices 9 and 10)
-        dx = data_slice[9]
-        dy = data_slice[10]
+        # Reconstruct the 3x3 Homography Matrix (Indices 3-11)
+        h = np.array(data_slice[3:12]).reshape(3, 3)
 
-        # Rotation (Indices 3 and 6)
-        h11 = data_slice[3]
-        h21 = data_slice[6]
-        yaw = math.atan2(h21, h11)
+        # Calculate Center Point in Camera Frame
+        # Define the center point of the reference image
+        ref_center = np.array([self.width / 2.0, self.height / 2.0, 1.0])
+        
+        # Map the reference center to the camera frame: camera_pt = H * ref_pt
+        cam_center = np.dot(h, ref_center)
+        
+        # Normalize by the third scale component (w)
+        actual_x = cam_center[0] / cam_center[2]
+        actual_y = cam_center[1] / cam_center[2]
+
+        # Rotation (Yaw)
+        yaw = math.atan2(h[1, 0], h[0, 0])
 
         # Construct PoseStamped
         ps = PoseStamped()
-        ps.header = header  # Carry over timestamp and frame_id
+        ps.header = header
         
-        ps.pose.position.x = float(dx)
-        ps.pose.position.y = float(dy)
+        # NOTE: These are still in PIXEL units. 
+        # TODO: convert these to meters.
+        ps.pose.position.x = float(actual_x)
+        ps.pose.position.y = float(actual_y)
         ps.pose.position.z = 0.0
         
-        # Yaw to Quaternion conversion
-        ps.pose.orientation.x = 0.0
-        ps.pose.orientation.y = 0.0
         ps.pose.orientation.z = math.sin(yaw / 2.0)
         ps.pose.orientation.w = math.cos(yaw / 2.0)
         
         self.camera_pose_stamped = ps
 
-class Hazards:
+class HazardManager:
+
     def __init__(self, msg):
-        """
-        Container for all hazards detected in a single ROS 2 message.
-        
-        :param msg: The incoming Float32MultiArray message containing object data
-        """
-        from std_msgs.msg import Header
-        from builtin_interfaces.msg import Time
-        
-        # Use a default header since Float32MultiArray doesn't have one
-        # The header is created with current time and empty frame_id
-        current_time = Time()
-        current_time.sec = 0
-        current_time.nanosec = 0
-        self.header = Header()
-        self.header.stamp = current_time
-        self.header.frame_id = ""
         
         # The list of individual Hazard objects
         self.list = []
