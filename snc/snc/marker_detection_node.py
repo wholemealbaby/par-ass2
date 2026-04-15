@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from constants import (
+from snc.constants import (
     START_CHALLENGE_INTERFACE,
     START_CHALLENGE_TOPIC,
     START_CHALLENGE_BUFFER_SIZE,
