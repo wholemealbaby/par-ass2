@@ -11,13 +11,24 @@ from snc.constants import (
     OBJECTS_INTERFACE,
 )
 from std_msgs.msg import Empty
-from snc.hazard import Hazards
+from snc.hazard import HazardManager
+from snc.object import ObjectHandler
 
 class MarkerDetectionNode(Node):
     def __init__(self):
         super().__init__('marker_detection_node')
         self.get_logger().info('Marker detection node launched')
         
+        # Flag to ensure start marker is only once
+        self.start_marker_detected = False
+
+        # Handler for decoding find object 2D data into objects
+        self.object_handler = ObjectHandler()
+        # Handler for keeping track of unique hazards
+        # and transforming their positions into the map frame
+        self.hazard_manager = HazardManager()
+
+
         self.sub_objects = self.create_subscription(
             OBJECTS_INTERFACE,
             OBJECTS_TOPIC,
@@ -32,19 +43,21 @@ class MarkerDetectionNode(Node):
             START_CHALLENGE_BUFFER_SIZE,
         )
 
+    def trigger_start(self) -> None:
+        """Set the internal flag (self.start_marker_detected) to True
+        and publish to the start challenge topic."""
+        self.start_marker_detected = True
+        self.pub_start_challenge.publish(Empty())
+        self.get_logger().info('Start marker detected! Published to /snc_start.')
+
     def objects_callback(self, msg):
         """Callback method to handle published object information."""
-        # Decode into hazard objects
-        self.hazards = Hazards(msg)
-        self.get_logger().info(f"Received {len(self.hazards.list)}"
-        f" hazards: {"\n".join(h.name for h in self.hazards.list)}")
-        for h in self.hazards.list:
-            if h.name == "Start":
-                self.get_logger().info("Start challenge marker detected! Publishing trigger...")
-                self.pub_start_challenge.publish(Empty())
-                return
-
-
+        # Use handler to decode object data
+        self.object_handler.add_objects_from_message(msg)
+        if not self.start_marker_detected and self.object_handler.start_marker_detected:
+            self.trigger_start()
+        self.hazard_manager.update_from_objects(self.object_handler.objects)
+        
     def timer_callback(self):
         pass
         
