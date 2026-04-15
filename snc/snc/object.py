@@ -14,6 +14,7 @@ class DetectedObject:
         :param data_slice: 12 floats (ID, Width, Height, and 3x3 Matrix)
         :param header: The header from the incoming ROS message
         """
+        self.raw_data = data_slice
         self.header = header
         self.object_id = int(data_slice[0])
         self.name = OBJECT_MAP.get(self.object_id, "Unknown")

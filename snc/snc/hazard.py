@@ -42,9 +42,9 @@ class HazardManager:
         for obj in detected_objects:
             # Create Hazard from the abstract Object data
             # Assuming Hazard inherits from or wraps Object
-            hazard = Hazard(obj, obj.header) 
+            hazard = Hazard(obj.raw_data, obj.header) 
             
-            self.list.append(hazard, )
+            self.list.append(hazard)
             new_names.add(hazard.name)
 
         # Update set and metadata
