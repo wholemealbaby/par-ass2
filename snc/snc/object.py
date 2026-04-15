@@ -62,6 +62,13 @@ class DetectedObject:
         # Then use tf_buffer.transform(self.pose_stamped, target_frame)
         pass
 
+    def start_marker_detected(self) -> bool:
+        """Checks if the 'Start' object is among the detected objects."""
+        for obj in self.objects:
+            if obj.name == "Start":
+                return True
+        return False
+
 class ObjectHandler:
     def __init__(self):
         self.objects = []
