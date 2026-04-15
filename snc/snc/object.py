@@ -70,7 +70,7 @@ class ObjectHandler:
         """
         Creates an Object instance and adds it to the internal list.
         """
-        data = msg.objects.data 
+        data = msg.data 
         header = msg.header
 
         if len(data) == 12:
