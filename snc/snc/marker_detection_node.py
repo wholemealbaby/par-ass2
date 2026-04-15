@@ -10,6 +10,8 @@ from constants import (
     OBJECTS_BUFFER_SIZE,
     OBJECTS_INTERFACE,
 )
+from std_msgs.msg import Empty
+from hazard import Hazards
 
 class MarkerDetectionNode(Node):
     def __init__(self):
@@ -30,8 +32,18 @@ class MarkerDetectionNode(Node):
             START_CHALLENGE_BUFFER_SIZE,
         )
 
-    def objects_callback(self):
-        pass
+    def objects_callback(self, msg):
+        """Callback method to handle published object information."""
+        # Decode into hazard objects
+        self.hazards = Hazards(msg)
+        self.get_logger().info(f"Received {len(self.hazards.hazards)}"
+        f" hazards: {"\n".join(h.name for h in self.hazards.hazards)}")
+        for h in self.hazards.hazards:
+            if h.name == "Start":
+                self.get_logger().info("Start challenge marker detected! Publishing trigger...")
+                self.pub_start_challenge.publish(Empty())
+                return
+
 
     def timer_callback(self):
         pass
