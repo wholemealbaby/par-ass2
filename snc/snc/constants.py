@@ -1,6 +1,6 @@
 from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
-from vision_msgs.msg import ObjectsStamped
+from find_object_2d.msg import ObjectsStamped
 
 # Mapping of hazard names to their ID 
 # from the assignment specification
