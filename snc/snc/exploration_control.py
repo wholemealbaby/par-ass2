@@ -56,33 +56,24 @@ class ExplorationController:
     def start(self):
         """Starts the exploration process with all frontiers unexplored."""
         self.nav.get_logger().info("Starting exploration...")
+        self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="EXPLORING"))
         return self.__control_exploration("START")
 
     def stop(self):
         """Stops the exploration process."""
         self.nav.get_logger().info("Stopping exploration...")
+        self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="STOPPING EXPLORATION"))
         return self.__control_exploration("STOP")
 
     def resume(self):
         """Resumes the exploration process, allowing it to continue from where it left off."""
         self.nav.get_logger().info("Resuming exploration...")
+        self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="EXPLORING"))
         return self.__control_exploration("RESUME")
     
     def teleop(self):
         """Switches to teleop control."""
         self.nav.get_logger().info("Switching to teleop control...")
+        self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="TELEOP OVERRIDE"))
         return self.__control_exploration("TELEOP")
     
-# --- Example Usage in your Overriding Logic ---
-
-# controller = ExplorationController(nav)
-
-# 1. Stop Exploration
-# nav.get_logger().info("Stopping exploration...")
-# controller.control_exploration("STOP")
-
-# 2. Brief sleep with the node clock to ensure velocity commands have ceased
-# nav.get_clock().sleep_for(rclpy.duration.Duration(seconds=0.5))
-
-# 3. Take over with Nav2
-# nav.followPath(my_priority_path)
