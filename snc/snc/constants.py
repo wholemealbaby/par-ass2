@@ -49,11 +49,11 @@ OBJECTS_TOPIC = "/objectsStamped"
 OBJECTS_BUFFER_SIZE = 20
 OBJECTS_INTERFACE = ObjectsStamped
 
-# Topic for Node 3 to pub all breadcrumbs taken during exploration
-# for Node 1 to improve exploration
-RETURN_BREADCRUMBS_TOPIC = '/breadcrumbs_return'
-RETURN_BREADCRUMBS_BUFFER_SIZE = 10
-RETURN_BREADCRUMBS_INTERFACE = Path
+# # Topic for Node 3 to pub all breadcrumbs taken during exploration
+# # for Node 1 to improve exploration
+# RETURN_BREADCRUMBS_TOPIC = '/breadcrumbs_return'
+# RETURN_BREADCRUMBS_BUFFER_SIZE = 10
+# RETURN_BREADCRUMBS_INTERFACE = Path
 
 # Topic for Node 3 to pub the final return trajectory
 # for assesors to evaluate
