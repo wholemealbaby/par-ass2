@@ -49,14 +49,31 @@ OBJECTS_TOPIC = "/objectsStamped"
 OBJECTS_BUFFER_SIZE = 20
 OBJECTS_INTERFACE = ObjectsStamped
 
+# Topic for Node 3 to pub all breadcrumbs taken during exploration
+# for Node 1 to improve exploration
 RETURN_BREADCRUMBS_TOPIC = '/breadcrumbs_return'
 RETURN_BREADCRUMBS_BUFFER_SIZE = 10
 RETURN_BREADCRUMBS_INTERFACE = Path
 
+# Topic for Node 3 to pub the final return trajectory
+# for assesors to evaluate
+PATH_RETURN_TOPIC = '/path_return'
+PATH_RETURN_BUFFER_SIZE = 10
+PATH_RETURN_INTERFACE = Path
+
+# Topic for Node 3 to pub all breadcrumbs taken during exploration
+# for Node 1 to improve exploration
 EXPLORE_BREADCRUMBS_TOPIC = '/breadcrumbs_explore'
 EXPLORE_BREADCRUMBS_BUFFER_SIZE = 10
 EXPLORE_BREADCRUMBS_INTERFACE = Path
 
+# Topic for Node 3 to pub the path taken during exploration
+# for assesors to evaluate
+PATH_EXPLORE_TOPIC = '/path_explore'
+PATH_EXPLORE_BUFFER_SIZE = 10
+PATH_EXPLORE_INTERFACE = Path
+
+# Topic for Node 3 to pub the final return trajectory
 RETURN_HOME_TRAJECTORY_TOPIC = '/return_home_trajectory'
 RETURN_HOME_TRAJECTORY_BUFFER_SIZE = 1
 RETURN_HOME_TRAJECTORY_INTERFACE = Path
@@ -65,6 +82,8 @@ HAZARD_SIGNAL_TOPIC = '/snc/hazard_signal'
 
 ROBOT_POSE_TOPIC = '/snc/robot_pose'
 
+# DEPRECATED
+# TODO: remove these and update imports in other files
 HOME_TRIGGER_TOPIC = '/trigger_home'
 HOME_TRIGGER_BUFFER_SIZE = 1
 HOME_TRIGGER_INTERFACE = Path
