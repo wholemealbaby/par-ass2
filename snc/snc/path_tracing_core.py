@@ -8,12 +8,6 @@ from geometry_msgs.msg import PoseStamped, TransformStamped, Quaternion
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
 
-SAMPLE_FAILED = 0
-SAMPLE_SKIPPED = 2
-
-STATUS_RETURNING = "STATUS_RETURNING"
-STATUS_COMPLETE = "STATUS_COMPLETE"
-
 
 def calculate_distance(x1, y1, x2, y2):
     """Calculate Euclidean distance between two points."""
