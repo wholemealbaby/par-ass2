@@ -82,12 +82,6 @@ HAZARD_SIGNAL_TOPIC = '/snc/hazard_signal'
 
 ROBOT_POSE_TOPIC = '/snc/robot_pose'
 
-# DEPRECATED
-# TODO: remove these and update imports in other files
-HOME_TRIGGER_TOPIC = '/trigger_home'
-HOME_TRIGGER_BUFFER_SIZE = 1
-HOME_TRIGGER_INTERFACE = Path
-
 # Go home signal topic to trigger return path tracing
 GO_HOME_TOPIC = '/go_home'
 GO_HOME_INTERFACE = Empty
