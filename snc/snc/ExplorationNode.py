@@ -22,18 +22,22 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPo
 
 from snc_interfaces.srv import ExplorationControl
 from snc.constants import (
-    TRIGGER_HOME_BUFFER_SIZE,
-    TRIGGER_HOME_INTERFACE,
-    TRIGGER_HOME_TOPIC,
-    RETURN_HOME_TRAJECTORY_BUFFER_SIZE, 
-    RETURN_HOME_TRAJECTORY_TOPIC,
-    RETURN_HOME_TRAJECTORY_INTERFACE,
     EXPLORE_BREADCRUMBS_TOPIC,
     EXPLORE_BREADCRUMBS_INTERFACE,
     EXPLORE_BREADCRUMBS_BUFFER_SIZE,
-    RETURN_BREADCRUMBS_TOPIC,
-    RETURN_BREADCRUMBS_INTERFACE,
-    RETURN_BREADCRUMBS_BUFFER_SIZE
+    SNC_STATUS_TOPIC,
+    SNC_STATUS_INTERFACE,
+    SNC_STATUS_BUFFER_SIZE,
+    TRIGGER_HOME_TOPIC,
+    TRIGGER_HOME_INTERFACE,
+    TRIGGER_HOME_BUFFER_SIZE,
+    TRIGGER_START_TOPIC,
+    TRIGGER_START_INTERFACE,
+    TRIGGER_START_BUFFER_SIZE,
+    TRIGGER_TELEOP_TOPIC,
+    TRIGGER_TELEOP_INTERFACE,
+    TRIGGER_TELEOP_BUFFER_SIZE,
+    HAZARD_SIGNAL_TOPIC
 )
 
 MAP_UNKNOWN = -1
@@ -66,7 +70,7 @@ class ExplorationNode(Node):
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 50)
-        self.declare_parameter('frontier_standoff_m', 0.1)
+        self.declare_parameter('frontier_standoff_m', 0)
 
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
@@ -90,6 +94,11 @@ class ExplorationNode(Node):
         self.no_frontier_count = 0
         self.no_frontier_limit = 5
 
+        self.covered = None
+        self.last_path_len = 0
+        self.last_processed_cell = None
+        self.coverage_radius_m = 0.18
+
         map_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
@@ -105,24 +114,24 @@ class ExplorationNode(Node):
         )
 
         self.start_sub = self.create_subscription(
-            Empty,
-            '/snc_start',
+            TRIGGER_START_INTERFACE,
+            TRIGGER_START_TOPIC,
             self.start_callback,
-            10
+            TRIGGER_START_BUFFER_SIZE
         )
 
         self.hazard_signal_sub = self.create_subscription(
             Empty,
-            '/snc_hazard_signal',
+            HAZARD_SIGNAL_TOPIC,
             self.hazard_signal_callback,
             10
         )
 
         self.teleop_sub = self.create_subscription(
-            Empty,
-            '/trigger_teleop',
+            TRIGGER_TELEOP_INTERFACE,
+            TRIGGER_TELEOP_TOPIC,
             self.teleop_callback,
-            10
+            TRIGGER_TELEOP_BUFFER_SIZE
         )
 
         self.hazards_sub = self.create_subscription(
@@ -136,12 +145,26 @@ class ExplorationNode(Node):
             EXPLORE_BREADCRUMBS_INTERFACE,
             EXPLORE_BREADCRUMBS_TOPIC,
             self.path_explore_callback,
-            10
+            EXPLORE_BREADCRUMBS_BUFFER_SIZE
         )
 
-        self.status_pub = self.create_publisher(String, '/snc_status', 10)
-        self.return_pub = self.create_publisher(Empty, '/snc_return_trigger', 10)
-        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.status_pub = self.create_publisher(
+            SNC_STATUS_INTERFACE, 
+            SNC_STATUS_TOPIC, 
+            SNC_STATUS_BUFFER_SIZE
+        )
+
+        self.return_pub = self.create_publisher(
+            TRIGGER_HOME_INTERFACE, 
+            TRIGGER_HOME_TOPIC,
+            TRIGGER_HOME_BUFFER_SIZE
+        )
+
+        self.cmd_vel_pub = self.create_publisher(
+            Twist, 
+            '/cmd_vel', 
+            10
+        )
 
         self.control_srv = self.create_service(
             ExplorationControl,
@@ -296,8 +319,96 @@ class ExplorationNode(Node):
         return response
 
     def path_explore_callback(self, msg):
-        poses = msg.poses
+        if self.latest_map is None:
+            return
+
+        self.ensure_coverage_grid()
+
+        path = msg.poses
+        n = len(path)
         
+        if n < self.last_path_len:
+            self.get_logger().info('Breadcrumb path shrank, rebuilding coverage grid')
+            self.rebuild_coverage_from_full_path(path)
+            return
+
+        new_points = path[self.last_path_len:]
+        for p in new_points:
+            cell = self.world_to_map(p.pose.position.x, p.pose.position.y)
+            if cell is None:
+                continue
+
+            if self.last_processed_cell is None:
+                self.paint_disk(cell[0], cell[1])
+            else:
+                self.paint_segment_covered(self.last_processed_cell, cell)
+
+            self.last_processed_cell = cell
+
+        self.last_path_len = n
+        self.get_logger().info(f"New last path len: {self.last_path_len}")
+
+    def ensure_coverage_grid(self):
+        h = self.latest_map.info.height
+        w = self.latest_map.info.width
+
+        if self.covered is None or self.covered.shape != (h, w):
+            self.covered = np.zeros((h, w), dtype=bool)
+            self.last_path_len = 0
+            self.last_processed_cell = None 
+
+    def world_to_map(self, x, y):
+        info = self.latest_map.info
+        mx = int((x - info.origin.position.x) / info.resolution)
+        my = int((y - info.origin.position.y) / info.resolution)
+
+        if 0 <= mx < info.width and 0 <= my < info.height:
+            return (mx, my)
+
+        return None
+
+    def paint_disk(self, mx, my):
+        res = self.latest_map.info.resolution
+        radius_cells = max(1, int(math.ceil(self.coverage_radius_m / res)))
+
+        h, w = self.covered.shape
+        for dx in range(-radius_cells, radius_cells + 1):
+            for dy in range(-radius_cells, radius_cells + 1):
+                if dx**2 + dy**2 > radius_cells**2:
+                    continue
+                nx, ny = mx + dx, my + dy
+                if 0 <= nx < w and 0 <= ny < h:
+                    self.covered[ny, nx] = True
+
+    def paint_segment_covered(self, a, b):
+        x0, y0 = a
+        x1, y1 = b
+
+        steps = max(abs(x1 - x0), abs(y1 - y0), 1)
+        for i in range(steps + 1):
+            t = i / steps
+            x = int(round(x0 + t * (x1 - x0)))
+            y = int(round(y0 + t * (y1 - y0)))
+            self.paint_disk(x, y)
+
+    def rebuild_coverage_from_full_path(self, path):
+        self.ensure_coverage_grid()
+        self.covered.fill(False)
+        self.last_processed_cell = None
+
+        for p in path:
+            cell = self.world_to_map(p.x, p.y)
+            if cell is None:
+                continue
+
+            if self.last_processed_cell is None:
+                self.paint_disk(cell[0], cell[1])
+            else:
+                self.paint_segment_covered(self.last_processed_cell, cell)
+
+            self.last_processed_cell = cell
+        
+        self.last_path_len = len(path)
 
     # ---------- exploration control ----------
     def start_exploration(self):
@@ -417,7 +528,7 @@ class ExplorationNode(Node):
         if curr_pose is None or self.latest_map is None:
             return
 
-        goal_pose = self.find_frontier_goal(self.latest_map, curr_pose)
+        goal_pose = self.find_navigation_goal(self.latest_map, curr_pose)
 
         if goal_pose is None:
             self.no_frontier_count += 1
@@ -447,43 +558,47 @@ class ExplorationNode(Node):
                         return True
         return False
 
-    def get_reachable_cells(self, grid, width, height, start_x, start_y):
-        if not (0 <= start_x < width and 0 <= start_y < height):
-            return set()
+    def get_reachable_cells_and_distance(self, grid, start_x, start_y):
+        height, width = grid.shape
+        reachable = np.zeros((height, width), dtype=bool)
+        dist = np.full((height, width), -1, dtype=np.int32)
 
-        if not self.is_cell_traversable(grid[start_y, start_x]):
-            return set()
-
-        reachable_cells = set()
         q = collections.deque([(start_x, start_y)])
-        reachable_cells.add((start_x, start_y))
+        reachable[start_y, start_x] = True
+        dist[start_y, start_x] = 0
 
         while q:
             cx, cy = q.popleft()
-
-            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
                 nx, ny = cx + dx, cy + dy
                 if not (0 <= nx < width and 0 <= ny < height):
                     continue
-                if (nx, ny) in reachable_cells:
+                if reachable[ny, nx]:
                     continue
                 if not self.is_cell_traversable(grid[ny, nx]):
                     continue
-                
-                reachable_cells.add((nx, ny))
+
+                reachable[ny, nx] = True
+                dist[ny, nx] = dist[cy, cx] + 1
                 q.append((nx, ny))
 
-        return reachable_cells
+        return reachable, dist
 
-    def extract_frontier_cells(self, grid, width, height, reachable_cells):
+    def extract_frontier_cells(self, grid, width, height, reachable_cells_mask):
         frontier_cells = []
-        for x, y in reachable_cells:
+
+        ys, xs = np.where(reachable_cells_mask)
+        for y, x in zip(ys, xs):
             if self.cell_has_unknown_neighbours(grid, x, y, width, height):
                 frontier_cells.append((x, y))
 
         return frontier_cells
 
-    def rank_frontier_clusters(self, clusters, robot_x, robot_y):
+    def extract_uncovered_cells(self, uncovered_mask):
+        ys, xs = np.where(uncovered_mask)
+        return [(x, y) for y, x in zip(ys, xs)]
+
+    def rank_clusters(self, clusters, robot_x, robot_y):
         ranked = []
 
         for cluster in clusters:
@@ -502,12 +617,12 @@ class ExplorationNode(Node):
         ranked.sort(key=lambda x: x[0])
         return [cluster for _, cluster in ranked]
 
-    def cluster_frontiers(self, frontier_cells):
-        frontier_set = set(frontier_cells)
+    def cluster_cells(self, cells):
+        frontier_set = set(cells)
         visited = set()
         clusters = []
 
-        for cell in frontier_cells:
+        for cell in cells:
             if cell in visited:
                 continue
 
@@ -551,7 +666,19 @@ class ExplorationNode(Node):
         gy = int(round(fy + standoff_cells * vy / norm))
         return gx, gy
 
-    def find_frontier_goal(self, map_msg, robot_pose):
+    def choose_coverage_goal_from_cluster(self, cluster, dists):
+        best_cell = None
+        best_dist = -1
+
+        for x, y in cluster:
+            d = dists[y, x]
+            if d > best_dist:
+                best_dist = d
+                best_cell = (x, y)
+
+        return best_cell
+
+    def find_navigation_goal(self, map_msg, robot_pose):
         width = map_msg.info.width
         height = map_msg.info.height
         res = map_msg.info.resolution
@@ -591,33 +718,87 @@ class ExplorationNode(Node):
                 self.get_logger().warn('Could not find traversable start cell near robot')
                 return None
 
-        reachable_cells = self.get_reachable_cells(grid, width, height, robot_x, robot_y)
-        frontier_cells = self.extract_frontier_cells(grid, width, height, reachable_cells)
+        reachable_cells, dists = self.get_reachable_cells_and_distance(grid, robot_x, robot_y)
         
-        self.get_logger().info(f'reachable={len(reachable_cells)}, frontier_cells={len(frontier_cells)}')
+        free_mask = np.vectorize(self.is_cell_traversable)(grid)
+        reachable_mask = reachable_cells
+        covered_mask = self.covered if self.covered is not None else np.zeros_like(reachable_mask, dtype=bool)
+        uncovered_mask = reachable_mask & free_mask & (~covered_mask)
+
+        #coverage_goal = self.find_coverage_goal(grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+        #if coverage_goal is not None:
+        #    return coverage_goal
+
+        frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
+        if frontier_goal is not None:
+            return frontier_goal
+
+        self.get_logger().info('No more frontiers/uncovered cells found. Exploration finished')
+        return None
+
+    def find_coverage_goal(self, grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
+        uncovered_cells = self.extract_uncovered_cells(uncovered_mask)
         
-        if not frontier_cells:
+        if not uncovered_cells:
+            self.get_logger().warn('No uncovered cells found')
             return None
 
-        clusters = self.cluster_frontiers(frontier_cells)
-        ranked_clusters = self.rank_frontier_clusters(clusters, robot_x, robot_y)
+        uncovered_clusters = self.cluster_cells(uncovered_cells)
+        ranked_clusters = self.rank_clusters(uncovered_clusters, robot_x, robot_y)
+
+        if ranked_clusters is None or len(ranked_clusters) <= 0:
+            self.get_logger().warn('No uncovered clusters found')
+            return None
+
+        self.get_logger().info(f'uncovered clusters={len(uncovered_clusters)}, ranked_uncovered_clusters={len(ranked_clusters)}')
+
+        for cluster in ranked_clusters:
+            #goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
+            goal_x, goal_y = self.choose_coverage_goal_from_cluster(cluster, dists)
+
+            if not (0 <= goal_x < width and 0 <= goal_y < height):
+                continue
+            if not self.is_cell_traversable(grid[goal_y, goal_x]):
+                continue
+
+            self.get_logger().info(f'selected uncovered cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
+
+            return self.create_pose(goal_x, goal_y, res, origin)
+
+        self.get_logger().warn('Uncovered clusters exist, but no valid backed-off goal was found')
+        return None
+
+    def find_frontier_goal(self, grid, width, height, robot_x, robot_y, reachable_mask, origin, res):
+        frontier_cells = self.extract_frontier_cells(grid, width, height, reachable_mask)
         
-        self.get_logger().info(f'clusters={len(clusters)}, ranked_clusters={len(ranked_clusters)}')
+        if not frontier_cells:
+            self.get_logger().warn('No frontier cells found')
+            return None
+
+        frontier_clusters = self.cluster_cells(frontier_cells)
+        ranked_clusters = self.rank_clusters(frontier_clusters, robot_x, robot_y)
+        
+        if ranked_clusters is None or len(ranked_clusters) <= 0:
+            self.get_logger().warn('No frontier clusters found')
+            return None
+
+        self.get_logger().info(f'frontier clusters={len(frontier_clusters)}, ranked_frontier_clusters={len(ranked_clusters)}')
         
         for cluster in ranked_clusters:
             goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
 
             if not (0 <= goal_x < width and 0 <= goal_y < height):
-                return None
+                continue
             if not self.is_cell_traversable(grid[goal_y, goal_x]):
-                return None
+                continue
 
-            self.get_logger().info(f'selected cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
+            self.get_logger().info(f'selected frontier cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
 
             return self.create_pose(goal_x, goal_y, res, origin)
 
         self.get_logger().warn('Frontier clusters exist, but no valid backed-off goal was found')
-
+        return None
+        
     def create_pose(self, mx, my, res, origin):
         pose = PoseStamped()
         pose.header.frame_id = self.global_frame
