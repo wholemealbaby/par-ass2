@@ -62,12 +62,20 @@ class PathTracingNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.explore_breadcrumbs = []  # List to store the breadcrumbs for the explore path
         self.return_breadcrumbs = []   # List to store the breadcrumbs for the return path
+        self.path_explore = []
         self.return_path = None # Variable to store the final return path once complete
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
         self.return_triggered = False # Flag to indicate if return home has been triggered, stops pose sampling when true
 
-        # Return home trigger
+        # Go home trigger subscription to start return path tracing
+        self.sub_go_home = self.create_subscription(
+            GO_HOME_INTERFACE,
+            GO_HOME_TOPIC,
+            self.home_trigger_callback,
+            GO_HOME_BUFFER_SIZE
+        )        
+        # Contingency Return home trigger
         self.sub_home_trigger = self.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
@@ -209,7 +217,7 @@ class PathTracingNode(Node):
             self.return_path = Path(header=return_trajectory[0].header, poses=return_trajectory)
         else:
             self.get_logger().error("Failed to calculate return trajectory, no path will be published")
-        self.pub_return_home_trajectory.publish(self.return_path)
+        # self.pub_return_home_trajectory.publish(self.return_path)
  
         # TODO: add exploration control call
 
