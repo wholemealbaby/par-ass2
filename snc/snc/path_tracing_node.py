@@ -62,7 +62,6 @@ class PathTracingNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.explore_breadcrumbs = []  # List to store the breadcrumbs for the explore path
         self.return_breadcrumbs = []   # List to store the breadcrumbs for the return path
-        self.path_explore = []
         self.return_path = None # Variable to store the final return path once complete
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
