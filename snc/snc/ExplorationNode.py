@@ -15,13 +15,26 @@ from tf2_ros import Buffer, TransformListener, TransformException
 from geometry_msgs.msg import PoseStamped, Twist
 from nav_msgs.msg import OccupancyGrid
 from std_msgs.msg import Empty, String
-from visualization_msgs.msg import MarkerArray  # change if /hazards uses another type
+from visualization_msgs.msg import MarkerArray
 
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 from snc_interfaces.srv import ExplorationControl
-
+from snc.constants import (
+    TRIGGER_HOME_BUFFER_SIZE,
+    TRIGGER_HOME_INTERFACE,
+    TRIGGER_HOME_TOPIC,
+    RETURN_HOME_TRAJECTORY_BUFFER_SIZE, 
+    RETURN_HOME_TRAJECTORY_TOPIC,
+    RETURN_HOME_TRAJECTORY_INTERFACE,
+    EXPLORE_BREADCRUMBS_TOPIC,
+    EXPLORE_BREADCRUMBS_INTERFACE,
+    EXPLORE_BREADCRUMBS_BUFFER_SIZE,
+    RETURN_BREADCRUMBS_TOPIC,
+    RETURN_BREADCRUMBS_INTERFACE,
+    RETURN_BREADCRUMBS_BUFFER_SIZE
+)
 
 MAP_UNKNOWN = -1
 MAP_FREE = 0
@@ -49,11 +62,11 @@ class ExplorationNode(Node):
 
         self.declare_parameter('planner_frequency', 1.0)
         self.declare_parameter('status_frequency', 1.0)
-        self.declare_parameter('exploration_timeout_sec', 240.0)
+        self.declare_parameter('exploration_timeout_sec', 2000.0)
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
-        self.declare_parameter('min_frontier_cluster_size', 5)
-        self.declare_parameter('frontier_standoff_m', 0.25)
+        self.declare_parameter('min_frontier_cluster_size', 50)
+        self.declare_parameter('frontier_standoff_m', 0.1)
 
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
@@ -116,6 +129,13 @@ class ExplorationNode(Node):
             MarkerArray,   # replace if your /hazards topic uses another type
             '/hazards',
             self.hazards_callback,
+            10
+        )
+
+        self.path_tracing_sub = self.create_subscription(
+            EXPLORE_BREADCRUMBS_INTERFACE,
+            EXPLORE_BREADCRUMBS_TOPIC,
+            self.path_explore_callback,
             10
         )
 
@@ -275,6 +295,10 @@ class ExplorationNode(Node):
         response.message = f'Unsupported command: {request.command}'
         return response
 
+    def path_explore_callback(self, msg):
+        poses = msg.poses
+        
+
     # ---------- exploration control ----------
     def start_exploration(self):
         self.started = True
@@ -423,15 +447,60 @@ class ExplorationNode(Node):
                         return True
         return False
 
-    def extract_frontier_cells(self, grid, width, height):
-        frontier_cells = []
-        for y in range(height):
-            for x in range(width):
-                if not self.is_cell_traversable(grid[y, x]):
+    def get_reachable_cells(self, grid, width, height, start_x, start_y):
+        if not (0 <= start_x < width and 0 <= start_y < height):
+            return set()
+
+        if not self.is_cell_traversable(grid[start_y, start_x]):
+            return set()
+
+        reachable_cells = set()
+        q = collections.deque([(start_x, start_y)])
+        reachable_cells.add((start_x, start_y))
+
+        while q:
+            cx, cy = q.popleft()
+
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nx, ny = cx + dx, cy + dy
+                if not (0 <= nx < width and 0 <= ny < height):
                     continue
-                if self.cell_has_unknown_neighbours(grid, x, y, width, height):
-                    frontier_cells.append((x, y))
+                if (nx, ny) in reachable_cells:
+                    continue
+                if not self.is_cell_traversable(grid[ny, nx]):
+                    continue
+                
+                reachable_cells.add((nx, ny))
+                q.append((nx, ny))
+
+        return reachable_cells
+
+    def extract_frontier_cells(self, grid, width, height, reachable_cells):
+        frontier_cells = []
+        for x, y in reachable_cells:
+            if self.cell_has_unknown_neighbours(grid, x, y, width, height):
+                frontier_cells.append((x, y))
+
         return frontier_cells
+
+    def rank_frontier_clusters(self, clusters, robot_x, robot_y):
+        ranked = []
+
+        for cluster in clusters:
+            if len(cluster) < self.min_frontier_cluster_size:
+                continue
+
+            centroid_x = sum(c[0] for c in cluster) / len(cluster)
+            centroid_y = sum(c[1] for c in cluster) / len(cluster)
+
+            dist = math.hypot(centroid_x - robot_x, centroid_y - robot_y)
+            size_bonus = 0.2 * len(cluster)
+            score = dist - size_bonus
+
+            ranked.append((score, cluster))
+
+        ranked.sort(key=lambda x: x[0])
+        return [cluster for _, cluster in ranked]
 
     def cluster_frontiers(self, frontier_cells):
         frontier_set = set(frontier_cells)
@@ -462,29 +531,6 @@ class ExplorationNode(Node):
             clusters.append(cluster)
 
         return clusters
-
-    def choose_frontier_cluster(self, clusters, robot_x, robot_y):
-        best_cluster = None
-        best_score = None
-
-        for cluster in clusters:
-            if len(cluster) < self.min_frontier_cluster_size:
-                continue
-
-            centroid_x = sum(c[0] for c in cluster) / len(cluster)
-            centroid_y = sum(c[1] for c in cluster) / len(cluster)
-
-            dist = math.hypot(centroid_x - robot_x, centroid_y - robot_y)
-            size_bonus = 0.2 * len(cluster)
-
-            # smaller is better
-            score = dist - size_bonus
-
-            if best_score is None or score < best_score:
-                best_score = score
-                best_cluster = cluster
-
-        return best_cluster
 
     def backoff_goal_cell(self, cluster, robot_x, robot_y):
         centroid_x = sum(c[0] for c in cluster) / len(cluster)
@@ -520,25 +566,57 @@ class ExplorationNode(Node):
         robot_y = int((robot_pose.pose.position.y - origin.y) / res)
 
         if not (0 <= robot_x < width and 0 <= robot_y < height):
+            self.get_logger().warn('Robot pose is outside map bounds')
             return None
 
-        frontier_cells = self.extract_frontier_cells(grid, width, height)
+        if not self.is_cell_traversable(grid[robot_y, robot_x]):
+            found = False
+            for radius in range(1, 6):
+                for dx in range(-radius, radius + 1):
+                    for dy in range(-radius, radius + 1):
+                        nx, ny = robot_x + dx, robot_y + dy
+                        if 0 <= nx < width and 0 <= ny < height:
+                            if self.is_cell_traversable(grid[ny, nx]):
+                                robot_x, robot_y = nx, ny
+                                found = True
+                                break
+
+                    if found:
+                        break
+
+                if found: 
+                    break
+
+            if not found:
+                self.get_logger().warn('Could not find traversable start cell near robot')
+                return None
+
+        reachable_cells = self.get_reachable_cells(grid, width, height, robot_x, robot_y)
+        frontier_cells = self.extract_frontier_cells(grid, width, height, reachable_cells)
+        
+        self.get_logger().info(f'reachable={len(reachable_cells)}, frontier_cells={len(frontier_cells)}')
+        
         if not frontier_cells:
             return None
 
         clusters = self.cluster_frontiers(frontier_cells)
-        best_cluster = self.choose_frontier_cluster(clusters, robot_x, robot_y)
-        if best_cluster is None:
-            return None
+        ranked_clusters = self.rank_frontier_clusters(clusters, robot_x, robot_y)
+        
+        self.get_logger().info(f'clusters={len(clusters)}, ranked_clusters={len(ranked_clusters)}')
+        
+        for cluster in ranked_clusters:
+            goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
 
-        goal_x, goal_y = self.backoff_goal_cell(best_cluster, robot_x, robot_y)
+            if not (0 <= goal_x < width and 0 <= goal_y < height):
+                return None
+            if not self.is_cell_traversable(grid[goal_y, goal_x]):
+                return None
 
-        if not (0 <= goal_x < width and 0 <= goal_y < height):
-            return None
-        if not self.is_cell_traversable(grid[goal_y, goal_x]):
-            return None
+            self.get_logger().info(f'selected cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
 
-        return self.create_pose(goal_x, goal_y, res, origin)
+            return self.create_pose(goal_x, goal_y, res, origin)
+
+        self.get_logger().warn('Frontier clusters exist, but no valid backed-off goal was found')
 
     def create_pose(self, mx, my, res, origin):
         pose = PoseStamped()
