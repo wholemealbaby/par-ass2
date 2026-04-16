@@ -48,12 +48,7 @@ from snc.path_tracing_core import (
 
 class PathTracingNode(Node):
     def __init__(self, params=None):
-        """self.sub_home_trigger = self.create_subscription(
-            Empty,
-            HOME_TRIGGER_TOPIC,
-            self.home_trigger_callback,
-            HOME_TRIGGER_BUFFER_SIZE
-        )
+        """
         Initialize the PathTracingNode.
         
         Args:
