@@ -81,13 +81,13 @@ class PathTracingNode(Node):
             PATH_EXPLORE_TOPIC,
             PATH_EXPLORE_BUFFER_SIZE
         )
-        # Publisher for /breadcrumbs_explore to publish the breadcrumbs taken during exploration
-        # for Node 1 to improve exploration
-        self.pub_explore_breadcrumbs = self.create_publisher(
-            EXPLORE_BREADCRUMBS_INTERFACE,
-            EXPLORE_BREADCRUMBS_TOPIC,
-            EXPLORE_BREADCRUMBS_BUFFER_SIZE
-        )
+        # # Publisher for /breadcrumbs_explore to publish the breadcrumbs taken during exploration
+        # # for Node 1 to improve exploration
+        # self.pub_explore_breadcrumbs = self.create_publisher(
+        #     EXPLORE_BREADCRUMBS_INTERFACE,
+        #     EXPLORE_BREADCRUMBS_TOPIC,
+        #     EXPLORE_BREADCRUMBS_BUFFER_SIZE
+        # )
         # Publisher for /breadcrumbs_return to publish the path taken during return
         # for assessors to evaluate
         self.pub_path_return = self.create_publisher(
