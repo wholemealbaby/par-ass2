@@ -7,7 +7,8 @@ from std_msgs.msg import Empty
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from nav2_simple_commander.robot_navigator import BasicNavigator
+from snc.exploration_control import ExplorationController
 
 from snc.constants import (
     GO_HOME_TOPIC,
@@ -51,6 +52,7 @@ class PathTracingNode(Node):
 
         # Navigator
         self.nav = BasicNavigator()
+        self.exploration_controller = ExplorationController(self.nav)
 
         # Configure parameters with defaults
         params = params or {}
@@ -210,18 +212,22 @@ class PathTracingNode(Node):
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
 
+        # Stop exploration
+        self.exploration_controller.stop()
+
         # Calculate the return trajectory and handle log failures
         return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs)
         if return_trajectory is not None:
             self.return_path = Path(header=return_trajectory[0].header, poses=return_trajectory)
         else:
             self.get_logger().error("Failed to calculate return trajectory, no path will be published")
+            return
  
-        # TODO: add exploration control call
-
         # Small delay to let the controllers settle
+        self.get_clock().sleep_for(Duration(seconds=1.0))
         
         self.get_logger().info('Navigating Home...')
+        self.nav.followPath(self.return_path)
 
     
     def wait_for_robot_pose(self):
