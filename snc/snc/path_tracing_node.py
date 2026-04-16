@@ -3,23 +3,33 @@
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
+from std_msgs.msg import Empty
 from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 from snc.constants import (
-    TRIGGER_HOME_BUFFER_SIZE,
-    TRIGGER_HOME_INTERFACE,
-    TRIGGER_HOME_TOPIC,
-    RETURN_HOME_TRAJECTORY_BUFFER_SIZE, 
-    RETURN_HOME_TRAJECTORY_TOPIC,
-    RETURN_HOME_TRAJECTORY_INTERFACE,
     EXPLORE_BREADCRUMBS_TOPIC,
-    EXPLORE_BREADCRUMBS_INTERFACE,
     EXPLORE_BREADCRUMBS_BUFFER_SIZE,
+    EXPLORE_BREADCRUMBS_INTERFACE,
     RETURN_BREADCRUMBS_TOPIC,
+    RETURN_BREADCRUMBS_BUFFER_SIZE,
     RETURN_BREADCRUMBS_INTERFACE,
-    RETURN_BREADCRUMBS_BUFFER_SIZE
+    RETURN_HOME_TRAJECTORY_TOPIC,
+    RETURN_HOME_TRAJECTORY_BUFFER_SIZE, 
+    RETURN_HOME_TRAJECTORY_INTERFACE,
+    PATH_EXPLORE_TOPIC,
+    PATH_EXPLORE_BUFFER_SIZE,
+    PATH_EXPLORE_INTERFACE,
+    PATH_RETURN_TOPIC,
+    PATH_RETURN_BUFFER_SIZE,
+    PATH_RETURN_INTERFACE,
+)
+from snc.constants import (
+    TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE, 
+    TRIGGER_START_TOPIC, TRIGGER_START_BUFFER_SIZE, TRIGGER_START_INTERFACE,
+    TRIGGER_TELEOP_TOPIC, TRIGGER_TELEOP_BUFFER_SIZE, TRIGGER_TELEOP_INTERFACE,
 )
 import math
 import tf_transformations
@@ -38,7 +48,12 @@ from snc.path_tracing_core import (
 
 class PathTracingNode(Node):
     def __init__(self, params=None):
-        """
+        """self.sub_home_trigger = self.create_subscription(
+            Empty,
+            HOME_TRIGGER_TOPIC,
+            self.home_trigger_callback,
+            HOME_TRIGGER_BUFFER_SIZE
+        )
         Initialize the PathTracingNode.
         
         Args:
@@ -72,25 +87,28 @@ class PathTracingNode(Node):
             self.home_trigger_callback,
             TRIGGER_HOME_BUFFER_SIZE
         )
-        # Publisher for explore breadcrumbs
+        # Publisher for /path_explore to publish the path taken during exploration 
+        # for assessors to evaluate
         self.pub_path_explore = self.create_publisher(
+            PATH_EXPLORE_INTERFACE,
+            PATH_EXPLORE_TOPIC,
+            PATH_EXPLORE_BUFFER_SIZE
+        )
+        # Publisher for /breadcrumbs_explore to publish the breadcrumbs taken during exploration
+        # for Node 1 to improve exploration
+        self.pub_explore_breadcrumbs = self.create_publisher(
             EXPLORE_BREADCRUMBS_INTERFACE,
             EXPLORE_BREADCRUMBS_TOPIC,
             EXPLORE_BREADCRUMBS_BUFFER_SIZE
         )
-        # Publisher for return breadcrumbs
+        # Publisher for /breadcrumbs_return to publish the path taken during return
+        # for assessors to evaluate
         self.pub_path_return = self.create_publisher(
-            RETURN_BREADCRUMBS_INTERFACE,
-            RETURN_BREADCRUMBS_TOPIC,
-            RETURN_BREADCRUMBS_BUFFER_SIZE
+            PATH_RETURN_INTERFACE,
+            PATH_RETURN_TOPIC,
+            PATH_RETURN_BUFFER_SIZE
         )
-        # Publisher for final return trajectory
-        self.pub_return_home_trajectory = self.create_publisher(
-            RETURN_HOME_TRAJECTORY_INTERFACE,
-            RETURN_HOME_TRAJECTORY_TOPIC,
-            RETURN_HOME_TRAJECTORY_BUFFER_SIZE
-        )
-        # Timer to sample the robot's pose at regular intervals
+
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
     
     def check_base_link_map_transform_possible(self):
@@ -192,15 +210,24 @@ class PathTracingNode(Node):
     def home_trigger_callback(self, msg):
         self.get_logger().info('Home trigger received, starting path tracing')
         self.return_triggered = True
+
+        # Reset last recorded pose and yaw to ensure the first return waypoint 
+        # is recorded regardless of distance/rotation from the last explore waypoint
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
+
+        # Calculate the return trajectory and handle log failures
         return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs)
         if return_trajectory is not None:
             self.return_path = Path(header=return_trajectory[0].header, poses=return_trajectory)
         else:
             self.get_logger().error("Failed to calculate return trajectory, no path will be published")
         self.pub_return_home_trajectory.publish(self.return_path)
-        self.nav.followPath(return_trajectory)
+ 
+        # TODO: add exploration control call
+
+        # Small delay to let the controllers settle
+        
         self.get_logger().info('Navigating Home...')
 
     
