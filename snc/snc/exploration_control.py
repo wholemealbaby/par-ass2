@@ -24,18 +24,22 @@ class ExplorationController:
         return future.result()
     
     def start(self):
+        """Starts the exploration process with all frontiers unexplored."""
         self.nav.get_logger().info("Starting exploration...")
         return self.__control_exploration("START")
 
     def stop(self):
+        """Stops the exploration process."""
         self.nav.get_logger().info("Stopping exploration...")
         return self.__control_exploration("STOP")
 
     def resume(self):
+        """Resumes the exploration process, allowing it to continue from where it left off."""
         self.nav.get_logger().info("Resuming exploration...")
         return self.__control_exploration("RESUME")
     
     def teleop(self):
+        """Switches to teleop control."""
         self.nav.get_logger().info("Switching to teleop control...")
         return self.__control_exploration("TELEOP")
     
