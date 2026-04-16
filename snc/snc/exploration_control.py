@@ -1,10 +1,40 @@
 import rclpy
 from snc.ExplorationNode import ExplorationControl
-
+from nav_msgs.msg import Path
+from sc.constants import (
+    TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE, 
+    TRIGGER_START_TOPIC, TRIGGER_START_BUFFER_SIZE, TRIGGER_START_INTERFACE,
+    TRIGGER_TELEOP_TOPIC, TRIGGER_TELEOP_BUFFER_SIZE, TRIGGER_TELEOP_INTERFACE,
+    SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE
+)
 class ExplorationController:
     def __init__(self, nav):
         self.nav = nav
         self.client = self.nav.create_client(ExplorationControl, '/snc_exploration_control')
+
+        # Publishers for /trigger_start, /trigger_home, /trigger_teleop, and /snc_status
+        self.pub_trigger_start = self.create_publisher(
+            TRIGGER_START_INTERFACE,
+            TRIGGER_START_TOPIC,
+            TRIGGER_START_BUFFER_SIZE
+        )
+        self.pub_trigger_teleop = self.create_publisher(
+            TRIGGER_TELEOP_INTERFACE,
+            TRIGGER_TELEOP_TOPIC,
+            TRIGGER_TELEOP_BUFFER_SIZE
+        )
+        self.pub_trigger_home = self.create_publisher(
+            TRIGGER_HOME_INTERFACE,
+            TRIGGER_HOME_TOPIC,
+            TRIGGER_HOME_BUFFER_SIZE
+        )
+        self.pub_snc_status = self.create_publisher(
+            SNC_STATUS_INTERFACE,
+            SNC_STATUS_TOPIC,
+            SNC_STATUS_BUFFER_SIZE
+        )
+
+        # Wait for the Navigation Node to be available before proceeding
         self.wait_for_service()
 
     def wait_for_service(self):
