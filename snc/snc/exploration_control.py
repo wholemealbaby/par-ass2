@@ -11,7 +11,7 @@ class ExplorationController:
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.nav.get_logger().info('Exploration service not available, waiting...')
 
-    def control_exploration(self, command_string):
+    def __control_exploration(self, command_string):
         """
         Sends a START or STOP command to the exploration service.
         """
@@ -22,7 +22,23 @@ class ExplorationController:
         rclpy.spin_until_future_complete(self.nav, future)
         
         return future.result()
+    
+    def start(self):
+        self.nav.get_logger().info("Starting exploration...")
+        return self.__control_exploration("START")
 
+    def stop(self):
+        self.nav.get_logger().info("Stopping exploration...")
+        return self.__control_exploration("STOP")
+
+    def resume(self):
+        self.nav.get_logger().info("Resuming exploration...")
+        return self.__control_exploration("RESUME")
+    
+    def teleop(self):
+        self.nav.get_logger().info("Switching to teleop control...")
+        return self.__control_exploration("TELEOP")
+    
 # --- Example Usage in your Overriding Logic ---
 
 # controller = ExplorationController(nav)
