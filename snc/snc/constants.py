@@ -88,6 +88,11 @@ HOME_TRIGGER_TOPIC = '/trigger_home'
 HOME_TRIGGER_BUFFER_SIZE = 1
 HOME_TRIGGER_INTERFACE = Path
 
+# Go home signal topic to trigger return path tracing
+GO_HOME_TOPIC = '/go_home'
+GO_HOME_INTERFACE = Empty
+GO_HOME_BUFFER_SIZE = 1
+
 # Trigger Listener Topics
 TRIGGER_START_TOPIC = '/trigger_start'
 TRIGGER_START_INTERFACE = Empty
