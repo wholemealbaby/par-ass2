@@ -7,6 +7,8 @@ from std_msgs.msg import Empty
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+
 from snc.constants import (
     EXPLORE_BREADCRUMBS_BUFFER_SIZE,
     RETURN_BREADCRUMBS_BUFFER_SIZE,
@@ -18,7 +20,6 @@ from snc.constants import (
     RETURN_BREADCRUMBS_TOPIC
 )
 import math
-from geometry_msgs.msg import Transform
 import tf_transformations
 
 
@@ -43,6 +44,9 @@ class PathTracingNode(Node):
         """
         super().__init__('path_tracing_node')
         self.get_logger().info('Path tracing node launched')
+
+        # Navigator
+        self.nav = BasicNavigator()
 
         # Configure parameters with defaults
         params = params or {}
@@ -194,8 +198,9 @@ class PathTracingNode(Node):
         else:
             self.get_logger().error("Failed to calculate return trajectory, no path will be published")
         self.pub_return_home_trajectory.publish(self.return_path)
+        self.nav.followPath(return_trajectory)
+        self.get_logger().info('Navigating Home...')
 
-        
     
     def wait_for_robot_pose(self):
         """Wait for the robot pose transform to become available."""
