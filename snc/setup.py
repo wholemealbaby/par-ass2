@@ -31,6 +31,8 @@ setup(
             'navigation_node = snc.navigation_node:main',
             'marker_detection_node = snc.marker_detection_node:main',
             'path_tracing_node = snc.path_tracing_node:main',
+            'best_effort_repeater = snc.best_effort_repeater:main',
+            'trigger_listener = snc.trigger_listener:main',
         ],
     },
 )

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+# Setup direnv for bash or zsh
+
+SHELL_CONFIG=""
+
+# Detect shell
+if [[ "$ZSH_VERSION" != "" ]]; then
+    SHELL_CONFIG="$HOME/.zshrc"
+elif [[ "$BASH_VERSION" != "" ]]; then
+    SHELL_CONFIG="$HOME/.bashrc"
+else
+    echo "Error: Could not detect shell. Please set up direnv manually."
+    exit 1
+fi
+
+# Check if direnv is installed
+if ! command -v direnv &> /dev/null; then
+    echo "Error: direnv is not installed. Please install it first."
+    echo "  Ubuntu/Debian: sudo apt install direnv"
+    echo "  macOS: brew install direnv"
+    exit 1
+fi
+
+# Add direnv hook if not already present
+if ! grep -q "eval.*direnv.*hook" "$SHELL_CONFIG"; then
+    echo "" >> "$SHELL_CONFIG"
+    echo "# direnv hook" >> "$SHELL_CONFIG"
+    if [[ "$ZSH_VERSION" != "" ]]; then
+        echo 'eval "$(direnv hook zsh)"' >> "$SHELL_CONFIG"
+    else
+        echo 'eval "$(direnv hook bash)"' >> "$SHELL_CONFIG"
+    fi
+    echo "Added direnv hook to $SHELL_CONFIG"
+else
+    echo "direnv hook already exists in $SHELL_CONFIG"
+fi
+
+# Manual Hooks (Sanity Check)
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+
+echo ""
+echo "direnv setup complete!"
+echo "1. Reload your shell: source $SHELL_CONFIG"
+echo "2. Navigate to snc directory and run: direnv allow"

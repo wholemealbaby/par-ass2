@@ -9,3 +9,5 @@ services:
     tty: true
     stdin_open: true
     # This automatically merges with the robot's /home/husarion/compose.yaml
+    # Remove orphaned containers when stopping/down
+    stop_grace_period: 3s
