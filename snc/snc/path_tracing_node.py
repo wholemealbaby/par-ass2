@@ -216,7 +216,6 @@ class PathTracingNode(Node):
             self.return_path = Path(header=return_trajectory[0].header, poses=return_trajectory)
         else:
             self.get_logger().error("Failed to calculate return trajectory, no path will be published")
-        # self.pub_return_home_trajectory.publish(self.return_path)
  
         # TODO: add exploration control call
 
