@@ -19,9 +19,15 @@ import threading
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from snc.constants import (
-    EXPLORE_BREADCRUMBS_TOPIC,
-    RETURN_BREADCRUMBS_TOPIC,
-    HOME_TRIGGER_TOPIC
+    PATH_EXPLORE_TOPIC,
+    PATH_EXPLORE_BUFFER_SIZE,
+    PATH_EXPLORE_INTERFACE,
+    PATH_RETURN_TOPIC,
+    PATH_RETURN_BUFFER_SIZE,
+    PATH_RETURN_INTERFACE,
+    TRIGGER_HOME_TOPIC,
+    TRIGGER_HOME_BUFFER_SIZE,
+    TRIGGER_HOME_INTERFACE
 )
 
 class PathTracingRuntimeTest(Node):
@@ -39,25 +45,25 @@ class PathTracingRuntimeTest(Node):
         
         # Subscribe to path topics
         self.explore_sub = self.create_subscription(
-            Path,
-            EXPLORE_BREADCRUMBS_TOPIC,
+            PATH_EXPLORE_INTERFACE,
+            PATH_EXPLORE_TOPIC,
             self.explore_path_callback,
-            10
+            PATH_EXPLORE_BUFFER_SIZE
         )
         
         self.return_sub = self.create_subscription(
-            Path,
-            RETURN_BREADCRUMBS_TOPIC,
+            PATH_RETURN_INTERFACE,
+            PATH_RETURN_TOPIC,
             self.return_path_callback,
-            10
+            PATH_RETURN_BUFFER_SIZE
         )
         
         # Subscribe to home trigger
         self.home_trigger_sub = self.create_subscription(
-            Empty,
-            HOME_TRIGGER_TOPIC,
+            TRIGGER_HOME_INTERFACE,
+            TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
-            10
+            TRIGGER_HOME_BUFFER_SIZE
         )
         
         # Test duration and timeout
@@ -69,9 +75,9 @@ class PathTracingRuntimeTest(Node):
         
         self.get_logger().info('Path tracing runtime test initialized')
         self.get_logger().info(f'Subscribed to topics:')
-        self.get_logger().info(f'  - {EXPLORE_BREADCRUMBS_TOPIC}')
-        self.get_logger().info(f'  - {RETURN_BREADCRUMBS_TOPIC}')
-        self.get_logger().info(f'  - {HOME_TRIGGER_TOPIC}')
+        self.get_logger().info(f'  - {PATH_EXPLORE_TOPIC}')
+        self.get_logger().info(f'  - {PATH_RETURN_TOPIC}')
+        self.get_logger().info(f'  - {TRIGGER_HOME_TOPIC}')
 
     def explore_path_callback(self, msg):
         """Callback for explore path messages"""
