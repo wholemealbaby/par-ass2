@@ -1,0 +1,215 @@
+FO] [sync_slam_toolbox_node-4]: process started with pid [280]
+[marker_detection_node-2] [INFO] [1776392823.570569452] [marker_detection_node]: Marker detection node launched
+[path_tracing_node-3] [INFO] [1776392824.244885834] [path_tracing_node]: Path tracing node launched
+[path_tracing_node-3] [WARN] [1776392824.246920397] [rcl.logging_rosout]: Publisher already registered for node name: 'path_tracing_node'. If this is due to multiple nodes with the same name then all logs for the logger named 'path_tracing_node' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[navigation_node-1] [WARN] [1776392826.139430763] [rcl.logging_rosout]: Publisher already registered for node name: 'navigation_node'. If this is due to multiple nodes with the same name then all logs for the logger named 'navigation_node' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[navigation_node-1] [INFO] [1776392829.639504523] [navigation_node]: Exploration node created
+[navigation_node-1] [INFO] [1776392829.640727083] [navigation_node]: Waiting for Nav2 to become active...
+[path_tracing_node-3] [INFO] [1776392830.919102117] [path_tracing_node]: Stored explore waypoint 1
+[path_tracing_node-3] [INFO] [1776392833.913210140] [path_tracing_node]: Stored explore waypoint 2
+[navigation_node-1] [INFO] [1776392834.031856049] [navigation_node]: Nav2 is ready for use!
+[navigation_node-1] [INFO] [1776392834.032565144] [navigation_node]: Nav2 is active
+[navigation_node-1] [INFO] [1776392834.034901818] [navigation_node]: Waiting for TF map -> base_link...
+[path_tracing_node-3] [INFO] [1776392834.417585946] [path_tracing_node]: Stored explore waypoint 3
+[navigation_node-1] [INFO] [1776392834.549854936] [navigation_node]: New last path len: 1
+[navigation_node-1] [INFO] [1776392834.960302766] [navigation_node]: New last path len: 2
+[navigation_node-1] [INFO] [1776392835.164187436] [navigation_node]: New last path len: 3
+[path_tracing_node-3] [INFO] [1776392836.412400260] [path_tracing_node]: Stored explore waypoint 4
+[navigation_node-1] [INFO] [1776392836.597638128] [navigation_node]: New last path len: 4
+[path_tracing_node-3] [INFO] [1776392836.912201236] [path_tracing_node]: Stored explore waypoint 5
+[navigation_node-1] [INFO] [1776392837.107273395] [navigation_node]: New last path len: 5
+[navigation_node-1] [INFO] [1776392837.229717871] [navigation_node]: Robot pose TF is available
+[navigation_node-1] [INFO] [1776392837.230623597] [navigation_node]: Waiting for occupancy grid /map...
+[navigation_node-1] [INFO] [1776392837.233241272] [navigation_node]: Exploration node is ready and waiting for /snc_start
+[path_tracing_node-3] [INFO] [1776392849.912179285] [path_tracing_node]: Stored explore waypoint 6
+[navigation_node-1] [INFO] [1776392849.941867735] [navigation_node]: New last path len: 6
+[path_tracing_node-3] [INFO] [1776392850.912919370] [path_tracing_node]: Stored explore waypoint 7
+[navigation_node-1] [INFO] [1776392850.920165838] [navigation_node]: New last path len: 7
+[path_tracing_node-3] [INFO] [1776392851.912055486] [path_tracing_node]: Stored explore waypoint 8
+[navigation_node-1] [INFO] [1776392851.938113183] [navigation_node]: New last path len: 8
+[path_tracing_node-3] [INFO] [1776392853.412814992] [path_tracing_node]: Stored explore waypoint 9
+[navigation_node-1] [INFO] [1776392853.436897515] [navigation_node]: New last path len: 9
+[path_tracing_node-3] [INFO] [1776392853.913126580] [path_tracing_node]: Stored explore waypoint 10
+[navigation_node-1] [INFO] [1776392853.921113255] [navigation_node]: New last path len: 10
+[path_tracing_node-3] [INFO] [1776392854.412031720] [path_tracing_node]: Stored explore waypoint 11
+[navigation_node-1] [INFO] [1776392854.423097737] [navigation_node]: New last path len: 11
+[path_tracing_node-3] [INFO] [1776392855.412400766] [path_tracing_node]: Stored explore waypoint 12
+[navigation_node-1] [INFO] [1776392855.420595515] [navigation_node]: New last path len: 12
+[path_tracing_node-3] [INFO] [1776392855.912766632] [path_tracing_node]: Stored explore waypoint 13
+[navigation_node-1] [INFO] [1776392855.920949733] [navigation_node]: New last path len: 13
+[path_tracing_node-3] [INFO] [1776392856.412773164] [path_tracing_node]: Stored explore waypoint 14
+[navigation_node-1] [INFO] [1776392856.421990657] [navigation_node]: New last path len: 14
+[path_tracing_node-3] [INFO] [1776392856.912708696] [path_tracing_node]: Stored explore waypoint 15
+[navigation_node-1] [INFO] [1776392856.921461743] [navigation_node]: New last path len: 15
+[path_tracing_node-3] [INFO] [1776392857.913096853] [path_tracing_node]: Stored explore waypoint 16
+[navigation_node-1] [INFO] [1776392857.918952206] [navigation_node]: New last path len: 16
+[path_tracing_node-3] [INFO] [1776392858.413066867] [path_tracing_node]: Stored explore waypoint 17
+[navigation_node-1] [INFO] [1776392858.421657876] [navigation_node]: New last path len: 17
+[path_tracing_node-3] [INFO] [1776392858.912759675] [path_tracing_node]: Stored explore waypoint 18
+[navigation_node-1] [INFO] [1776392858.937189589] [navigation_node]: New last path len: 18
+[path_tracing_node-3] [INFO] [1776392859.413397042] [path_tracing_node]: Stored explore waypoint 19
+[navigation_node-1] [INFO] [1776392859.420774419] [navigation_node]: New last path len: 19
+[path_tracing_node-3] [INFO] [1776392861.912410773] [path_tracing_node]: Stored explore waypoint 20
+[navigation_node-1] [INFO] [1776392861.928072102] [navigation_node]: New last path len: 20
+[path_tracing_node-3] [INFO] [1776392862.413000991] [path_tracing_node]: Stored explore waypoint 21
+[navigation_node-1] [INFO] [1776392862.421764335] [navigation_node]: New last path len: 21
+[path_tracing_node-3] [INFO] [1776392862.912729930] [path_tracing_node]: Stored explore waypoint 22
+[navigation_node-1] [INFO] [1776392862.923379613] [navigation_node]: New last path len: 22
+[path_tracing_node-3] [INFO] [1776392863.412541239] [path_tracing_node]: Stored explore waypoint 23
+[navigation_node-1] [INFO] [1776392863.420544710] [navigation_node]: New last path len: 23
+[path_tracing_node-3] [INFO] [1776392863.912050769] [path_tracing_node]: Stored explore waypoint 24
+[navigation_node-1] [INFO] [1776392863.919688924] [navigation_node]: New last path len: 24
+[path_tracing_node-3] [INFO] [1776392864.912934539] [path_tracing_node]: Stored explore waypoint 25
+[navigation_node-1] [INFO] [1776392864.923288833] [navigation_node]: New last path len: 25
+[path_tracing_node-3] [INFO] [1776392865.914718387] [path_tracing_node]: Stored explore waypoint 26
+[navigation_node-1] [INFO] [1776392865.972769244] [navigation_node]: New last path len: 26
+[path_tracing_node-3] [INFO] [1776392866.412867986] [path_tracing_node]: Stored explore waypoint 27
+[navigation_node-1] [INFO] [1776392866.430710064] [navigation_node]: New last path len: 27
+[path_tracing_node-3] [INFO] [1776392867.412448419] [path_tracing_node]: Stored explore waypoint 28
+[navigation_node-1] [INFO] [1776392867.470383035] [navigation_node]: New last path len: 28
+[path_tracing_node-3] [INFO] [1776392867.912455432] [path_tracing_node]: Stored explore waypoint 29
+[navigation_node-1] [INFO] [1776392868.022983629] [navigation_node]: New last path len: 29
+[path_tracing_node-3] [INFO] [1776392868.412202797] [path_tracing_node]: Stored explore waypoint 30
+[navigation_node-1] [INFO] [1776392868.425701637] [navigation_node]: New last path len: 30
+[path_tracing_node-3] [INFO] [1776392868.912177477] [path_tracing_node]: Stored explore waypoint 31
+[navigation_node-1] [INFO] [1776392868.921060821] [navigation_node]: New last path len: 31
+[path_tracing_node-3] [INFO] [1776392870.413335187] [path_tracing_node]: Stored explore waypoint 32
+[navigation_node-1] [INFO] [1776392870.420938138] [navigation_node]: New last path len: 32
+[path_tracing_node-3] [INFO] [1776392871.412566396] [path_tracing_node]: Stored explore waypoint 33
+[navigation_node-1] [INFO] [1776392871.420125255] [navigation_node]: New last path len: 33
+[path_tracing_node-3] [INFO] [1776392872.412498627] [path_tracing_node]: Stored explore waypoint 34
+[navigation_node-1] [INFO] [1776392872.461545602] [navigation_node]: New last path len: 34
+[path_tracing_node-3] [INFO] [1776392872.913523810] [path_tracing_node]: Stored explore waypoint 35
+[navigation_node-1] [INFO] [1776392872.936916257] [navigation_node]: New last path len: 35
+[path_tracing_node-3] [INFO] [1776392873.412555727] [path_tracing_node]: Stored explore waypoint 36
+[navigation_node-1] [INFO] [1776392873.419778288] [navigation_node]: New last path len: 36
+[path_tracing_node-3] [INFO] [1776392874.412167734] [path_tracing_node]: Stored explore waypoint 37
+[navigation_node-1] [INFO] [1776392874.420809837] [navigation_node]: New last path len: 37
+[path_tracing_node-3] [INFO] [1776392874.912528786] [path_tracing_node]: Stored explore waypoint 38
+[navigation_node-1] [INFO] [1776392874.923260599] [navigation_node]: New last path len: 38
+[path_tracing_node-3] [INFO] [1776392875.413009023] [path_tracing_node]: Stored explore waypoint 39
+[navigation_node-1] [INFO] [1776392875.429617152] [navigation_node]: New last path len: 39
+[path_tracing_node-3] [INFO] [1776392876.413738682] [path_tracing_node]: Stored explore waypoint 40
+[navigation_node-1] [INFO] [1776392876.420924205] [navigation_node]: New last path len: 40
+[path_tracing_node-3] [INFO] [1776392877.413065743] [path_tracing_node]: Stored explore waypoint 41
+[navigation_node-1] [INFO] [1776392877.420235581] [navigation_node]: New last path len: 41
+[path_tracing_node-3] [INFO] [1776392877.912234087] [path_tracing_node]: Stored explore waypoint 42
+[navigation_node-1] [INFO] [1776392877.965267539] [navigation_node]: New last path len: 42
+[path_tracing_node-3] [INFO] [1776392878.912178336] [path_tracing_node]: Stored explore waypoint 43
+[navigation_node-1] [INFO] [1776392878.999901179] [navigation_node]: New last path len: 43
+[path_tracing_node-3] [INFO] [1776392879.414086855] [path_tracing_node]: Stored explore waypoint 44
+[navigation_node-1] [INFO] [1776392879.422213104] [navigation_node]: New last path len: 44
+[path_tracing_node-3] [INFO] [1776392880.412777674] [path_tracing_node]: Stored explore waypoint 45
+[navigation_node-1] [INFO] [1776392880.422992652] [navigation_node]: New last path len: 45
+[path_tracing_node-3] [INFO] [1776392881.412283810] [path_tracing_node]: Stored explore waypoint 46
+[navigation_node-1] [INFO] [1776392881.419865279] [navigation_node]: New last path len: 46
+[path_tracing_node-3] [INFO] [1776392881.912366749] [path_tracing_node]: Stored explore waypoint 47
+[navigation_node-1] [INFO] [1776392881.921030574] [navigation_node]: New last path len: 47
+[path_tracing_node-3] [INFO] [1776392882.412631541] [path_tracing_node]: Stored explore waypoint 48
+[navigation_node-1] [INFO] [1776392882.462031407] [navigation_node]: New last path len: 48
+[path_tracing_node-3] [INFO] [1776392883.412530086] [path_tracing_node]: Stored explore waypoint 49
+[navigation_node-1] [INFO] [1776392883.421001836] [navigation_node]: New last path len: 49
+[path_tracing_node-3] [INFO] [1776392883.913121435] [path_tracing_node]: Stored explore waypoint 50
+[navigation_node-1] [INFO] [1776392883.922434780] [navigation_node]: New last path len: 50
+[path_tracing_node-3] [INFO] [1776392884.412941559] [path_tracing_node]: Stored explore waypoint 51
+[navigation_node-1] [INFO] [1776392884.421434901] [navigation_node]: New last path len: 51
+[path_tracing_node-3] [INFO] [1776392884.912212347] [path_tracing_node]: Stored explore waypoint 52
+[navigation_node-1] [INFO] [1776392884.950313991] [navigation_node]: New last path len: 52
+[path_tracing_node-3] [INFO] [1776392886.414307635] [path_tracing_node]: Stored explore waypoint 53
+[navigation_node-1] [INFO] [1776392886.424117038] [navigation_node]: New last path len: 53
+[path_tracing_node-3] [INFO] [1776392886.912600828] [path_tracing_node]: Stored explore waypoint 54
+[navigation_node-1] [INFO] [1776392886.921445524] [navigation_node]: New last path len: 54
+[path_tracing_node-3] [INFO] [1776392887.413273417] [path_tracing_node]: Stored explore waypoint 55
+[navigation_node-1] [INFO] [1776392887.426019774] [navigation_node]: New last path len: 55
+[path_tracing_node-3] [INFO] [1776392887.912306798] [path_tracing_node]: Stored explore waypoint 56
+[navigation_node-1] [INFO] [1776392887.921074938] [navigation_node]: New last path len: 56
+[path_tracing_node-3] [INFO] [1776392888.413911428] [path_tracing_node]: Stored explore waypoint 57
+[navigation_node-1] [INFO] [1776392888.422799420] [navigation_node]: New last path len: 57
+[path_tracing_node-3] [INFO] [1776392888.912175380] [path_tracing_node]: Stored explore waypoint 58
+[navigation_node-1] [INFO] [1776392888.920386073] [navigation_node]: New last path len: 58
+[path_tracing_node-3] [INFO] [1776392889.412857951] [path_tracing_node]: Stored explore waypoint 59
+[navigation_node-1] [INFO] [1776392889.422180685] [navigation_node]: New last path len: 59
+[path_tracing_node-3] [INFO] [1776392889.912206295] [path_tracing_node]: Stored explore waypoint 60
+[navigation_node-1] [INFO] [1776392889.943118934] [navigation_node]: New last path len: 60
+[path_tracing_node-3] [INFO] [1776392892.415402521] [path_tracing_node]: Stored explore waypoint 61
+[navigation_node-1] [INFO] [1776392892.437456371] [navigation_node]: New last path len: 61
+[path_tracing_node-3] [INFO] [1776392893.413075577] [path_tracing_node]: Stored explore waypoint 62
+[navigation_node-1] [INFO] [1776392893.423184147] [navigation_node]: New last path len: 62
+[path_tracing_node-3] [INFO] [1776392935.296155904] [path_tracing_node]: Home trigger received, starting path tracing
+[path_tracing_node-3] [INFO] [1776392935.317205936] [path_tracing_node]: Stopping exploration...
+[path_tracing_node-3] Traceback (most recent call last):
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/snc/path_tracing_node", line 33, in <module>
+[path_tracing_node-3]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'path_tracing_node')())
+[path_tracing_node-3]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/path_tracing_node.py", line 249, in main
+[path_tracing_node-3]     rclpy.spin(node)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 247, in spin
+[path_tracing_node-3]     executor.spin_once()
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 923, in spin_once
+[path_tracing_node-3]     self._spin_once_impl(timeout_sec)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 915, in _spin_once_impl
+[path_tracing_node-3]     raise handler.exception()
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/task.py", line 286, in _execute_coroutine_step
+[path_tracing_node-3]     result = coro.send(None)
+[path_tracing_node-3]              ^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 592, in handler
+[path_tracing_node-3]     await call_coroutine()
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 480, in _execute
+[path_tracing_node-3]     await await_or_execute(sub.callback, *msg_tuple)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 115, in await_or_execute
+[path_tracing_node-3]     return callback(*args)
+[path_tracing_node-3]            ^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/path_tracing_node.py", line 216, in home_trigger_callback
+[path_tracing_node-3]     self.exploration_controller.stop()
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/exploration_control.py", line 71, in stop
+[path_tracing_node-3]     return self.__control_exploration("STOP")
+[path_tracing_node-3]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/exploration_control.py", line 57, in __control_exploration
+[path_tracing_node-3]     rclpy.spin_until_future_complete(self.nav, future)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 274, in spin_until_future_complete
+[path_tracing_node-3]     executor.spin_until_future_complete(future, timeout_sec)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 370, in spin_until_future_complete
+[path_tracing_node-3]     self._enter_spin()
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 222, in _enter_spin
+[path_tracing_node-3]     raise RuntimeError('Executor is already spinning')
+[path_tracing_node-3] RuntimeError: Executor is already spinning
+[navigation_node-1] [INFO] [1776392935.347479387] [navigation_node]: Canceling current task.
+[ERROR] [path_tracing_node-3]: process has died [pid 279, exit code 1, cmd '/ros2_ws/install/snc/lib/snc/path_tracing_node --ros-args -r __node:=path_tracing_node'].
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[sync_slam_toolbox_node-4] [INFO] [1776392944.467582762] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[navigation_node-1] [INFO] [1776392944.468763525] [navigation_node]: Canceling current task.
+[navigation_node-1] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[marker_detection_node-2] Traceback (most recent call last):
+[marker_detection_node-2]   File "/ros2_ws/install/snc/lib/snc/marker_detection_node", line 33, in <module>
+[marker_detection_node-2]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'marker_detection_node')())
+[marker_detection_node-2]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[marker_detection_node-2]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/marker_detection_node.py", line 78, in main
+[marker_detection_node-2]     rclpy.shutdown()
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 134, in shutdown
+[marker_detection_node-2]     _shutdown(context=context)
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/utilities.py", line 82, in shutdown
+[marker_detection_node-2]     context.shutdown()
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/context.py", line 129, in shutdown
+[marker_detection_node-2]     self.__context.shutdown()
+[marker_detection_node-2] rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:333
+[INFO] [sync_slam_toolbox_node-4]: process has finished cleanly [pid 280]
+[ERROR] [marker_detection_node-2]: process has died [pid 278, exit code 1, cmd '/ros2_ws/install/snc/lib/snc/marker_detection_node --ros-args -r __node:=marker_detection_node'].
+[navigation_node-1] Traceback (most recent call last):
+[navigation_node-1]   File "/ros2_ws/install/snc/lib/snc/navigation_node", line 33, in <module>
+[navigation_node-1]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'navigation_node')())
+[navigation_node-1]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/navigation_node.py", line 824, in main
+[navigation_node-1]     executor.spin_once(timeout_sec=0.1)
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 1012, in spin_once
+[navigation_node-1]     self._spin_once_impl(timeout_sec)
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 988, in _spin_once_impl
+[navigation_node-1]     handler, entity, node = self.wait_for_ready_callbacks(
+[navigation_node-1]                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 874, in wait_for_ready_callbacks
+[navigation_node-1]     return next(self._cb_iter)
+[navigation_node-1]            ^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 778, in _wait_for_ready_callbacks
+[navigation_node-1]     wait_set.wait(timeout_nsec)
+[navigation_node-1] KeyboardInterrupt
+[ERROR] [navigation_node-1]: process has died [pid 277, exit code -2, cmd '/ros2_ws/install/snc/lib/snc/navigation_node --ros-args -r __node:=navigation_node'].
+root@ulthwe:/ros2_ws# 
