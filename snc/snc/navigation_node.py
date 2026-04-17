@@ -812,7 +812,7 @@ class NavigationNode(Node):
 
 def main():
     rclpy.init()
-    node = ExplorationNode()
+    node = NavigationNode()
 
     executor = MultiThreadedExecutor()
     executor.add_node(node)
