@@ -214,7 +214,7 @@ class PathTracingNode(Node):
 
         # Stop exploration
         self.exploration_controller.stop()
-
+        self.get_logger().info("Exploration stopped, calculating return trajectory...")
         # Calculate the return trajectory and handle log failures
         return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs)
         if return_trajectory is not None:
@@ -224,7 +224,7 @@ class PathTracingNode(Node):
             return
  
         # Small delay to let the controllers settle
-        self.get_clock().sleep_for(Duration(seconds=1.0))
+        self.get_clock().sleep_for(Duration(seconds=.5))
         
         self.get_logger().info('Navigating Home...')
         self.nav.followPath(self.return_path)
@@ -241,17 +241,24 @@ class PathTracingNode(Node):
         
         self.get_logger().info("Transform found! Starting path tracing.")
 
-def main():
-    rclpy.init()
-    node = PathTracingNode()
+def main(args=None):
+    from rclpy.executors import MultiThreadedExecutor
+    rclpy.init(args=args)
     
+    # Assume PathTracingNode creates the ExplorationController internally
+    node = PathTracingNode() 
+    
+    # Use MultiThreadedExecutor to handle ReentrantCallbackGroups
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
-    
-    node.destroy_node()
-    rclpy.shutdown()
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':

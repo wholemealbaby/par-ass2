@@ -13,24 +13,35 @@ class ExplorationController:
         self.client = self.nav.create_client(ExplorationControl, '/snc_exploration_control')
         self.logger = self.nav.get_logger().get_child('ExplorationController')
 
+        # Use a callback group to ensure callbacks are processed in the same thread
+        self.cb_group = self.nav.get_callback_group()
         # Subscriptions for /trigger_start, /trigger_home, /trigger_teleop
         self.sub_trigger_start = self.nav.create_subscription(
             TRIGGER_START_INTERFACE,
             TRIGGER_START_TOPIC,
             self.start_trigger_callback,
-            TRIGGER_START_BUFFER_SIZE
+            TRIGGER_START_BUFFER_SIZE,
+            callback_group=self.cb_group
         )
         self.sub_trigger_teleop = self.nav.create_subscription(
             TRIGGER_TELEOP_INTERFACE,
             TRIGGER_TELEOP_TOPIC,
             self.teleop_trigger_callback,
-            TRIGGER_TELEOP_BUFFER_SIZE
+            TRIGGER_TELEOP_BUFFER_SIZE,
+            callback_group=self.cb_group
         )
         self.sub_trigger_home = self.nav.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
-            TRIGGER_HOME_BUFFER_SIZE
+            TRIGGER_HOME_BUFFER_SIZE,
+            callback_group=self.cb_group
+        )
+
+        self.pub_snc_status = self.nav.create_publisher(
+            SNC_STATUS_INTERFACE,
+            SNC_STATUS_TOPIC,
+            SNC_STATUS_BUFFER_SIZE
         )
 
         # Publisher for SNC status updates
@@ -47,54 +58,56 @@ class ExplorationController:
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.logger.info('Exploration service not available, waiting...')
 
-    def __control_exploration(self, command_string):
+    async def __control_exploration(self, command_string):
         """
         Sends a START or STOP command to the exploration service.
         """
         request = ExplorationControl.Request()
-        request.command = command_string  # "START" or "STOP"
+        request.command = command_string
 
+        self.logger.info(f"Sending command: {command_string}")
         future = self.client.call_async(request)
-        rclpy.spin_until_future_complete(self.nav, future)
         
-        return future.result()
+
+        response = await future
+        return response
     
-    def start(self):
+    async def start(self):
         """Starts the exploration process with all frontiers unexplored."""
         self.logger.info("Starting exploration...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="EXPLORING"))
-        return self.__control_exploration("START")
+        return await self.__control_exploration("START")
 
-    def stop(self):
+    async def stop(self):
         """Stops the exploration process."""
         self.logger.info("Stopping exploration...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="STOPPING EXPLORATION"))
-        return self.__control_exploration("STOP")
+        return await self.__control_exploration("STOP")
 
-    def resume(self):
+    async def resume(self):
         """Resumes the exploration process, allowing it to continue from where it left off."""
         self.logger.info("Resuming exploration...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="EXPLORING"))
-        return self.__control_exploration("RESUME")
+        return await self.__control_exploration("RESUME")
     
-    def teleop(self):
+    async def teleop(self):
         """Switches to teleop control."""
         self.logger.info("Switching to teleop control...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="TELEOP OVERRIDE"))
-        return self.__control_exploration("TELEOP")
+        return await self.__control_exploration("TELEOP")
     
-    def home_trigger_callback(self, _):
+    async def home_trigger_callback(self, _):
         """Callback function for the home trigger subscription."""
         self.logger.info("Home trigger received")
-        self.stop()
+        await self.stop()
     
-    def teleop_trigger_callback(self, _):
+    async def teleop_trigger_callback(self, _):
         """Callback function for the teleop trigger subscription."""
         self.logger.info("Teleop trigger received")
-        self.teleop()
+        await self.teleop()
     
-    def start_trigger_callback(self, _):
+    async def start_trigger_callback(self, _):
         """Callback function for the start trigger subscription."""
         self.logger.info("Start trigger received")
-        self.start()
+        await self.start()
     
