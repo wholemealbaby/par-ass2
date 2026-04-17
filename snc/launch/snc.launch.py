@@ -41,27 +41,18 @@ def generate_launch_description():
         parameters=[] 
     )
 
-    find_object_node = Node(
-        package='find_object_2d',
-        executable='find_object_2d',
-        name='find_object_node',
-        output='screen'
-    )
+    # find_object_node = Node(
+    #     package='find_object_2d',
+    #     executable='find_object_2d',
+    #     name='find_object_node',
+    #     output='screen'
+    # )
 
-    # Node 6: Trigger Listener Node (Operator Laptop)
-    trigger_listener_node = Node(
-        package=package_name,
-        executable='trigger_listener',
-        name='trigger_listener',
-        output='screen',
-        parameters=[]
-    )
 
     return LaunchDescription([
         navigation_node,
         marker_detection_node,
         path_tracing_node,
         slam_toolbox_node,
-        find_object_node,
-        trigger_listener_node
+        # find_object_node
     ])
