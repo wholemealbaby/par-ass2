@@ -731,8 +731,6 @@ class NavigationNode(Node):
         covered_mask = self.covered if self.covered is not None else np.zeros_like(reachable_mask, dtype=bool)
         uncovered_mask = reachable_mask & free_mask & (~covered_mask)
 
-        
-
         if self.choose_frontier_goal:
             self.get_logger().info('Choosing frontier goal...')
             frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
