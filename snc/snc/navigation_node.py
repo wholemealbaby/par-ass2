@@ -97,7 +97,8 @@ class NavigationNode(Node):
         self.covered = None
         self.last_path_len = 0
         self.last_processed_cell = None
-        self.coverage_radius_m = 0.18
+        self.robot_radius_m = 0.15
+        self.safety_margin_m = 0.05
         self.choose_frontier_goal = True
 
         map_qos = QoSProfile(
@@ -166,6 +167,8 @@ class NavigationNode(Node):
             '/cmd_vel', 
             10
         )
+        
+        #TODO: Add coverage marker publisher
 
         self.control_srv = self.create_service(
             ExplorationControl,
@@ -368,9 +371,17 @@ class NavigationNode(Node):
 
         return None
 
+    #TODO: Add paint_grid_method
+    #      Paint cyan if traversed
+    def publish_coverage_marker(self):
+        if self.latest_map is None or self.covered is None:
+            return
+
+        # Create marker message and publish    
+
     def paint_disk(self, mx, my):
         res = self.latest_map.info.resolution
-        radius_cells = max(1, int(math.ceil(self.coverage_radius_m / res)))
+        radius_cells = max(1, int(math.ceil(self.robot_radius_m / res)))
 
         h, w = self.covered.shape
         for dx in range(-radius_cells, radius_cells + 1):
@@ -559,10 +570,41 @@ class NavigationNode(Node):
                         return True
         return False
 
-    def get_reachable_cells_and_distance(self, grid, start_x, start_y):
+    def build_safe_free_mask(self, grid):
+        res = self.latest_map.info.resolution
+        
+        inflation_cells = max(1, int(math.ceil((self.robot_radius_m + self.safety_margin_m) / res)))
+        
         height, width = grid.shape
+        
+        blocked = (grid == MAP_UNKNOWN) | (grid >= MAP_OCCUPIED_THRESHOLD)
+        
+        inflated_blocked = np.copy(blocked)
+        
+        ys, xs = np.where(blocked)
+        for y, x in zip(ys, xs):
+            for dy in range(-inflation_cells, inflation_cells + 1):
+                for dx in range(-inflation_cells, inflation_cells + 1):
+                    if dx**2 + dy**2 > inflation_cells**2:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < width and 0 <= ny < height:
+                        inflated_blocked[ny, nx] = True
+                    
+        safe_free = ~inflated_blocked
+        return safe_free
+
+    def get_reachable_cells_and_distance(self, safe_free_mask, start_x, start_y):
+        #TODO: Add robot radius here to remove cells within
+        #      narrow corridors which are not actually corridors
+        #      but gaps between the wall parts of the real maze
+        #TODO: TEST NEW BEHAVIOUR
+        height, width = safe_free_mask.shape
         reachable = np.zeros((height, width), dtype=bool)
         dist = np.full((height, width), -1, dtype=np.int32)
+
+        if not safe_free_mask[start_y, start_x]:
+            return reachable, dist
 
         q = collections.deque([(start_x, start_y)])
         reachable[start_y, start_x] = True
@@ -576,7 +618,7 @@ class NavigationNode(Node):
                     continue
                 if reachable[ny, nx]:
                     continue
-                if not self.is_cell_traversable(grid[ny, nx]):
+                if not safe_free_mask[ny, nx]:
                     continue
 
                 reachable[ny, nx] = True
@@ -724,7 +766,8 @@ class NavigationNode(Node):
                 self.get_logger().warn('Could not find traversable start cell near robot')
                 return None
 
-        reachable_cells, dists = self.get_reachable_cells_and_distance(grid, robot_x, robot_y)
+        safe_free_mask = self.build_safe_free_mask(grid)
+        reachable_cells, dists = self.get_reachable_cells_and_distance(safe_free_mask, robot_x, robot_y)
         
         free_mask = np.vectorize(self.is_cell_traversable)(grid)
         reachable_mask = reachable_cells
