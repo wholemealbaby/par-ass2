@@ -412,15 +412,7 @@ class NavigationNode(Node):
         if 0 <= mx < info.width and 0 <= my < info.height:
             return (mx, my)
 
-        return None
-
-    #TODO: Add paint_grid_method
-    #      Paint cyan if traversed
-    def publish_coverage_marker(self):
-        if self.latest_map is None or self.covered is None:
-            return
-
-        # Create marker message and publish    
+        return None   
 
     def paint_disk(self, mx, my):
         res = self.latest_map.info.resolution
