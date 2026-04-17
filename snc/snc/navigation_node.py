@@ -22,9 +22,9 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPo
 
 from snc_interfaces.srv import ExplorationControl
 from snc.constants import (
-    EXPLORE_BREADCRUMBS_TOPIC,
-    EXPLORE_BREADCRUMBS_INTERFACE,
-    EXPLORE_BREADCRUMBS_BUFFER_SIZE,
+    PATH_EXPLORE_TOPIC,
+    PATH_EXPLORE_INTERFACE,
+    PATH_EXPLORE_BUFFER_SIZE,
     SNC_STATUS_TOPIC,
     SNC_STATUS_INTERFACE,
     SNC_STATUS_BUFFER_SIZE,
@@ -142,10 +142,10 @@ class NavigationNode(Node):
         )
 
         self.path_tracing_sub = self.create_subscription(
-            EXPLORE_BREADCRUMBS_INTERFACE,
-            EXPLORE_BREADCRUMBS_TOPIC,
+            PATH_EXPLORE_INTERFACE,
+            PATH_EXPLORE_TOPIC,
             self.path_explore_callback,
-            EXPLORE_BREADCRUMBS_BUFFER_SIZE
+            PATH_EXPLORE_BUFFER_SIZE
         )
 
         self.status_pub = self.create_publisher(
