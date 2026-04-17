@@ -1,5 +1,5 @@
 import rclpy
-from snc.navigation_node import NaviagtionNode
+from snc.navigation_node import NavigationNode
 from nav_msgs.msg import Path
 from snc.constants import (
     TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE, 
@@ -10,7 +10,7 @@ from snc.constants import (
 class ExplorationController:
     def __init__(self, nav):
         self.nav = nav
-        self.client = self.nav.create_client(ExplorationControl, '/snc_exploration_control')
+        self.client = self.nav.create_client(NavigationNode, '/snc_exploration_control')
 
         # Subscriptions for /trigger_start, /trigger_home, /trigger_teleop
         self.sub_trigger_start = self.create_subscription(
@@ -50,7 +50,7 @@ class ExplorationController:
         """
         Sends a START or STOP command to the exploration service.
         """
-        request = ExplorationControl.Request()
+        request = NavigationNode.Request()
         request.command = command_string  # "START" or "STOP"
 
         future = self.client.call_async(request)
