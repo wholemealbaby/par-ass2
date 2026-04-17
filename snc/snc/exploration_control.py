@@ -11,6 +11,7 @@ class ExplorationController:
     def __init__(self, nav):
         self.nav = nav
         self.client = self.nav.create_client(ExplorationControl, '/snc_exploration_control')
+        self.logger = self.nav.get_logger().get_child('ExplorationController')
 
         # Subscriptions for /trigger_start, /trigger_home, /trigger_teleop
         self.sub_trigger_start = self.nav.create_subscription(
@@ -44,7 +45,7 @@ class ExplorationController:
 
     def wait_for_service(self):
         while not self.client.wait_for_service(timeout_sec=1.0):
-            self.nav.get_logger().info('Exploration service not available, waiting...')
+            self.logger.info('Exploration service not available, waiting...')
 
     def __control_exploration(self, command_string):
         """
@@ -60,40 +61,40 @@ class ExplorationController:
     
     def start(self):
         """Starts the exploration process with all frontiers unexplored."""
-        self.nav.get_logger().info("Starting exploration...")
+        self.logger.info("Starting exploration...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="EXPLORING"))
         return self.__control_exploration("START")
 
     def stop(self):
         """Stops the exploration process."""
-        self.nav.get_logger().info("Stopping exploration...")
+        self.logger.info("Stopping exploration...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="STOPPING EXPLORATION"))
         return self.__control_exploration("STOP")
 
     def resume(self):
         """Resumes the exploration process, allowing it to continue from where it left off."""
-        self.nav.get_logger().info("Resuming exploration...")
+        self.logger.info("Resuming exploration...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="EXPLORING"))
         return self.__control_exploration("RESUME")
     
     def teleop(self):
         """Switches to teleop control."""
-        self.nav.get_logger().info("Switching to teleop control...")
+        self.logger.info("Switching to teleop control...")
         self.pub_snc_status.publish(SNC_STATUS_INTERFACE(data="TELEOP OVERRIDE"))
         return self.__control_exploration("TELEOP")
     
     def home_trigger_callback(self, _):
         """Callback function for the home trigger subscription."""
-        self.nav.get_logger().info("Home trigger received")
+        self.logger.info("Home trigger received")
         self.stop()
     
     def teleop_trigger_callback(self, _):
         """Callback function for the teleop trigger subscription."""
-        self.nav.get_logger().info("Teleop trigger received")
+        self.logger.info("Teleop trigger received")
         self.teleop()
     
     def start_trigger_callback(self, _):
         """Callback function for the start trigger subscription."""
-        self.nav.get_logger().info("Start trigger received")
+        self.logger.info("Start trigger received")
         self.start()
     
