@@ -70,7 +70,7 @@ class NavigationNode(Node):
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 50)
-        self.declare_parameter('frontier_standoff_m', 0)
+        self.declare_parameter('frontier_standoff_m', 0.15)
 
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
@@ -651,6 +651,8 @@ class NavigationNode(Node):
         centroid_x = sum(c[0] for c in cluster) / len(cluster)
         centroid_y = sum(c[1] for c in cluster) / len(cluster)
 
+        self.get_logger().info(f'Centroid of chosen cluster: ({centroid_x},{centroid_y})')
+
         closest = min(
             cluster,
             key=lambda c: math.hypot(c[0] - centroid_x, c[1] - centroid_y)
@@ -664,6 +666,9 @@ class NavigationNode(Node):
         standoff_cells = max(1, int(self.frontier_standoff_m / self.latest_map.info.resolution))
         gx = int(round(fx + standoff_cells * vx / norm))
         gy = int(round(fy + standoff_cells * vy / norm))
+        
+        self.get_logger().info(f'Computed back off goal cell based on centroid and standoff ({self.frontier_standoff_m}): ({gx},{gy})')
+
         return gx, gy
 
     def choose_coverage_goal_from_cluster(self, cluster, dists):
