@@ -14,7 +14,7 @@ class ExplorationController:
         self.logger = self.nav.get_logger().get_child('ExplorationController')
 
         # Use a callback group to ensure callbacks are processed in the same thread
-        self.cb_group = self.nav.default_callback_group()
+        self.cb_group = self.nav.default_callback_group
         # Subscriptions for /trigger_start, /trigger_home, /trigger_teleop
         self.sub_trigger_start = self.nav.create_subscription(
             TRIGGER_START_INTERFACE,
