@@ -98,6 +98,7 @@ class NavigationNode(Node):
         self.last_path_len = 0
         self.last_processed_cell = None
         self.coverage_radius_m = 0.18
+        self.choose_frontier_goal = True
 
         map_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -730,15 +731,30 @@ class NavigationNode(Node):
         covered_mask = self.covered if self.covered is not None else np.zeros_like(reachable_mask, dtype=bool)
         uncovered_mask = reachable_mask & free_mask & (~covered_mask)
 
-        #coverage_goal = self.find_coverage_goal(grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
-        #if coverage_goal is not None:
-        #    return coverage_goal
+        
 
-        frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
-        if frontier_goal is not None:
-            return frontier_goal
+        if self.choose_frontier_goal:
+            self.get_logger().info('Choosing frontier goal...')
+            frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
+            if frontier_goal is not None:
+                return frontier_goal
+            else:
+                self.get_logger().info('No frontier goal found. Choosing coverage goal instead...')
+                coverage_goal = self.find_coverage_goal(grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+                if coverage_goal is not None:
+                    return coverage_goal
+        else:
+            self.get_logger().info('Choosing coverage goal...')
+            coverage_goal = self.find_coverage_goal(grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+            if coverage_goal is not None:
+                return coverage_goal
+            else:
+                self.get_logger().info('No coverage goal found. Choosing frontier goal instead...')
+                frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
+                if frontier_goal is not None:
+                    return frontier_goal
 
-        self.get_logger().info('No more frontiers/uncovered cells found. Exploration finished')
+        self.get_logger().info('No more frontiers/uncovered cells found')
         return None
 
     def find_coverage_goal(self, grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
@@ -755,11 +771,11 @@ class NavigationNode(Node):
             self.get_logger().warn('No uncovered clusters found')
             return None
 
-        self.get_logger().info(f'uncovered clusters={len(uncovered_clusters)}, ranked_uncovered_clusters={len(ranked_clusters)}')
+        self.get_logger().info(f'#uncovered clusters={len(uncovered_clusters)}, #ranked_uncovered_clusters={len(ranked_clusters)}')
 
         for cluster in ranked_clusters:
-            #goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
-            goal_x, goal_y = self.choose_coverage_goal_from_cluster(cluster, dists)
+            goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
+            #goal_x, goal_y = self.choose_coverage_goal_from_cluster(cluster, dists)
 
             if not (0 <= goal_x < width and 0 <= goal_y < height):
                 continue
