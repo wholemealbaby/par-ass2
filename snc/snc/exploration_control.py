@@ -1,5 +1,5 @@
 import rclpy
-from snc.ExplorationNode import ExplorationControl
+from snc.naviagtion_node import Naviagtion
 from nav_msgs.msg import Path
 from snc.constants import (
     TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE, 

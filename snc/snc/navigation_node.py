@@ -52,7 +52,7 @@ STATE_RETURNING = 'STATUS_RETURNING'
 STATE_DONE = 'STATUS_DONE'
 
 
-class ExplorationNode(Node):
+class NavigationNode(Node):
     def __init__(self):
         super().__init__('exploration_node')
 
