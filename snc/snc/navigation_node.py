@@ -168,7 +168,6 @@ class NavigationNode(Node):
             10
         )
         
-        #TODO: Add coverage marker publisher
         self.coverage_marker_pub = self.create_publisher(
             Marker, 
             '/covered_cells_marker',
@@ -256,9 +255,6 @@ class NavigationNode(Node):
         self.pending_resume_after_spin = False
 
     def hazards_callback(self, msg: MarkerArray):
-        # Example for MarkerArray: use marker.id as unique hazard ID.
-        # Replace this logic if /hazards has a different message type.
-        # TODO: Add mapping logic for the markers.
         before = len(self.hazard_ids)
         for marker in msg.markers:
             self.hazard_ids.add(int(marker.id))
@@ -630,10 +626,6 @@ class NavigationNode(Node):
         return safe_free
 
     def get_reachable_cells_and_distance(self, safe_free_mask, start_x, start_y):
-        #TODO: Add robot radius here to remove cells within
-        #      narrow corridors which are not actually corridors
-        #      but gaps between the wall parts of the real maze
-        #TODO: TEST NEW BEHAVIOUR
         height, width = safe_free_mask.shape
         reachable = np.zeros((height, width), dtype=bool)
         dist = np.full((height, width), -1, dtype=np.int32)
