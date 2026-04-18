@@ -56,7 +56,7 @@ class NavigationNode(Node):
     def __init__(self):
         super().__init__('navigation_node')
 
-        self.navigator = BasicNavigator(node_name='navigation_node')
+        self.navigator = BasicNavigator()
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -70,7 +70,7 @@ class NavigationNode(Node):
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 50)
-        self.declare_parameter('frontier_standoff_m', 0.15)
+        self.declare_parameter('frontier_standoff_m', 0)
 
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
@@ -604,15 +604,19 @@ class NavigationNode(Node):
     def build_safe_free_mask(self, grid):
         res = self.latest_map.info.resolution
         
-        inflation_cells = max(1, int(math.ceil((self.robot_radius_m + self.safety_margin_m) / res)))
+        inflation_cells = max(
+            1, 
+            int(math.ceil((self.robot_radius_m + self.safety_margin_m) / res))
+        )
         
         height, width = grid.shape
         
-        blocked = (grid == MAP_UNKNOWN) | (grid >= MAP_OCCUPIED_THRESHOLD)
+        known_free = (grid >= 0) & (grid < MAP_OCCUPIED_THRESHOLD)
+        occupied = (grid >= MAP_OCCUPIED_THRESHOLD)
         
-        inflated_blocked = np.copy(blocked)
+        inflated_occupied = np.copy(occupied)
         
-        ys, xs = np.where(blocked)
+        ys, xs = np.where(occupied)
         for y, x in zip(ys, xs):
             for dy in range(-inflation_cells, inflation_cells + 1):
                 for dx in range(-inflation_cells, inflation_cells + 1):
@@ -620,10 +624,22 @@ class NavigationNode(Node):
                         continue
                     nx, ny = x + dx, y + dy
                     if 0 <= nx < width and 0 <= ny < height:
-                        inflated_blocked[ny, nx] = True
+                        inflated_occupied[ny, nx] = True
                     
-        safe_free = ~inflated_blocked
+        safe_free = known_free & (~inflated_occupied)
         return safe_free
+
+    def find_nearby_safe_cell(self, safe_free_mask, start_x, start_y, max_radius=10):
+        height, width = safe_free_mask.shape
+
+        for radius in range(0, max_radius + 1):
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    nx, ny = start_x + dx, start_y + dy
+                    if 0 <= nx < width and 0 <= ny < height and safe_free_mask[ny, nx]:
+                        return nx, ny
+
+        return None, None
 
     def get_reachable_cells_and_distance(self, safe_free_mask, start_x, start_y):
         height, width = safe_free_mask.shape
@@ -794,6 +810,12 @@ class NavigationNode(Node):
                 return None
 
         safe_free_mask = self.build_safe_free_mask(grid)
+        if not safe_free_mask[robot_y, robot_x]:
+            robot_x, robot_y = self.find_nearby_safe_cell(safe_free_mask, robot_x, robot_y)
+            if robot_x is None:
+                self.get_logger().warn('Robot is not on a safe cell and no nearby safe cell was found')
+                return None
+
         reachable_cells, dists = self.get_reachable_cells_and_distance(safe_free_mask, robot_x, robot_y)
         
         free_mask = np.vectorize(self.is_cell_traversable)(grid)
@@ -803,29 +825,29 @@ class NavigationNode(Node):
 
         if self.choose_frontier_goal:
             self.get_logger().info('Choosing frontier goal...')
-            frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
+            frontier_goal = self.find_frontier_goal(grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res)
             if frontier_goal is not None:
                 return frontier_goal
             else:
                 self.get_logger().info('No frontier goal found. Choosing coverage goal instead...')
-                coverage_goal = self.find_coverage_goal(grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+                coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
                 if coverage_goal is not None:
                     return coverage_goal
         else:
             self.get_logger().info('Choosing coverage goal...')
-            coverage_goal = self.find_coverage_goal(grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+            coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
             if coverage_goal is not None:
                 return coverage_goal
             else:
                 self.get_logger().info('No coverage goal found. Choosing frontier goal instead...')
-                frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
+                frontier_goal = self.find_frontier_goal(grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res)
                 if frontier_goal is not None:
                     return frontier_goal
 
         self.get_logger().info('No more frontiers/uncovered cells found')
         return None
 
-    def find_coverage_goal(self, grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
+    def find_coverage_goal(self, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
         uncovered_cells = self.extract_uncovered_cells(uncovered_mask)
         
         if not uncovered_cells:
@@ -842,12 +864,12 @@ class NavigationNode(Node):
         self.get_logger().info(f'#uncovered clusters={len(uncovered_clusters)}, #ranked_uncovered_clusters={len(ranked_clusters)}')
 
         for cluster in ranked_clusters:
-            goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
-            #goal_x, goal_y = self.choose_coverage_goal_from_cluster(cluster, dists)
+            #goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
+            goal_x, goal_y = self.choose_coverage_goal_from_cluster(cluster, dists)
 
             if not (0 <= goal_x < width and 0 <= goal_y < height):
                 continue
-            if not self.is_cell_traversable(grid[goal_y, goal_x]):
+            if not safe_free_mask[goal_y, goal_x]:
                 continue
 
             self.get_logger().info(f'selected uncovered cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
@@ -857,7 +879,7 @@ class NavigationNode(Node):
         self.get_logger().warn('Uncovered clusters exist, but no valid backed-off goal was found')
         return None
 
-    def find_frontier_goal(self, grid, width, height, robot_x, robot_y, reachable_mask, origin, res):
+    def find_frontier_goal(self, grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res):
         frontier_cells = self.extract_frontier_cells(grid, width, height, reachable_mask)
         
         if not frontier_cells:
@@ -878,7 +900,7 @@ class NavigationNode(Node):
 
             if not (0 <= goal_x < width and 0 <= goal_y < height):
                 continue
-            if not self.is_cell_traversable(grid[goal_y, goal_x]):
+            if not safe_free_mask[goal_y, goal_x]:
                 continue
 
             self.get_logger().info(f'selected frontier cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
