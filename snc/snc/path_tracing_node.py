@@ -1,4 +1,4 @@
-code#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import rclpy
 from rclpy.duration import Duration
