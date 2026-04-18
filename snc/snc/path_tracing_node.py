@@ -56,9 +56,8 @@ class PathTracingNode(Node):
         # Initialize the ExplorationController (logic-only, no ROS interfaces)
         self.exploration_controller = ExplorationController(self)
 
-        from rclpy.callback_groups import ReentrantCallbackGroup, AsyncCallbackGroup
+        from rclpy.callback_groups import ReentrantCallbackGroup
         self.cb_group = ReentrantCallbackGroup()
-        self.async_cb_group = AsyncCallbackGroup()
 
         # Configure parameters with defaults
         params = params or {}
@@ -90,15 +89,15 @@ class PathTracingNode(Node):
             GO_HOME_TOPIC,
             self.home_trigger_callback,
             GO_HOME_BUFFER_SIZE,
-            callback_group=self.async_cb_group
-        )
+            callback_group=self.cb_group
+        )        
         # Contingency Return home trigger
         self.sub_home_trigger = self.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
             TRIGGER_HOME_BUFFER_SIZE,
-            callback_group=self.async_cb_group
+            callback_group=self.cb_group
         )
         # Publisher for /path_explore to publish the path taken during exploration 
         # for assessors to evaluate
@@ -122,7 +121,7 @@ class PathTracingNode(Node):
             PATH_RETURN_BUFFER_SIZE
         )
 
-        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
+        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback, callback_group=self.cb_group)
     
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
