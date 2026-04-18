@@ -252,7 +252,7 @@ class PathTracingNode(Node):
         self.last_recorded_yaw = None
 
         # Calculate the return trajectory and handle log failures
-        return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs)
+        return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs, self.waypoint_spacing_min, self.waypoint_rotation_min)
         if return_trajectory is not None:
             self.return_path = Path(header=return_trajectory[0].header, poses=return_trajectory)
         else:
