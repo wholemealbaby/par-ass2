@@ -40,19 +40,23 @@ from snc.path_tracing_core import (
 
 
 class PathTracingNode(Node):
-    def __init__(self, params=None):
+    def __init__(self, nav, params=None):
         """
         Initialize the PathTracingNode.
         
         Args:
+            nav: The BasicNavigator instance to use for navigation and service calls
             params: Optional dictionary of parameters to override defaults
         """
-        super().__init__('path_tracing_node')
+        super().__init__('path_tracing_logic_node')
         self.get_logger().info('Path tracing node launched')
 
         # Navigator
-        self.nav = BasicNavigator()
+        self.nav = nav
         self.exploration_controller = ExplorationController(self.nav)
+
+        from rclpy.callback_groups import ReentrantCallbackGroup
+        self.cb_group = ReentrantCallbackGroup()
 
         # Configure parameters with defaults
         params = params or {}
@@ -74,14 +78,16 @@ class PathTracingNode(Node):
             GO_HOME_INTERFACE,
             GO_HOME_TOPIC,
             self.home_trigger_callback,
-            GO_HOME_BUFFER_SIZE
+            GO_HOME_BUFFER_SIZE,
+            callback_group=self.cb_group
         )        
         # Contingency Return home trigger
         self.sub_home_trigger = self.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
-            TRIGGER_HOME_BUFFER_SIZE
+            TRIGGER_HOME_BUFFER_SIZE,
+            callback_group=self.cb_group
         )
         # Publisher for /path_explore to publish the path taken during exploration 
         # for assessors to evaluate
@@ -105,7 +111,7 @@ class PathTracingNode(Node):
             PATH_RETURN_BUFFER_SIZE
         )
 
-        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
+        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback, callback_group=self.cb_group)
     
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
@@ -245,12 +251,12 @@ def main(args=None):
     from rclpy.executors import MultiThreadedExecutor
     rclpy.init(args=args)
     
-    # Assume PathTracingNode creates the ExplorationController internally
-    node = PathTracingNode() 
+    nav = BasicNavigator(node_name='Node_3_BasicNavigator')
+    node = PathTracingNode(nav) 
     
-    # Use MultiThreadedExecutor to handle ReentrantCallbackGroups
     executor = MultiThreadedExecutor()
     executor.add_node(node)
+    executor.add_node(nav)
 
     try:
         executor.spin()
