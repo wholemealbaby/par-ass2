@@ -27,7 +27,13 @@ from snc.constants import (
     PATH_RETURN_INTERFACE,
     TRIGGER_HOME_TOPIC,
     TRIGGER_HOME_BUFFER_SIZE,
-    TRIGGER_HOME_INTERFACE
+    TRIGGER_HOME_INTERFACE,
+    STARTUP_SYNC_TOPIC,
+    STARTUP_SYNC_BUFFER_SIZE,
+    STARTUP_SYNC_INTERFACE,
+    START_CHALLENGE_TOPIC,
+    START_CHALLENGE_BUFFER_SIZE,
+    START_CHALLENGE_INTERFACE
 )
 
 class PathTracingRuntimeTest(Node):
@@ -42,6 +48,26 @@ class PathTracingRuntimeTest(Node):
         # Store latest messages
         self.latest_explore_path = None
         self.latest_return_path = None
+        
+        # Track startup sync signals from other nodes
+        self.startup_sync_signals = {}
+        self.expected_nodes = {'path_tracing', 'navigation', 'marker_detection'}
+        self.all_nodes_ready = False
+        
+        # Publisher for snc_start topic
+        self.pub_start_challenge = self.create_publisher(
+            START_CHALLENGE_INTERFACE,
+            START_CHALLENGE_TOPIC,
+            START_CHALLENGE_BUFFER_SIZE
+        )
+        
+        # Subscriber for startup sync topic
+        self.sub_startup_sync = self.create_subscription(
+            STARTUP_SYNC_INTERFACE,
+            STARTUP_SYNC_TOPIC,
+            self.startup_sync_callback,
+            STARTUP_SYNC_BUFFER_SIZE
+        )
         
         # Subscribe to path topics
         self.explore_sub = self.create_subscription(
@@ -164,11 +190,62 @@ class PathTracingRuntimeTest(Node):
             
         return True
 
+    def startup_sync_callback(self, msg):
+        """Callback for startup synchronization topic."""
+        node_name = msg.data if hasattr(msg, 'data') else str(msg)
+        
+        if not node_name:
+            self.get_logger().warn('Received empty node name')
+            return
+            
+        current_time = time.time()
+        elapsed = current_time - self.start_time if self.start_time else 0.0
+        
+        if node_name in self.startup_sync_signals:
+            self.get_logger().info(f'[REPEAT] Received startup sync from {node_name} at {elapsed:.2f}s')
+        else:
+            self.startup_sync_signals[node_name] = current_time
+            self.get_logger().info(f'Received startup sync from {node_name} at {elapsed:.2f}s')
+            
+            # Check if all expected nodes are ready
+            if set(self.startup_sync_signals.keys()) == self.expected_nodes:
+                self.all_nodes_ready = True
+                elapsed = time.time() - self.start_time
+                self.get_logger().info(f'=== ALL NODES READY! ===')
+                self.get_logger().info(f'Total time to startup sync: {elapsed:.2f} seconds')
+                self.get_logger().info(f'Received signals from: {sorted(self.startup_sync_signals.keys())}')
+                
+                # Print summary
+                self.get_logger().info('--- Startup Sync Timing Summary ---')
+                for node, timestamp in sorted(self.startup_sync_signals.items()):
+                    self.get_logger().info(f'{node}: {timestamp - self.start_time:.2f}s')
+                
+                # Publish snc_start to trigger the challenge
+                self.get_logger().info('Publishing snc_start to trigger challenge...')
+                self.pub_start_challenge.publish(START_CHALLENGE_INTERFACE())
+                self.get_logger().info(f'Published to {START_CHALLENGE_TOPIC}')
+
     def run_test(self):
        """Run the runtime test until interrupted by keyboard signal"""
        self.get_logger().info('Starting runtime test - will run until interrupted by Ctrl+C...')
        
-       # Run indefinitely until interrupted
+       # Wait for startup sync to complete before proceeding
+       self.get_logger().info(f'Waiting for startup sync from nodes: {sorted(self.expected_nodes)}...')
+       startup_sync_start = time.time()
+       
+       while not self.interrupted and not self.all_nodes_ready:
+           rclpy.spin_once(self, timeout_sec=0.1)
+           elapsed = time.time() - startup_sync_start
+           if elapsed > 30.0 and not self.all_nodes_ready:
+               self.get_logger().warn('Startup sync timeout - continuing anyway...')
+               break
+       
+       if self.all_nodes_ready:
+           self.get_logger().info(f'Startup sync completed successfully in {time.time() - startup_sync_start:.2f} seconds')
+       else:
+           self.get_logger().error('Startup sync did not complete within timeout')
+       
+       # Run indefinitely until interrupted (after startup sync is done)
        while not self.interrupted:
            rclpy.spin_once(self, timeout_sec=0.1)
            
