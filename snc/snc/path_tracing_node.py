@@ -347,22 +347,22 @@ class PathTracingNode(Node):
 
     def stop_exploration(self):
         """Stops the exploration process."""
-        self.logger.info("Requesting exploration STOP...")
+        self.get_logger().info("Requesting exploration STOP...")
         return self._call_service("STOP")
 
     def start_exploration(self):
         """Starts the exploration process with all frontiers unexplored."""
-        self.logger.info("Requesting exploration START...")
+        self.get_logger().info("Requesting exploration START...")
         return self._call_service("START")
 
     def resume(self):
         """Resumes the exploration process, allowing it to continue from where it left off."""
-        self.logger.info("Requesting exploration RESUME...")
+        self.get_logger().info("Requesting exploration RESUME...")
         return self._call_service("RESUME")
     
     def teleop(self):
         """Switches to teleop control."""
-        self.logger.info("Requesting teleop control...")
+        self.get_logger().info("Requesting teleop control...")
         return self._call_service("TELEOP")
 
 def main(args=None):
