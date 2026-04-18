@@ -56,7 +56,7 @@ class NavigationNode(Node):
     def __init__(self):
         super().__init__('navigation_node')
 
-        self.navigator = BasicNavigator(node_name='navigation_node')
+        self.navigator = BasicNavigator()
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -830,12 +830,12 @@ class NavigationNode(Node):
                 return frontier_goal
             else:
                 self.get_logger().info('No frontier goal found. Choosing coverage goal instead...')
-                coverage_goal = self.find_coverage_goal(grid, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+                coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
                 if coverage_goal is not None:
                     return coverage_goal
         else:
             self.get_logger().info('Choosing coverage goal...')
-            coverage_goal = self.find_coverage_goal(grid, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+            coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
             if coverage_goal is not None:
                 return coverage_goal
             else:
