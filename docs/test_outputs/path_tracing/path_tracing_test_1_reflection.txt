@@ -1,0 +1,8 @@
+path tracing return home test 1
+- Return home was successfully without collisions
+- return path did not commit fully to the explore path, waypoint thresholds need adjusting
+- explore path in the visualizer corrupted after return home trigger and started rotating locked to the robots pose 
+    - it could be that the path is being republished after home home_trigger_callback
+    - or the inverted path is being published
+- trigger home did not work, go home died
+- might need to add a time to live on path topics
