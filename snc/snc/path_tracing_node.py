@@ -36,6 +36,7 @@ from snc.constants import (
 )
 import math
 import tf_transformations
+from snc_interfaces.srv import ExplorationControl
 
 
 # Import core functions for easier testing
@@ -63,9 +64,8 @@ class PathTracingNode(Node):
 
         # Navigator
         self.nav = nav
-        
-        from rclpy.callback_groups import ReentrantCallbackGroup
-        self.cb_group = ReentrantCallbackGroup()
+        # Controller client
+        self.client = self.node.create_client(ExplorationControl, '/snc_exploration_control')
 
         # Configure parameters with defaults
         params = params or {}
@@ -74,12 +74,7 @@ class PathTracingNode(Node):
         self.declare_parameter('testing_mode', False)
         self.testing_mode = params.get('testing_mode', self.get_parameter('testing_mode').value)
         self.get_logger().info(f'Testing mode: {self.testing_mode}')
-        
-        # Initialize the ExplorationController only if not in testing mode
-        if not self.testing_mode:
-            self.exploration_controller = ExplorationController(self)
-        else:
-            self.exploration_controller = Mock()
+    
         
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
         self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
@@ -95,8 +90,6 @@ class PathTracingNode(Node):
         self.last_recorded_yaw = None
         self.return_triggered = False # Flag to indicate if return home has been triggered, stops pose sampling when true
 
-        # === ROS INTERFACES (All handled by this node) ===
-
         # Publisher for /snc_status - Single source of truth for status messages
         self.pub_status = self.create_publisher(
             SNC_STATUS_INTERFACE,
@@ -109,38 +102,33 @@ class PathTracingNode(Node):
             START_CHALLENGE_INTERFACE,
             START_CHALLENGE_TOPIC,
             self.start_challenge_callback,
-            START_CHALLENGE_BUFFER_SIZE,
-            callback_group=self.cb_group
+            START_CHALLENGE_BUFFER_SIZE
         )
         # Go home trigger subscription to start return path tracing
         self.sub_go_home = self.create_subscription(
             GO_HOME_INTERFACE,
             GO_HOME_TOPIC,
             self.home_trigger_callback,
-            GO_HOME_BUFFER_SIZE,
-            callback_group=self.cb_group
+            GO_HOME_BUFFER_SIZE
         )  
         # Contingency triggers
         self.sub_home_trigger = self.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
-            TRIGGER_HOME_BUFFER_SIZE,
-            callback_group=self.cb_group
+            TRIGGER_HOME_BUFFER_SIZE
         )
         self.sub_start_trigger = self.create_subscription(
             TRIGGER_START_INTERFACE,
             TRIGGER_START_TOPIC,
             self.start_challenge_callback,
-            TRIGGER_START_BUFFER_SIZE,
-            callback_group=self.cb_group
+            TRIGGER_START_BUFFER_SIZE
         )
         self.sub_teleop_trigger = self.create_subscription(
             TRIGGER_TELEOP_INTERFACE,
             TRIGGER_TELEOP_TOPIC,
             self.teleop_trigger_callback,
-            TRIGGER_TELEOP_BUFFER_SIZE,
-            callback_group=self.cb_group
+            TRIGGER_TELEOP_BUFFER_SIZE
         )
         # Publisher for /path_explore to publish the path taken during exploration 
         # for assessors to evaluate
@@ -157,15 +145,14 @@ class PathTracingNode(Node):
             PATH_RETURN_BUFFER_SIZE
         )
 
-        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback, callback_group=self.cb_group)
+        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
     
     def teleop_trigger_callback(self, _):
         """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
         """
         self.get_logger().info("Teleop trigger received. Entering testing mode (disabling exploration controller and navigation).")
         if not self.testing_mode:
-            self.exploration_controller.stop()
-            self.exploration_controller = None
+            self.stop_exploration()
     
     def start_challenge_callback(self, _):
         """Callback for the start challenge trigger, which allows starting the path tracing without waiting for the transform to become available. Useful for testing.
@@ -174,7 +161,7 @@ class PathTracingNode(Node):
         # Start the pose sampling timer immediately without waiting for TF
         self.sample_pose_timer.reset()
         self.started = True
-        self.exploration_controller.start()
+        self.start_exploration()
 
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
@@ -277,7 +264,7 @@ class PathTracingNode(Node):
         # Return the yaw
         return euler[2]
     
-    async def home_trigger_callback(self, _):
+    def home_trigger_callback(self, _):
         """
         The single point of truth for the 'Home' event.
         
@@ -288,16 +275,11 @@ class PathTracingNode(Node):
         """
         self.get_logger().info("Home trigger received. Coordinating shutdown...")
         
-        # 1. Update Status
         self.pub_status.publish(String(data="STOPPING FOR HOME"))
 
-        # 2. Tell Controller to stop exploration
-        # We await this to ensure exploration is DEAD before we start navigating
-        # Only if not in testing mode
-        if not self.testing_mode and self.exploration_controller is not None:
-            await self.exploration_controller.stop()
+        if not self.testing_mode:
+            self.stop_exploration()
 
-        # 3. Trigger the internal return-to-home logic
         self.start_return_sequence()
 
     def start_return_sequence(self):
@@ -342,6 +324,47 @@ class PathTracingNode(Node):
         
         self.get_logger().info("Transform found! Starting path tracing.")
 
+    def _call_service(self, command):
+        """
+        Internal helper to call the exploration service.
+        
+        Args:
+            command: The command string (START, STOP, RESUME, TELEOP)
+            
+        Returns:
+            The service response or None if service call fails
+        """
+        if not self.client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error(f"Service not available for command: {command}")
+            return None
+        
+        request = ExplorationControl.Request()
+        request.command = command
+        
+        self.get_logger().info(f"Sending command: {command}")
+        response = self.client.call(request)
+        return response
+
+    def stop_exploration(self):
+        """Stops the exploration process."""
+        self.logger.info("Requesting exploration STOP...")
+        return self._call_service("STOP")
+
+    def start_exploration(self):
+        """Starts the exploration process with all frontiers unexplored."""
+        self.logger.info("Requesting exploration START...")
+        return self._call_service("START")
+
+    def resume(self):
+        """Resumes the exploration process, allowing it to continue from where it left off."""
+        self.logger.info("Requesting exploration RESUME...")
+        return self._call_service("RESUME")
+    
+    def teleop(self):
+        """Switches to teleop control."""
+        self.logger.info("Requesting teleop control...")
+        return self._call_service("TELEOP")
+
 def main(args=None):
     from rclpy.executors import MultiThreadedExecutor
     rclpy.init(args=args)
@@ -349,12 +372,9 @@ def main(args=None):
     nav = BasicNavigator(node_name='path_tracing_node')
     node = PathTracingNode(nav) 
     
-    executor = MultiThreadedExecutor()
-    executor.add_node(node)
-    executor.add_node(nav)
 
     try:
-        executor.spin()
+        node.spin()
     except KeyboardInterrupt:
         pass
     finally:

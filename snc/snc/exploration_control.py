@@ -39,7 +39,7 @@ class ExplorationController:
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.logger.info('Exploration service not available, waiting...')
 
-    async def _call_service(self, command):
+    def _call_service(self, command):
         """
         Internal helper to call the exploration service.
         
@@ -57,26 +57,25 @@ class ExplorationController:
         request.command = command
         
         self.logger.info(f"Sending command: {command}")
-        future = self.client.call_async(request)
-        response = await future
+        response = self.client.call(request)
         return response
 
-    async def stop(self):
+    def stop(self):
         """Stops the exploration process."""
         self.logger.info("Requesting exploration STOP...")
-        return await self._call_service("STOP")
+        return self._call_service("STOP")
 
-    async def start(self):
+    def start(self):
         """Starts the exploration process with all frontiers unexplored."""
         self.logger.info("Requesting exploration START...")
-        return await self._call_service("START")
+        return self._call_service("START")
 
-    async def resume(self):
+    def resume(self):
         """Resumes the exploration process, allowing it to continue from where it left off."""
         self.logger.info("Requesting exploration RESUME...")
-        return await self._call_service("RESUME")
+        return self._call_service("RESUME")
     
-    async def teleop(self):
+    def teleop(self):
         """Switches to teleop control."""
         self.logger.info("Requesting teleop control...")
-        return await self._call_service("TELEOP")
+        return self._call_service("TELEOP")
