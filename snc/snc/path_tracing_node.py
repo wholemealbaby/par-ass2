@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from unittest.mock import Mock
+
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
@@ -77,7 +79,7 @@ class PathTracingNode(Node):
         if not self.testing_mode:
             self.exploration_controller = ExplorationController(self)
         else:
-            self.exploration_controller = None
+            self.exploration_controller = Mock()
         
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
         self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
@@ -161,7 +163,7 @@ class PathTracingNode(Node):
         """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
         """
         self.get_logger().info("Teleop trigger received. Entering testing mode (disabling exploration controller and navigation).")
-        if not self.testing_mode and self.exploration_controller is not None:
+        if not self.testing_mode:
             self.exploration_controller.stop()
             self.exploration_controller = None
     
