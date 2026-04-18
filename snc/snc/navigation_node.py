@@ -37,7 +37,10 @@ from snc.constants import (
     TRIGGER_TELEOP_TOPIC,
     TRIGGER_TELEOP_INTERFACE,
     TRIGGER_TELEOP_BUFFER_SIZE,
-    HAZARD_SIGNAL_TOPIC
+    HAZARD_SIGNAL_TOPIC,
+    STARTUP_SYNC_TOPIC,
+    STARTUP_SYNC_INTERFACE,
+    STARTUP_SYNC_BUFFER_SIZE
 )
 
 MAP_UNKNOWN = -1
@@ -156,8 +159,28 @@ class NavigationNode(Node):
             SNC_STATUS_BUFFER_SIZE
         )
 
+        # Startup synchronization publisher - publishes node readiness
+        self.pub_startup_sync = self.create_publisher(
+            STARTUP_SYNC_INTERFACE,
+            STARTUP_SYNC_TOPIC,
+            STARTUP_SYNC_BUFFER_SIZE
+        )
+
+        # Startup synchronization subscriber - waits for all nodes to be ready
+        self.sub_startup_sync = self.create_subscription(
+            STARTUP_SYNC_INTERFACE,
+            STARTUP_SYNC_TOPIC,
+            self.startup_sync_callback,
+            STARTUP_SYNC_BUFFER_SIZE
+        )
+
+        # Track which nodes have published readiness
+        self.nodes_ready = set()
+        self.node_name = 'navigation'
+        self.all_nodes_ready = False
+
         self.return_pub = self.create_publisher(
-            TRIGGER_HOME_INTERFACE, 
+            TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             TRIGGER_HOME_BUFFER_SIZE
         )
@@ -228,6 +251,33 @@ class NavigationNode(Node):
 
         self.is_ready = True
         self.get_logger().info('Exploration node is ready and waiting for /snc_start')
+
+    def startup_sync_callback(self, msg):
+        """Callback for startup synchronization topic. Tracks which nodes have published readiness."""
+        if self.all_nodes_ready:
+            return
+        
+        # Extract node name from the message data
+        node_name = msg.data if hasattr(msg, 'data') else str(msg)
+        if node_name and node_name != self.node_name:
+            self.nodes_ready.add(node_name)
+            self.get_logger().info(f'Received ready signal from: {node_name}. Ready nodes: {len(self.nodes_ready) + 1}/3')
+            
+            # Check if all expected nodes are ready (3 nodes: path_tracing, navigation, marker_detection)
+            if len(self.nodes_ready) >= 2:  # +1 for self
+                self.all_nodes_ready = True
+                self.get_logger().info('All nodes are ready! Starting startup synchronization complete.')
+    
+    def wait_for_all_nodes_ready(self):
+        """Wait for all nodes to publish their readiness on the startup sync topic."""
+        self.get_logger().info('Waiting for all nodes to be ready...')
+        
+        self.pub_startup_sync.publish(String(data=self.node_name))
+        
+        while rclpy.ok() and not self.all_nodes_ready:
+            rclpy.spin_once(self, timeout_sec=0.1)
+        
+        self.get_logger().info('All nodes ready, proceeding with initialization.')
 
     # ---------- callbacks ----------
     def map_callback(self, msg: OccupancyGrid):
@@ -942,6 +992,9 @@ class NavigationNode(Node):
 def main():
     rclpy.init()
     node = NavigationNode()
+
+    # Wait for all nodes to be ready before starting
+    node.wait_for_all_nodes_ready()
 
     executor = MultiThreadedExecutor()
     executor.add_node(node)

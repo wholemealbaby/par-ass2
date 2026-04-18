@@ -1,11 +1,11 @@
-git commit -m ""#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 from unittest.mock import Mock
 
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
-from std_msgs.msg import String, Empty
+from std_msgs.msg import String
 from nav_msgs.msg import Path
 from tf2_ros import TransformListener, Buffer, TransformException
 from nav2_simple_commander.robot_navigator import BasicNavigator
