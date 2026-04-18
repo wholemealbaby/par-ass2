@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
@@ -20,9 +20,8 @@ from snc.constants import (
     PATH_RETURN_TOPIC,
     PATH_RETURN_BUFFER_SIZE,
     PATH_RETURN_INTERFACE,
-)
-from snc.constants import (
-    TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE, 
+    TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE,
+    SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE
 )
 import math
 import tf_transformations
@@ -40,19 +39,25 @@ from snc.path_tracing_core import (
 
 
 class PathTracingNode(Node):
-    def __init__(self, params=None):
+    def __init__(self, nav, params=None):
         """
         Initialize the PathTracingNode.
         
         Args:
+            nav: The BasicNavigator instance to use for navigation
             params: Optional dictionary of parameters to override defaults
         """
         super().__init__('path_tracing_node')
         self.get_logger().info('Path tracing node launched')
 
         # Navigator
-        self.nav = BasicNavigator()
-        self.exploration_controller = ExplorationController(self.nav)
+        self.nav = nav
+        
+        # Initialize the ExplorationController (logic-only, no ROS interfaces)
+        self.exploration_controller = ExplorationController(self)
+
+        from rclpy.callback_groups import ReentrantCallbackGroup
+        self.cb_group = ReentrantCallbackGroup()
 
         # Configure parameters with defaults
         params = params or {}
@@ -69,19 +74,30 @@ class PathTracingNode(Node):
         self.last_recorded_yaw = None
         self.return_triggered = False # Flag to indicate if return home has been triggered, stops pose sampling when true
 
+        # === ROS INTERFACES (All handled by this node) ===
+
+        # Publisher for /snc_status - Single source of truth for status messages
+        self.pub_status = self.create_publisher(
+            SNC_STATUS_INTERFACE,
+            SNC_STATUS_TOPIC,
+            SNC_STATUS_BUFFER_SIZE
+        )
+
         # Go home trigger subscription to start return path tracing
         self.sub_go_home = self.create_subscription(
             GO_HOME_INTERFACE,
             GO_HOME_TOPIC,
             self.home_trigger_callback,
-            GO_HOME_BUFFER_SIZE
+            GO_HOME_BUFFER_SIZE,
+            callback_group=self.cb_group
         )        
         # Contingency Return home trigger
         self.sub_home_trigger = self.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
-            TRIGGER_HOME_BUFFER_SIZE
+            TRIGGER_HOME_BUFFER_SIZE,
+            callback_group=self.cb_group
         )
         # Publisher for /path_explore to publish the path taken during exploration 
         # for assessors to evaluate
@@ -105,7 +121,7 @@ class PathTracingNode(Node):
             PATH_RETURN_BUFFER_SIZE
         )
 
-        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
+        self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback, callback_group=self.cb_group)
     
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
@@ -163,7 +179,7 @@ class PathTracingNode(Node):
         # Check if waypoint minimums are satisfied before storing
         if self.last_recorded_pose is not None and self.last_recorded_yaw is not None:
             # Use the core module function for waypoint filtering logic
-            yaw = get_yaw_from_transform(t)
+            yaw = self.get_yaw_from_transform(t)
             if not should_record_waypoint(
                 current_x=current_x,
                 current_y=current_y,
@@ -180,9 +196,8 @@ class PathTracingNode(Node):
 
         # Update last recorded pose and yaw
         self.last_recorded_pose = (current_x, current_y)
-        self.last_recorded_yaw = get_yaw_from_transform(t)
+        self.last_recorded_yaw = self.get_yaw_from_transform(t)
         return pose
-
 
     def get_yaw_from_transform(self, t):
         """
@@ -203,18 +218,39 @@ class PathTracingNode(Node):
         # Return the yaw
         return euler[2]
     
-    def home_trigger_callback(self, _):
-        self.get_logger().info('Home trigger received, starting path tracing')
-        self.return_triggered = True
+    async def home_trigger_callback(self, _):
+        """
+        The single point of truth for the 'Home' event.
+        
+        This callback coordinates the shutdown sequence:
+        1. Update status message
+        2. Stop exploration (awaiting completion)
+        3. Start return trajectory following
+        """
+        self.get_logger().info("Home trigger received. Coordinating shutdown...")
+        
+        # 1. Update Status
+        self.pub_status.publish(String(data="STOPPING FOR HOME"))
 
+        # 2. Tell Controller to stop exploration
+        # We await this to ensure exploration is DEAD before we start navigating
+        await self.exploration_controller.stop()
+
+        # 3. Trigger the internal return-to-home logic
+        self.start_return_sequence()
+
+    def start_return_sequence(self):
+        """
+        Calculate the return trajectory and begin navigation home.
+        """
+        self.return_triggered = True
+        self.get_logger().info("Starting return trajectory following.")
+        
         # Reset last recorded pose and yaw to ensure the first return waypoint 
         # is recorded regardless of distance/rotation from the last explore waypoint
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
 
-        # Stop exploration
-        self.exploration_controller.stop()
-        self.get_logger().info("Exploration stopped, calculating return trajectory...")
         # Calculate the return trajectory and handle log failures
         return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs)
         if return_trajectory is not None:
@@ -222,7 +258,7 @@ class PathTracingNode(Node):
         else:
             self.get_logger().error("Failed to calculate return trajectory, no path will be published")
             return
- 
+
         # Small delay to let the controllers settle
         self.get_clock().sleep_for(Duration(seconds=.5))
         
@@ -245,12 +281,12 @@ def main(args=None):
     from rclpy.executors import MultiThreadedExecutor
     rclpy.init(args=args)
     
-    # Assume PathTracingNode creates the ExplorationController internally
-    node = PathTracingNode() 
+    nav = BasicNavigator(node_name='path_tracing_node')
+    node = PathTracingNode(nav) 
     
-    # Use MultiThreadedExecutor to handle ReentrantCallbackGroups
     executor = MultiThreadedExecutor()
     executor.add_node(node)
+    executor.add_node(nav)
 
     try:
         executor.spin()
