@@ -44,13 +44,6 @@ class ExplorationController:
             SNC_STATUS_BUFFER_SIZE
         )
 
-        # Publisher for SNC status updates
-        self.pub_snc_status = self.nav.create_publisher(
-            SNC_STATUS_INTERFACE,
-            SNC_STATUS_TOPIC,
-            SNC_STATUS_BUFFER_SIZE
-        )
-
         # Wait for the Navigation Node to be available before proceeding
         self.wait_for_service()
 
