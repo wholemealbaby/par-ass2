@@ -5,12 +5,10 @@ from unittest.mock import Mock
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
-from std_msgs.msg import Empty, String
+from std_msgs.msg import String
 from nav_msgs.msg import Path
-from geometry_msgs.msg import PoseStamped
 from tf2_ros import TransformListener, Buffer, TransformException
 from nav2_simple_commander.robot_navigator import BasicNavigator
-from snc.exploration_control import ExplorationController
 
 from snc.constants import (
     GO_HOME_TOPIC,
@@ -35,7 +33,7 @@ from snc.constants import (
     SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE
 )
 import math
-import tf_transformations
+
 from snc_interfaces.srv import ExplorationControl
 
 
@@ -43,7 +41,7 @@ from snc_interfaces.srv import ExplorationControl
 from snc.path_tracing_core import (
     should_record_waypoint,
     construct_pose_stamped,
-    get_yaw_from_transform,
+    euler_from_quaternion,
     SAMPLE_FAILED,
     SAMPLE_SKIPPED,
     calculate_return_trajectory
@@ -259,7 +257,7 @@ class PathTracingNode(Node):
 
         # Convert quaternion to roll, pitch, yaw
         # returns a list
-        euler = tf_transformations.euler_from_quaternion(quaternion)
+        euler = euler_from_quaternion(quaternion)
 
         # Return the yaw
         return euler[2]
