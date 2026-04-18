@@ -1,12 +1,23 @@
 /marker_detection_node:
   ros__parameters:
     marker_confidence_threshold: 0.8 
+
 /navigation_node:
   ros__parameters:
     spin_duration_s: 2.0             
+
 /path_tracing_node:
   ros__parameters:
     waypoint_spacing_min: 0.5 # Minimum distance to publish a new waypoint
     waypoint_rotation_min: 15.0 # Minibmum rotation (in degrees) to publish a new waypoint
     pose_sample_interval_s: 0.5 # Time interval to sample the robot's pose for path tracing
     testing_mode: false # When true, runs in isolation without exploration controller and nav
+
+/twist_mux_node:
+  ros__parameters:
+    testing_mode: false
+    lock_teleop: true
+    lock_manual: true
+    cmd_vel_topic: /cmd_vel
+    cmd_vel_teleop_topic: /cmd_vel_teleop
+    cmd_vel_manual_topic: /cmd_vel_manual

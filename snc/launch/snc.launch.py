@@ -33,6 +33,22 @@ def generate_launch_description():
         parameters=[]
     )
 
+    # Node 4: Twist Mux Node with Testing Mode Lock
+    twist_mux_node = Node(
+        package=package_name,
+        executable='twist_mux',
+        name='twist_mux_node',
+        output='screen',
+        parameters=[
+            {'testing_mode': False},
+            {'lock_teleop': True},
+            {'lock_manual': True},
+            {'cmd_vel_topic': '/cmd_vel'},
+            {'cmd_vel_teleop_topic': '/cmd_vel_teleop'},
+            {'cmd_vel_manual_topic': '/cmd_vel_manual'}
+        ]
+    )
+
     slam_toolbox_node = Node(
         package='slam_toolbox',
         executable='sync_slam_toolbox_node', # Common executable for slam_toolbox
@@ -53,6 +69,7 @@ def generate_launch_description():
         navigation_node,
         marker_detection_node,
         path_tracing_node,
+        twist_mux_node,
         slam_toolbox_node,
         # find_object_node
     ])
