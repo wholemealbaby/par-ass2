@@ -281,7 +281,7 @@ def main(args=None):
     from rclpy.executors import MultiThreadedExecutor
     rclpy.init(args=args)
     
-    nav = BasicNavigator(node_name='Node_3_BasicNavigator')
+    nav = BasicNavigator(node_name='path_tracing_node')
     node = PathTracingNode(nav) 
     
     executor = MultiThreadedExecutor()

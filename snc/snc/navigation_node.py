@@ -56,7 +56,7 @@ class NavigationNode(Node):
     def __init__(self):
         super().__init__('navigation_node')
 
-        self.navigator = BasicNavigator()
+        self.navigator = BasicNavigator(node_name='navigation_node')
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
