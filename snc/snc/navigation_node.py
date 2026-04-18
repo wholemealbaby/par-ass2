@@ -823,6 +823,24 @@ class NavigationNode(Node):
         covered_mask = self.covered if self.covered is not None else np.zeros_like(reachable_mask, dtype=bool)
         uncovered_mask = reachable_mask & free_mask & (~covered_mask)
 
+        num_free = np.count_nonzero(free_mask)
+        num_reachable = np.count_nonzero(reachable_mask)
+        num_covered = np.count_nonzero(covered_mask)
+        num_uncovered = np.count_nonzero(uncovered_mask)
+        reachable_covered_mask = reachable_mask & covered_mask
+        covered_pct = (100.0 * num_covered / num_free) if num_free > 0 else 0.0
+        reachable_covered_pct = (
+            100.0 * (num_reachable - num_uncovered) / num_reachable
+            if num_reachable > 0 else 0.0
+        )
+
+        self.get_logger().info(
+            f"free={num_free}, reachable={num_reachable}, covered={num_covered}, "
+            f"uncovered={num_uncovered}, covered/free={covered_pct:.1f}%, "
+            f"covered/reachable={reachable_covered_pct:.1f}%, "
+            f"reachable_covered={np.count_nonzero(reachable_covered_mask)}"
+        )
+
         if self.choose_frontier_goal:
             self.get_logger().info('Choosing frontier goal...')
             frontier_goal = self.find_frontier_goal(grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res)
