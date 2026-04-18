@@ -103,3 +103,8 @@ TRIGGER_HOME_BUFFER_SIZE = 1
 SNC_STATUS_TOPIC = '/snc_status'
 SNC_STATUS_INTERFACE = String
 SNC_STATUS_BUFFER_SIZE = 1
+
+# Startup synchronization topic - all nodes publish their readiness here
+STARTUP_SYNC_TOPIC = '/snc_startup_sync'
+STARTUP_SYNC_INTERFACE = Empty
+STARTUP_SYNC_BUFFER_SIZE = 1
