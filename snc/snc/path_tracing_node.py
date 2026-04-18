@@ -366,15 +366,13 @@ class PathTracingNode(Node):
         return self._call_service("TELEOP")
 
 def main(args=None):
-    from rclpy.executors import MultiThreadedExecutor
     rclpy.init(args=args)
     
     nav = BasicNavigator(node_name='path_tracing_node')
-    node = PathTracingNode(nav) 
-    
+    node = PathTracingNode(nav)
 
     try:
-        node.spin()
+        rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
