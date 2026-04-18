@@ -106,5 +106,5 @@ SNC_STATUS_BUFFER_SIZE = 1
 
 # Startup synchronization topic - all nodes publish their readiness here
 STARTUP_SYNC_TOPIC = '/snc_startup_sync'
-STARTUP_SYNC_INTERFACE = Empty
+STARTUP_SYNC_INTERFACE = String
 STARTUP_SYNC_BUFFER_SIZE = 1
