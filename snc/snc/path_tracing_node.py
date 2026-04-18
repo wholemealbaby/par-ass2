@@ -65,7 +65,7 @@ class PathTracingNode(Node):
         # Navigator
         self.nav = nav
         # Controller client
-        self.client = self.node.create_client(ExplorationControl, '/snc_exploration_control')
+        self.client = self.create_client(ExplorationControl, '/snc_exploration_control')
 
         # Configure parameters with defaults
         params = params or {}
