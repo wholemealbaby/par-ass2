@@ -1,0 +1,132 @@
+root@universe:/ros2_ws# ros2 launch snc snc.launch.py
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-04-18-03-44-42-375301-universe-239
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [navigation_node-1]: process started with pid [242]
+[INFO] [marker_detection_node-2]: process started with pid [243]
+[INFO] [path_tracing_node-3]: process started with pid [244]
+[INFO] [sync_slam_toolbox_node-4]: process started with pid [245]
+[marker_detection_node-2] [INFO] [1776483886.085588487] [marker_detection_node_ex]: Marker detection node launched
+[navigation_node-1] [WARN] [1776483886.248611167] [rcl.logging_rosout]: Publisher already registered for node name: 'navigation_node_ex'. If this is due to multiple nodes with the same name then all logs for the logger named 'navigation_node_ex' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[path_tracing_node-3] [WARN] [1776483892.202846453] [rcl.logging_rosout]: Publisher already registered for node name: 'path_tracing_node_ex'. If this is due to multiple nodes with the same name then all logs for the logger named 'path_tracing_node_ex' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[path_tracing_node-3] [INFO] [1776483892.719203145] [path_tracing_node_ex]: Path tracing node launched
+[path_tracing_node-3] [INFO] [1776483892.733220344] [path_tracing_node_ex]: Testing mode: False
+[navigation_node-1] [INFO] [1776483893.267119789] [navigation_node_ex]: Exploration node created
+[navigation_node-1] [INFO] [1776483893.268549741] [navigation_node_ex]: Waiting for Nav2 to become active...
+[navigation_node-1] [INFO] [1776483897.351963614] [navigation_node_ex]: Nav2 is ready for use!
+[navigation_node-1] [INFO] [1776483897.352682044] [navigation_node_ex]: Nav2 is active
+[navigation_node-1] [INFO] [1776483897.353398714] [navigation_node_ex]: Waiting for TF map -> base_link...
+[navigation_node-1] [INFO] [1776483899.426119943] [navigation_node_ex]: Robot pose TF is available
+[navigation_node-1] [INFO] [1776483899.426831484] [navigation_node_ex]: Waiting for occupancy grid /map...
+[navigation_node-1] [INFO] [1776483899.429085162] [navigation_node_ex]: Exploration node is ready and waiting for /snc_start
+[navigation_node-1] [INFO] [1776483904.101044567] [navigation_node_ex]: Exploration started....
+[navigation_node-1] [INFO] [1776483905.153520734] [navigation_node_ex]: free=2467, reachable=1464, covered=0, uncovered=1464, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776483905.155585818] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776483905.197497933] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776483905.199240238] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776483905.342396282] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776483905.357485431] [navigation_node_ex]: selected uncovered cluster size=1464, goal=(57,12)
+[navigation_node-1] [INFO] [1776483905.364200057] [navigation_node_ex]: Navigating to goal: 0.4687920276241444 -1.3048737546970552...
+[navigation_node-1] [WARN] [1776483906.095257907] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776483906.239246380] [navigation_node_ex]: free=2467, reachable=1464, covered=0, uncovered=1464, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776483906.278533575] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776483906.308273686] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776483906.316466282] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776483906.351038880] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776483906.357296003] [navigation_node_ex]: selected uncovered cluster size=1464, goal=(57,12)
+[navigation_node-1] [INFO] [1776483906.365065986] [navigation_node_ex]: Navigating to goal: 0.4687920276241444 -1.3048737546970552...
+[navigation_node-1] [WARN] [1776483907.090448567] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776483907.160080690] [navigation_node_ex]: free=2467, reachable=1464, covered=0, uncovered=1464, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776483907.163190724] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776483907.205774991] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776483907.206810848] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776483907.306318342] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776483907.308277981] [navigation_node_ex]: selected uncovered cluster size=1464, goal=(57,12)
+[navigation_node-1] [INFO] [1776483907.311533794] [navigation_node_ex]: Navigating to goal: 0.4687920276241444 -1.3048737546970552...
+[navigation_node-1] [INFO] [1776483907.531160939] [navigation_node_ex]: Exploration started....
+[navigation_node-1] [INFO] [1776483908.182034113] [navigation_node_ex]: free=2467, reachable=1464, covered=0, uncovered=1464, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776483908.197469801] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776483908.230526039] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776483908.232599160] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776483908.266889757] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776483908.278119238] [navigation_node_ex]: selected uncovered cluster size=1464, goal=(57,12)
+[navigation_node-1] [INFO] [1776483908.280382972] [navigation_node_ex]: Navigating to goal: 0.4687920276241444 -1.3048737546970552...
+[navigation_node-1] [INFO] [1776483918.090940338] [navigation_node_ex]: Frontier reached, replanning...
+[navigation_node-1] [INFO] [1776483918.179933705] [navigation_node_ex]: free=4851, reachable=2891, covered=0, uncovered=2891, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776483918.181096711] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776483918.227197569] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776483918.228176185] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776483918.250070627] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776483918.251796451] [navigation_node_ex]: selected uncovered cluster size=2891, goal=(8,59)
+[navigation_node-1] [INFO] [1776483918.254293519] [navigation_node_ex]: Navigating to goal: -1.4983424928179079 0.5565759681158742...
+[navigation_node-1] [INFO] [1776483930.090386129] [navigation_node_ex]: Frontier reached, replanning...
+[navigation_node-1] [INFO] [1776483930.261368553] [navigation_node_ex]: free=4866, reachable=2947, covered=0, uncovered=2947, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776483930.300943823] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [INFO] [1776483930.374206539] [navigation_node_ex]: frontier clusters=1, ranked_frontier_clusters=1
+[navigation_node-1] [INFO] [1776483930.376938960] [navigation_node_ex]: Centroid of chosen cluster: (82.07407407407408,35.74074074074074)
+[navigation_node-1] [INFO] [1776483930.377792983] [navigation_node_ex]: Computed back off goal cell based on centroid and standoff (0.0): (81,35)
+[navigation_node-1] [INFO] [1776483930.378442634] [navigation_node_ex]: selected frontier cluster size=54, goal=(81,35)
+[navigation_node-1] [INFO] [1776483930.379879901] [navigation_node_ex]: Navigating to goal: 1.4191898684275042 -0.42319818624948424...
+[navigation_node-1] [INFO] [1776483946.089546206] [navigation_node_ex]: Frontier reached, replanning...
+[navigation_node-1] [INFO] [1776483946.211779572] [navigation_node_ex]: free=5631, reachable=3297, covered=0, uncovered=3297, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776483946.215662351] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776483946.274624570] [navigation_node_ex]: No frontier cells found
+[navigation_node-1] [INFO] [1776483946.275639389] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776483946.353059515] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776483946.355052173] [navigation_node_ex]: selected uncovered cluster size=3297, goal=(9,60)
+[navigation_node-1] [INFO] [1776483946.357381481] [navigation_node_ex]: Navigating to goal: -1.4898662150130821 0.576801791398774...
+[path_tracing_node-3] [INFO] [1776483950.577635577] [path_tracing_node_ex]: Home trigger received. Coordinating shutdown...
+[path_tracing_node-3] [INFO] [1776483950.604149412] [path_tracing_node_ex]: Requesting exploration STOP...
+[path_tracing_node-3] [INFO] [1776483950.605572864] [path_tracing_node_ex]: Sending command: STOP
+[navigation_node-1] [INFO] [1776483950.765804160] [navigation_node_ex]: Canceling current task.
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[sync_slam_toolbox_node-4] [INFO] [1776483989.866421912] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[navigation_node-1] [INFO] [1776483989.867901234] [navigation_node_ex]: Canceling current task.
+[navigation_node-1] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[marker_detection_node-2] Traceback (most recent call last):
+[marker_detection_node-2]   File "/ros2_ws/install/snc/lib/snc/marker_detection_node", line 33, in <module>
+[marker_detection_node-2]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'marker_detection_node')())
+[marker_detection_node-2]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[marker_detection_node-2]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/marker_detection_node.py", line 78, in main
+[marker_detection_node-2]     rclpy.shutdown()
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 134, in shutdown
+[marker_detection_node-2]     _shutdown(context=context)
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/utilities.py", line 82, in shutdown
+[marker_detection_node-2]     context.shutdown()
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/context.py", line 129, in shutdown
+[marker_detection_node-2]     self.__context.shutdown()
+[marker_detection_node-2] rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:333
+[path_tracing_node-3] Traceback (most recent call last):
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/snc/path_tracing_node", line 33, in <module>
+[path_tracing_node-3]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'path_tracing_node')())
+[path_tracing_node-3]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/path_tracing_node.py", line 380, in main
+[path_tracing_node-3]     rclpy.shutdown()
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 134, in shutdown
+[path_tracing_node-3]     _shutdown(context=context)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/utilities.py", line 82, in shutdown
+[path_tracing_node-3]     context.shutdown()
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/context.py", line 129, in shutdown
+[path_tracing_node-3]     self.__context.shutdown()
+[path_tracing_node-3] rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:333
+[ERROR] [marker_detection_node-2]: process has died [pid 243, exit code 1, cmd '/ros2_ws/install/snc/lib/snc/marker_detection_node --ros-args -r __node:=marker_detection_node_ex'].
+[INFO] [sync_slam_toolbox_node-4]: process has finished cleanly [pid 245]
+[navigation_node-1] Traceback (most recent call last):
+[navigation_node-1]   File "/ros2_ws/install/snc/lib/snc/navigation_node", line 33, in <module>
+[navigation_node-1]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'navigation_node')())
+[navigation_node-1]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/navigation_node.py", line 953, in main
+[navigation_node-1]     executor.spin_once(timeout_sec=0.1)
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 1012, in spin_once
+[navigation_node-1]     self._spin_once_impl(timeout_sec)
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 988, in _spin_once_impl
+[navigation_node-1]     handler, entity, node = self.wait_for_ready_callbacks(
+[navigation_node-1]                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 874, in wait_for_ready_callbacks
+[navigation_node-1]     return next(self._cb_iter)
+[navigation_node-1]            ^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 778, in _wait_for_ready_callbacks
+[navigation_node-1]     wait_set.wait(timeout_nsec)
+[navigation_node-1] KeyboardInterrupt
+[ERROR] [path_tracing_node-3]: process has died [pid 244, exit code 1, cmd '/ros2_ws/install/snc/lib/snc/path_tracing_node --ros-args -r __node:=path_tracing_node_ex'].
+[ERROR] [navigation_node-1]: process has died [pid 242, exit code -2, cmd '/ros2_ws/install/snc/lib/snc/navigation_node --ros-args -r __node:=navigation_node_ex'].
+root@universe:/ros2_ws# 
