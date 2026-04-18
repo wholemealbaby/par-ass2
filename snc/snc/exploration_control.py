@@ -1,13 +1,7 @@
-import rclpy
 from snc_interfaces.srv import ExplorationControl
-from nav_msgs.msg import Path
-from snc.constants import (
-    TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE, 
-    TRIGGER_START_TOPIC, TRIGGER_START_BUFFER_SIZE, TRIGGER_START_INTERFACE,
-    TRIGGER_TELEOP_TOPIC, TRIGGER_TELEOP_BUFFER_SIZE, TRIGGER_TELEOP_INTERFACE,
-    SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE
-)
 
+# DEPRECATED
+# DO NOT USE
 
 class ExplorationController:
     """
