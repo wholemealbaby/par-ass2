@@ -20,6 +20,15 @@ from snc.constants import (
     PATH_RETURN_TOPIC,
     PATH_RETURN_BUFFER_SIZE,
     PATH_RETURN_INTERFACE,
+    TRIGGER_START_TOPIC,
+    TRIGGER_START_BUFFER_SIZE,
+    TRIGGER_START_INTERFACE,
+    TRIGGER_TELEOP_TOPIC,
+    TRIGGER_TELEOP_BUFFER_SIZE,
+    TRIGGER_TELEOP_INTERFACE,
+    START_CHALLENGE_TOPIC,
+    START_CHALLENGE_INTERFACE,
+    START_CHALLENGE_BUFFER_SIZE,
     TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE,
     SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE
 )
@@ -53,17 +62,27 @@ class PathTracingNode(Node):
         # Navigator
         self.nav = nav
         
-        # Initialize the ExplorationController (logic-only, no ROS interfaces)
-        self.exploration_controller = ExplorationController(self)
-
         from rclpy.callback_groups import ReentrantCallbackGroup
         self.cb_group = ReentrantCallbackGroup()
 
         # Configure parameters with defaults
         params = params or {}
+        
+        # Declare and get parameters
+        self.declare_parameter('testing_mode', False)
+        self.testing_mode = params.get('testing_mode', self.get_parameter('testing_mode').value)
+        self.get_logger().info(f'Testing mode: {self.testing_mode}')
+        
+        # Initialize the ExplorationController only if not in testing mode
+        if not self.testing_mode:
+            self.exploration_controller = ExplorationController(self)
+        else:
+            self.exploration_controller = None
+        
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
         self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
         self.waypoint_rotation_min = math.radians(params.get('waypoint_rotation_min', 15))
+        self.started = False # Flag to indicate if path tracing has started, prevents pose sampling before the challenge starts
         
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -83,6 +102,14 @@ class PathTracingNode(Node):
             SNC_STATUS_BUFFER_SIZE
         )
 
+        # Start challenge subscription 
+        self.sub_start_challenge = self.create_subscription(
+            START_CHALLENGE_INTERFACE,
+            START_CHALLENGE_TOPIC,
+            self.start_challenge_callback,
+            START_CHALLENGE_BUFFER_SIZE,
+            callback_group=self.cb_group
+        )
         # Go home trigger subscription to start return path tracing
         self.sub_go_home = self.create_subscription(
             GO_HOME_INTERFACE,
@@ -90,13 +117,27 @@ class PathTracingNode(Node):
             self.home_trigger_callback,
             GO_HOME_BUFFER_SIZE,
             callback_group=self.cb_group
-        )        
-        # Contingency Return home trigger
+        )  
+        # Contingency triggers
         self.sub_home_trigger = self.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
             TRIGGER_HOME_BUFFER_SIZE,
+            callback_group=self.cb_group
+        )
+        self.sub_start_trigger = self.create_subscription(
+            TRIGGER_START_INTERFACE,
+            TRIGGER_START_TOPIC,
+            self.start_challenge_callback,
+            TRIGGER_START_BUFFER_SIZE,
+            callback_group=self.cb_group
+        )
+        self.sub_teleop_trigger = self.create_subscription(
+            TRIGGER_TELEOP_INTERFACE,
+            TRIGGER_TELEOP_TOPIC,
+            self.teleop_trigger_callback,
+            TRIGGER_TELEOP_BUFFER_SIZE,
             callback_group=self.cb_group
         )
         # Publisher for /path_explore to publish the path taken during exploration 
@@ -106,13 +147,6 @@ class PathTracingNode(Node):
             PATH_EXPLORE_TOPIC,
             PATH_EXPLORE_BUFFER_SIZE
         )
-        # # Publisher for /breadcrumbs_explore to publish the breadcrumbs taken during exploration
-        # # for Node 1 to improve exploration
-        # self.pub_explore_breadcrumbs = self.create_publisher(
-        #     EXPLORE_BREADCRUMBS_INTERFACE,
-        #     EXPLORE_BREADCRUMBS_TOPIC,
-        #     EXPLORE_BREADCRUMBS_BUFFER_SIZE
-        # )
         # Publisher for /breadcrumbs_return to publish the path taken during return
         # for assessors to evaluate
         self.pub_path_return = self.create_publisher(
@@ -123,6 +157,23 @@ class PathTracingNode(Node):
 
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback, callback_group=self.cb_group)
     
+    def teleop_trigger_callback(self, _):
+        """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
+        """
+        self.get_logger().info("Teleop trigger received. Entering testing mode (disabling exploration controller and navigation).")
+        if not self.testing_mode and self.exploration_controller is not None:
+            self.exploration_controller.stop()
+            self.exploration_controller = None
+    
+    def start_challenge_callback(self, _):
+        """Callback for the start challenge trigger, which allows starting the path tracing without waiting for the transform to become available. Useful for testing.
+        """
+        self.get_logger().info("Start challenge trigger received. Starting path tracing without waiting for TF.")
+        # Start the pose sampling timer immediately without waiting for TF
+        self.sample_pose_timer.reset()
+        self.started = True
+        self.exploration_controller.start()
+
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
         """
@@ -137,6 +188,8 @@ class PathTracingNode(Node):
         """
         # Check that the transform is possible
         if not self.check_base_link_map_transform_possible():
+            return
+        if not self.started:
             return
 
         pose = self.get_robot_pose_in_map_frame()
@@ -224,7 +277,7 @@ class PathTracingNode(Node):
         
         This callback coordinates the shutdown sequence:
         1. Update status message
-        2. Stop exploration (awaiting completion)
+        2. Stop exploration (awaiting completion) - only if not in testing mode
         3. Start return trajectory following
         """
         self.get_logger().info("Home trigger received. Coordinating shutdown...")
@@ -234,7 +287,9 @@ class PathTracingNode(Node):
 
         # 2. Tell Controller to stop exploration
         # We await this to ensure exploration is DEAD before we start navigating
-        await self.exploration_controller.stop()
+        # Only if not in testing mode
+        if not self.testing_mode and self.exploration_controller is not None:
+            await self.exploration_controller.stop()
 
         # 3. Trigger the internal return-to-home logic
         self.start_return_sequence()
@@ -246,7 +301,7 @@ class PathTracingNode(Node):
         self.return_triggered = True
         self.get_logger().info("Starting return trajectory following.")
         
-        # Reset last recorded pose and yaw to ensure the first return waypoint 
+        # Reset last recorded pose and yaw to ensure the first return waypoint
         # is recorded regardless of distance/rotation from the last explore waypoint
         self.last_recorded_pose = None
         self.last_recorded_yaw = None
@@ -262,8 +317,12 @@ class PathTracingNode(Node):
         # Small delay to let the controllers settle
         self.get_clock().sleep_for(Duration(seconds=.5))
         
-        self.get_logger().info('Navigating Home...')
-        self.nav.followPath(self.return_path)
+        # Only navigate if not in testing mode
+        if not self.testing_mode:
+            self.get_logger().info('Navigating Home...')
+            self.nav.followPath(self.return_path)
+        else:
+            self.get_logger().info('Testing mode: Skipping navigation')
 
     
     def wait_for_robot_pose(self):
