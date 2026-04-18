@@ -279,7 +279,7 @@ class PathTracingNode(Node):
 
         if not self.testing_mode:
             self.stop_exploration()
-
+        self.get_logger().info("Exploration stopped, starting return sequence...")
         self.start_return_sequence()
 
     def start_return_sequence(self):
@@ -342,8 +342,24 @@ class PathTracingNode(Node):
         request.command = command
         
         self.get_logger().info(f"Sending command: {command}")
-        response = self.client.call(request)
-        return response
+        
+        # Use async call with timeout to avoid hanging
+        future = self.client.call_async(request)
+        
+        # Wait for response with 5 second timeout
+        while rclpy.ok():
+            if future.done():
+                response = future.result()
+                if response is not None:
+                    return response
+                else:
+                    self.get_logger().error(f"Service call {command} failed")
+                    return None
+            # Check timeout
+            rclpy.spin_once(self, timeout_sec=0.1)
+        
+        self.get_logger().error(f"Service call {command} timed out")
+        return None
 
     def stop_exploration(self):
         """Stops the exploration process."""
