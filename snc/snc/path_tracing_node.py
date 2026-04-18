@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+code#!/usr/bin/env python3
 
 import rclpy
 from rclpy.duration import Duration
@@ -47,7 +47,7 @@ class PathTracingNode(Node):
             nav: The BasicNavigator instance to use for navigation
             params: Optional dictionary of parameters to override defaults
         """
-        super().__init__('path_tracing_logic_node')
+        super().__init__('path_tracing_node')
         self.get_logger().info('Path tracing node launched')
 
         # Navigator
