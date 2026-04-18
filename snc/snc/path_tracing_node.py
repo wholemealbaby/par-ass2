@@ -179,10 +179,11 @@ class PathTracingNode(Node):
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
         """
-        if not self.tf_buffer.can_transform('map', 'base_link', rclpy.time.Time()):
-            # Log intermittently to avoid spamming the console
-            self.get_logger().warn("Waiting for TF to become available...", throttle_duration_sec=10.0)
-            return False
+        if not self.testing_mode:
+            if not self.tf_buffer.can_transform('map', 'base_link', rclpy.time.Time()):
+                # Log intermittently to avoid spamming the console
+                self.get_logger().warn("Waiting for TF to become available...", throttle_duration_sec=10.0)
+                return False
         return True
 
     def sample_pose_callback(self):
