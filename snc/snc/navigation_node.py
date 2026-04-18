@@ -12,10 +12,10 @@ from rclpy.executors import MultiThreadedExecutor
 
 from tf2_ros import Buffer, TransformListener, TransformException
 
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import OccupancyGrid
-from std_msgs.msg import Empty, String
-from visualization_msgs.msg import MarkerArray
+from std_msgs.msg import Empty, String, ColorRGBA
+from visualization_msgs.msg import MarkerArray, Marker
 
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
@@ -97,7 +97,8 @@ class NavigationNode(Node):
         self.covered = None
         self.last_path_len = 0
         self.last_processed_cell = None
-        self.coverage_radius_m = 0.18
+        self.robot_radius_m = 0.15
+        self.safety_margin_m = 0.05
         self.choose_frontier_goal = True
 
         map_qos = QoSProfile(
@@ -166,6 +167,13 @@ class NavigationNode(Node):
             '/cmd_vel', 
             10
         )
+        
+        self.coverage_marker_pub = self.create_publisher(
+            Marker, 
+            '/covered_cells_marker',
+            1    
+        )
+        self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
 
         self.control_srv = self.create_service(
             ExplorationControl,
@@ -247,9 +255,6 @@ class NavigationNode(Node):
         self.pending_resume_after_spin = False
 
     def hazards_callback(self, msg: MarkerArray):
-        # Example for MarkerArray: use marker.id as unique hazard ID.
-        # Replace this logic if /hazards has a different message type.
-        # TODO: Add mapping logic for the markers.
         before = len(self.hazard_ids)
         for marker in msg.markers:
             self.hazard_ids.add(int(marker.id))
@@ -349,6 +354,43 @@ class NavigationNode(Node):
         self.last_path_len = n
         self.get_logger().info(f"New last path len: {self.last_path_len}")
 
+    def publish_coverage_marker(self):#
+        if self.latest_map is None or self.covered is None:
+            return
+        
+        msg = Marker()
+        msg.header.frame_id = self.global_frame
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.ns = 'coverage'
+        msg.id = 0
+        msg.type = Marker.CUBE_LIST
+        msg.action = Marker.ADD
+        msg.scale.x = self.latest_map.info.resolution
+        msg.scale.y = self.latest_map.info.resolution
+        msg.scale.z = 0.01
+        msg.pose.orientation.w = 1.0
+        msg.frame_locked = True
+        
+        color = ColorRGBA()
+        color.r = 0.0
+        color.g = 1.0
+        color.b = 1.0
+        color.a = 0.7
+        msg.color = color
+        
+        origin = self.latest_map.info.origin.position
+        res = self.latest_map.info.resolution
+        
+        ys, xs = np.where(self.covered)
+        for y, x in zip(ys, xs):
+            p = Point()
+            p.x = origin.x + (x + 0.5) * res
+            p.y = origin.y + (y + 0.5) * res
+            p.z = 0.01
+            msg.points.append(p)
+            
+        self.coverage_marker_pub.publish(msg)
+
     def ensure_coverage_grid(self):
         h = self.latest_map.info.height
         w = self.latest_map.info.width
@@ -366,11 +408,11 @@ class NavigationNode(Node):
         if 0 <= mx < info.width and 0 <= my < info.height:
             return (mx, my)
 
-        return None
+        return None   
 
     def paint_disk(self, mx, my):
         res = self.latest_map.info.resolution
-        radius_cells = max(1, int(math.ceil(self.coverage_radius_m / res)))
+        radius_cells = max(1, int(math.ceil(self.robot_radius_m / res)))
 
         h, w = self.covered.shape
         for dx in range(-radius_cells, radius_cells + 1):
@@ -559,10 +601,37 @@ class NavigationNode(Node):
                         return True
         return False
 
-    def get_reachable_cells_and_distance(self, grid, start_x, start_y):
+    def build_safe_free_mask(self, grid):
+        res = self.latest_map.info.resolution
+        
+        inflation_cells = max(1, int(math.ceil((self.robot_radius_m + self.safety_margin_m) / res)))
+        
         height, width = grid.shape
+        
+        blocked = (grid == MAP_UNKNOWN) | (grid >= MAP_OCCUPIED_THRESHOLD)
+        
+        inflated_blocked = np.copy(blocked)
+        
+        ys, xs = np.where(blocked)
+        for y, x in zip(ys, xs):
+            for dy in range(-inflation_cells, inflation_cells + 1):
+                for dx in range(-inflation_cells, inflation_cells + 1):
+                    if dx**2 + dy**2 > inflation_cells**2:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < width and 0 <= ny < height:
+                        inflated_blocked[ny, nx] = True
+                    
+        safe_free = ~inflated_blocked
+        return safe_free
+
+    def get_reachable_cells_and_distance(self, safe_free_mask, start_x, start_y):
+        height, width = safe_free_mask.shape
         reachable = np.zeros((height, width), dtype=bool)
         dist = np.full((height, width), -1, dtype=np.int32)
+
+        if not safe_free_mask[start_y, start_x]:
+            return reachable, dist
 
         q = collections.deque([(start_x, start_y)])
         reachable[start_y, start_x] = True
@@ -576,7 +645,7 @@ class NavigationNode(Node):
                     continue
                 if reachable[ny, nx]:
                     continue
-                if not self.is_cell_traversable(grid[ny, nx]):
+                if not safe_free_mask[ny, nx]:
                     continue
 
                 reachable[ny, nx] = True
@@ -724,7 +793,8 @@ class NavigationNode(Node):
                 self.get_logger().warn('Could not find traversable start cell near robot')
                 return None
 
-        reachable_cells, dists = self.get_reachable_cells_and_distance(grid, robot_x, robot_y)
+        safe_free_mask = self.build_safe_free_mask(grid)
+        reachable_cells, dists = self.get_reachable_cells_and_distance(safe_free_mask, robot_x, robot_y)
         
         free_mask = np.vectorize(self.is_cell_traversable)(grid)
         reachable_mask = reachable_cells
