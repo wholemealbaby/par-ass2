@@ -227,7 +227,7 @@ class PathTracingNode(Node):
                 if tf_buffer else self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
         except TransformException as e:
             if self.testing_mode:
-                self.get_logger().log(f"TF unavailable during testing, using default pose")
+                self.get_logger().info(f"TF unavailable during testing, using default pose")
                 return construct_pose_stamped(Mock(transform=Mock(translation=Mock(x=0.0, y=0.0), rotation=Mock(x=0.0, y=0.0, z=0.0, w=1.0))), clock or self.get_clock(), 'map')
             self.get_logger().warn(f"Failed to get robot pose despite TF being available: {e}")
             return SAMPLE_FAILED
