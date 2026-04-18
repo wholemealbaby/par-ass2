@@ -10,7 +10,7 @@ def generate_launch_description():
     navigation_node = Node(
         package=package_name,
         executable='navigation_node',
-        name='navigation_node',
+        name='navigation_node_ex',
         output='screen',
         parameters=[]
     )
@@ -19,7 +19,7 @@ def generate_launch_description():
     marker_detection_node = Node(
         package=package_name,
         executable='marker_detection_node',
-        name='marker_detection_node',
+        name='marker_detection_node_ex',
         output='screen',
         parameters=[]
     )
@@ -28,7 +28,7 @@ def generate_launch_description():
     path_tracing_node = Node(
         package=package_name,
         executable='path_tracing_node',
-        name='path_tracing_node',
+        name='path_tracing_node_ex',
         output='screen',
         parameters=[]
     )
