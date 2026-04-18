@@ -334,32 +334,24 @@ class PathTracingNode(Node):
         Returns:
             The service response or None if service call fails
         """
+
         if not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error(f"Service not available for command: {command}")
-            return None
+            self.get_logger().error(f"Service not available: {command}")
+            return
         
         request = ExplorationControl.Request()
         request.command = command
         
-        self.get_logger().info(f"Sending command: {command}")
-        
-        # Use async call with timeout to avoid hanging
         future = self.client.call_async(request)
-        
-        # Wait for response with 5 second timeout
-        while rclpy.ok():
-            if future.done():
-                response = future.result()
-                if response is not None:
-                    return response
-                else:
-                    self.get_logger().error(f"Service call {command} failed")
-                    return None
-            # Check timeout
-            rclpy.spin_once(self, timeout_sec=0.1)
-        
-        self.get_logger().error(f"Service call {command} timed out")
-        return None
+
+        future.add_done_callback(self._service_response_callback)
+
+    def _service_response_callback(self, future):
+        try:
+            response = future.result()
+            self.get_logger().info("Service call succeeded")
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
 
     def stop_exploration(self):
         """Stops the exploration process."""
