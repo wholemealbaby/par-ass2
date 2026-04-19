@@ -219,8 +219,7 @@ class PathTracingNode(Node):
         """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
         """
         self.get_logger().info("Teleop trigger received. Entering testing mode (disabling exploration controller and navigation).")
-        if not self.testing_mode:
-            self.stop_exploration()
+        self.stop_exploration()
     
     def start_challenge_callback(self, _):
         """Callback for the start challenge trigger, which allows starting the path tracing without waiting for the transform to become available. Useful for testing.
@@ -238,11 +237,10 @@ class PathTracingNode(Node):
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
         """
-        if not self.testing_mode:
-            if not self.tf_buffer.can_transform('map', 'base_link', rclpy.time.Time()):
-                # Log intermittently to avoid spamming the console
-                self.get_logger().warn("Waiting for TF to become available...", throttle_duration_sec=10.0)
-                return False
+        if not self.tf_buffer.can_transform('map', 'base_link', rclpy.time.Time()):
+            # Log intermittently to avoid spamming the console
+            self.get_logger().warn("Waiting for TF to become available...", throttle_duration_sec=10.0)
+            return False
         return True
 
     def sample_pose_callback(self):
@@ -285,8 +283,6 @@ class PathTracingNode(Node):
             t = tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time()) \
                 if tf_buffer else self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
         except TransformException as e:
-            if self.testing_mode:
-                self.get_logger().info(f"TF unavailable during testing, using default pose")
                 return construct_pose_stamped(Mock(transform=Mock(translation=Mock(x=0.0, y=0.0), rotation=Mock(x=0.0, y=0.0, z=0.0, w=1.0))), clock or self.get_clock(), 'map')
             self.get_logger().warn(f"Failed to get robot pose despite TF being available: {e}")
             return SAMPLE_FAILED
@@ -352,8 +348,7 @@ class PathTracingNode(Node):
         
         self.pub_status.publish(String(data="STOPPING FOR HOME"))
 
-        if not self.testing_mode:
-            self.stop_exploration()
+        self.stop_exploration()
         self.get_logger().info('Exploration stopped, calculating return trajectory...')
         self.start_return_sequence()
 
@@ -382,12 +377,8 @@ class PathTracingNode(Node):
         # Small delay to let the controllers settle
         self.get_clock().sleep_for(Duration(seconds=.5))
         
-        # Only navigate if not in testing mode
-        if not self.testing_mode:
-            self.get_logger().info('  Navigating Home...')
-            self.nav.followPath(self.return_path)
-        else:
-            self.get_logger().info('  Testing mode: Skipping navigation')
+        self.get_logger().info('  Navigating Home...')
+        self.nav.followPath(self.return_path)
 
     
     def wait_for_robot_pose(self):
