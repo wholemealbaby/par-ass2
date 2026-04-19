@@ -113,7 +113,9 @@ class PathTracingRuntimeTest(Node):
         # Flag to indicate if the test was interrupted
         self.interrupted = False
         
-        self.get_logger().info('Path tracing runtime test initialized')
+        self.get_logger().info('=' * 60)
+        self.get_logger().info('PATH TRACING RUNTIME TEST - CHALLENGE TOPICS')
+        self.get_logger().info('=' * 60)
         self.get_logger().info(f'Subscribed to topics:')
         self.get_logger().info(f'  - {PATH_EXPLORE_TOPIC}')
         self.get_logger().info(f'  - {PATH_RETURN_TOPIC}')
@@ -256,6 +258,9 @@ class PathTracingRuntimeTest(Node):
 
     def run_test(self):
        """Run the runtime test until interrupted by keyboard signal"""
+       self.get_logger().info('-' * 60)
+       self.get_logger().info('PHASE 0: TEST INITIALIZATION')
+       self.get_logger().info('-' * 60)
        self.get_logger().info('Starting runtime test - will run until interrupted by Ctrl+C...')
        
        # Wait for startup sync to complete before proceeding
@@ -275,16 +280,25 @@ class PathTracingRuntimeTest(Node):
            self.get_logger().error('Startup sync did not complete within timeout')
        
        # Run indefinitely until interrupted (after startup sync is done)
+       self.get_logger().info('-' * 60)
+       self.get_logger().info('PHASE 4: CHALLENGE IN PROGRESS')
+       self.get_logger().info('-' * 60)
        while not self.interrupted:
            rclpy.spin_once(self, timeout_sec=0.1)
-           
+       
        # Final validation when interrupted
+       self.get_logger().info('-' * 60)
+       self.get_logger().info('PHASE 5: TEST COMPLETED')
+       self.get_logger().info('-' * 60)
        self.get_logger().info('Test interrupted by user. Performing final validation on current data...')
        
        success = self.validate_paths()
        
        # Summary
-       self.get_logger().info('\n=== TEST SUMMARY ===')
+       self.get_logger().info('')
+       self.get_logger().info('=' * 60)
+       self.get_logger().info('TEST SUMMARY')
+       self.get_logger().info('=' * 60)
        self.get_logger().info(f'Explore paths: {self.explore_path_count}')
        self.get_logger().info(f'Return paths: {self.return_path_count}')
        self.get_logger().info(f'Home triggers: {self.home_trigger_count}')
