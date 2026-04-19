@@ -33,7 +33,10 @@ from snc.constants import (
     STARTUP_SYNC_INTERFACE,
     START_CHALLENGE_TOPIC,
     START_CHALLENGE_BUFFER_SIZE,
-    START_CHALLENGE_INTERFACE
+    START_CHALLENGE_INTERFACE,
+    GO_HOME_TOPIC,
+    GO_HOME_BUFFER_SIZE,
+    GO_HOME_INTERFACE
 )
 
 class PathTracingRuntimeTest(Node):
@@ -92,6 +95,17 @@ class PathTracingRuntimeTest(Node):
             TRIGGER_HOME_BUFFER_SIZE
         )
         
+        # Publisher for go_home topic
+        self.pub_go_home = self.create_publisher(
+            GO_HOME_INTERFACE,
+            GO_HOME_TOPIC,
+            GO_HOME_BUFFER_SIZE
+        )
+        
+        # Timer for go_home (created on first path waypoint)
+        self.go_home_timer = None
+        self.first_waypoint_received = False
+        
         # Test duration and timeout
         self.test_duration = 30.0  # seconds
         self.start_time = time.time()
@@ -111,6 +125,21 @@ class PathTracingRuntimeTest(Node):
         self.latest_explore_path = msg
         self.get_logger().info(f'Received explore path #{self.explore_path_count} '
                               f'with {len(msg.poses)} waypoints')
+        
+        # Start go_home timer on first waypoint
+        if not self.first_waypoint_received and len(msg.poses) > 0:
+            self.first_waypoint_received = True
+            self.get_logger().info('First path waypoint received. Starting 10-second timer for go_home...')
+            self.go_home_timer = self.create_timer(10.0, self.go_home_callback)
+    
+    def go_home_callback(self):
+        """Callback to publish go_home signal after 10 seconds"""
+        if self.go_home_timer:
+            self.go_home_timer.cancel()
+            self.go_home_timer = None
+        self.get_logger().info('10 seconds elapsed. Publishing go_home signal...')
+        self.pub_go_home.publish(GO_HOME_INTERFACE())
+        self.get_logger().info(f'Published to {GO_HOME_TOPIC}')
 
     def return_path_callback(self, msg):
         """Callback for return path messages"""
