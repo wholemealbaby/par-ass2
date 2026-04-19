@@ -49,13 +49,6 @@ def generate_launch_description():
         ]
     )
 
-    slam_toolbox_node = Node(
-        package='slam_toolbox',
-        executable='sync_slam_toolbox_node', # Common executable for slam_toolbox
-        name='slam_node',
-        output='screen',
-        parameters=[] 
-    )
 
     # find_object_node = Node(
     #     package='find_object_2d',
@@ -70,6 +63,5 @@ def generate_launch_description():
         marker_detection_node,
         path_tracing_node,
         twist_mux_node,
-        slam_toolbox_node,
         # find_object_node
     ])
