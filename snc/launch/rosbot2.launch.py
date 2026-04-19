@@ -63,6 +63,7 @@ def generate_launch_description():
             'scan_topic': '/scan',
             'scan_frame': 'laser',
             'use_sim_time': False,
+            'queue_size': 50,
         }]
     )
 
