@@ -50,28 +50,28 @@ def generate_launch_description():
         ]
     )
 
-    # SLAM Toolbox Node - Configured for ROSbot 2
-    # Uses base_link as the robot base frame and odom as the odometry frame
-    slam_toolbox_node = Node(
-        package='slam_toolbox',
-        executable='sync_slam_toolbox_node',
-        name='slam_node',
-        output='screen',
-        parameters=[{
-            'base_frame': 'base_link',
-            'odom_frame': 'odom',
-            'scan_topic': '/scan',
-            'scan_frame': 'laser',
-            'use_sim_time': False,
-            'queue_size': 100,
-            'min_range': 0.1,
-        }]
-    )
+    # # SLAM Toolbox Node - Configured for ROSbot 2
+    # # Uses base_link as the robot base frame and odom as the odometry frame
+    # slam_toolbox_node = Node(
+    #     package='slam_toolbox',
+    #     executable='sync_slam_toolbox_node',
+    #     name='slam_node',
+    #     output='screen',
+    #     parameters=[{
+    #         'base_frame': 'base_link',
+    #         'odom_frame': 'odom',
+    #         'scan_topic': '/scan',
+    #         'scan_frame': 'laser',
+    #         'use_sim_time': False,
+    #         'queue_size': 100,
+    #         'min_range': 0.1,
+    #     }]
+    # )
 
     return LaunchDescription([
         navigation_node,
         marker_detection_node,
         path_tracing_node,
         twist_mux_node,
-        slam_toolbox_node,
+        # slam_toolbox_node,
     ])
