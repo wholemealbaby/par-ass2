@@ -117,7 +117,7 @@ class PathTracingNode(Node):
 
         # Track which nodes have published readiness
         self.nodes_ready = set()
-        self.node_name = 'path_tracing'
+        self.node_name = self.get_name()  # Use actual node name
         self.all_nodes_ready = False
 
         # Start challenge subscription

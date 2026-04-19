@@ -64,7 +64,7 @@ class MarkerDetectionNode(Node):
 
         # Track which nodes have published readiness
         self.nodes_ready = set()
-        self.node_name = 'marker_detection'
+        self.node_name = self.get_name()  # Use actual node name
         self.all_nodes_ready = False
 
     def trigger_start(self) -> None:
@@ -108,8 +108,16 @@ class MarkerDetectionNode(Node):
         # Publish this node's readiness
         self.pub_startup_sync.publish(String(data=self.node_name))
         
-        while rclpy.ok() and not self.all_nodes_ready:
-            rclpy.spin_once(self, timeout_sec=0.1)
+        # Use a separate executor to process callbacks during startup sync
+        executor = rclpy.executors.SingleThreadedExecutor()
+        executor.add_node(self)
+        
+        try:
+            while rclpy.ok() and not self.all_nodes_ready:
+                executor.spin_once(timeout_sec=0.1)
+        finally:
+            executor.remove_node(self)
+            executor.shutdown()
         
         self.get_logger().info('All nodes ready, proceeding with initialization.')
 
