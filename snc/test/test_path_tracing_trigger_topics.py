@@ -244,7 +244,7 @@ class PathTracingRuntimeTest(Node):
        while not self.interrupted and not self.all_nodes_ready:
            rclpy.spin_once(self, timeout_sec=0.1)
            elapsed = time.time() - startup_sync_start
-           if elapsed > 30.0 and not self.all_nodes_ready:
+           if elapsed > TEST_SYNC_CHECK_TIMEOUT and not self.all_nodes_ready:
                self.get_logger().warn('Startup sync timeout - continuing anyway...')
                break
        
