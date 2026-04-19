@@ -50,6 +50,8 @@ OBJECTS_TOPIC = "/objectsStamped"
 OBJECTS_BUFFER_SIZE = 20
 OBJECTS_INTERFACE = ObjectsStamped
 
+TEST_SYNC_CHECK_TIMEOUT = 120.0  # seconds
+
 # # Topic for Node 3 to pub all breadcrumbs taken during exploration
 # # for Node 1 to improve exploration
 # RETURN_BREADCRUMBS_TOPIC = '/breadcrumbs_return'

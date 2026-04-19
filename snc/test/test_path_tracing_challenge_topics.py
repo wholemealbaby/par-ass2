@@ -25,6 +25,7 @@ from snc.constants import (
     PATH_RETURN_TOPIC,
     PATH_RETURN_BUFFER_SIZE,
     PATH_RETURN_INTERFACE,
+    TEST_SYNC_CHECK_TIMEOUT,
     TRIGGER_HOME_TOPIC,
     TRIGGER_HOME_BUFFER_SIZE,
     TRIGGER_HOME_INTERFACE,
@@ -109,7 +110,7 @@ class PathTracingRuntimeTest(Node):
         self.first_waypoint_received = False
         
         # Test duration and timeout
-        self.test_duration = 30.0  # seconds
+        self.test_duration = TEST_SYNC_CHECK_TIMEOUT  # seconds
         self.start_time = time.time()
         
         # Flag to indicate if the test was interrupted
