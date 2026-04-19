@@ -189,8 +189,15 @@ class PathTracingNode(Node):
         # Publish this node's readiness
         self.pub_startup_sync.publish(String(data=self.node_name))
         
+        # Use a separate executor to avoid conflict with main rclpy.spin()
+        executor = rclpy.executors.SingleThreadedExecutor()
+        executor.add_node(self)
+        
         while rclpy.ok() and not self.all_nodes_ready:
-            rclpy.spin_once(self, timeout_sec=0.1)
+            executor.spin_once(timeout_sec=0.1)
+        
+        executor.remove_node(self)
+        executor.shutdown()
         
         self.get_logger().info('All nodes ready, proceeding with initialization.')
     
