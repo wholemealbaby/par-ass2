@@ -224,6 +224,10 @@ class NavigationNode(Node):
         self.navigator.waitUntilNav2Active(localizer='slam_toolbox')
         self.get_logger().info('Nav2 is active')
 
+        # Set is_ready early so other nodes can proceed with startup sync
+        self.is_ready = True
+        self.get_logger().info('Exploration node is ready')
+
         self.get_logger().info(
             f'Waiting for TF {self.global_frame} -> {self.robot_base_frame}...'
         )
@@ -251,8 +255,7 @@ class NavigationNode(Node):
             ):
                 break
 
-        self.is_ready = True
-        self.get_logger().info('Exploration node is ready and waiting for /snc_start')
+        self.get_logger().info('Occupancy grid received, ready for exploration')
 
     def startup_sync_callback(self, msg):
         """Callback for startup synchronization topic. Tracks which nodes have published readiness."""
@@ -1007,9 +1010,8 @@ def main():
     # Wait for all nodes to be ready before starting
     node.wait_for_all_nodes_ready()
 
-    executor = MultiThreadedExecutor()
+    executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(node)
-    executor.add_node(node.navigator)
 
     try:
         node.wait_until_ready(executor)
@@ -1021,7 +1023,6 @@ def main():
         except Exception:
             pass
 
-        node.navigator.destroy_node()
         node.destroy_node()
 
         if rclpy.ok():
