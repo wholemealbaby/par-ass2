@@ -59,7 +59,9 @@ class PathTracingNode(Node):
             params: Optional dictionary of parameters to override defaults
         """
         super().__init__('path_tracing_node')
-        self.get_logger().info('Path tracing node launched')
+        self.get_logger().info('=' * 60)
+        self.get_logger().info('PATH TRACING NODE - INITIALIZING')
+        self.get_logger().info('=' * 60)
 
         # Navigator
         self.nav = nav
@@ -184,7 +186,10 @@ class PathTracingNode(Node):
     
     def wait_for_all_nodes_ready(self):
         """Wait for all nodes to publish their readiness on the startup sync topic."""
-        self.get_logger().info('Waiting for all nodes to be ready...')
+        self.get_logger().info('-' * 60)
+        self.get_logger().info('PHASE 1: WAITING FOR NODE SYNCHRONIZATION')
+        self.get_logger().info('-' * 60)
+        self.get_logger().info('Publishing readiness signal...')
         
         # Publish this node's readiness
         self.pub_startup_sync.publish(String(data=self.node_name))
@@ -193,13 +198,20 @@ class PathTracingNode(Node):
         executor = rclpy.executors.SingleThreadedExecutor()
         executor.add_node(self)
         
+        nodes_ready_count = 0
         while rclpy.ok() and not self.all_nodes_ready:
             executor.spin_once(timeout_sec=0.1)
+            current_ready = len(self.nodes_ready)
+            if current_ready > nodes_ready_count:
+                nodes_ready_count = current_ready
+                self.get_logger().info(f'  ✓ Node ready: {self.node_name} ({nodes_ready_count + 1}/3 nodes ready)')
         
         executor.remove_node(self)
         executor.shutdown()
         
-        self.get_logger().info('All nodes ready, proceeding with initialization.')
+        self.get_logger().info('-' * 60)
+        self.get_logger().info('PHASE 1 COMPLETE: All nodes synchronized')
+        self.get_logger().info('-' * 60)
     
     def teleop_trigger_callback(self, _):
         """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
@@ -211,11 +223,15 @@ class PathTracingNode(Node):
     def start_challenge_callback(self, _):
         """Callback for the start challenge trigger, which allows starting the path tracing without waiting for the transform to become available. Useful for testing.
         """
-        self.get_logger().info("Start challenge trigger received. Starting path tracing without waiting for TF.")
+        self.get_logger().info('-' * 60)
+        self.get_logger().info('PHASE 2: PATH TRACING STARTED')
+        self.get_logger().info('-' * 60)
+        self.get_logger().info('Start challenge trigger received. Beginning path exploration...')
         # Start the pose sampling timer immediately without waiting for TF
         self.sample_pose_timer.reset()
         self.started = True
         self.start_exploration()
+        self.get_logger().info('  ✓ Path exploration active - recording waypoints')
 
     def check_base_link_map_transform_possible(self):
         """Checks if the transform between base_link and map is possible, which is required for path tracing to function. Logs intermittently if not available.
@@ -244,11 +260,11 @@ class PathTracingNode(Node):
         # Save the waypoint to the appropriate breadcrumb list and publish the path
         if self.return_triggered:
             self.return_breadcrumbs.append(pose)
-            self.get_logger().info(f"Stored return waypoint {len(self.return_breadcrumbs)}")
+            self.get_logger().info(f'  Return: {len(self.return_breadcrumbs)} waypoints recorded')
             self.pub_path_return.publish(Path(header=pose.header, poses=self.return_breadcrumbs))
         else:
             self.explore_breadcrumbs.append(pose)
-            self.get_logger().info(f"Stored explore waypoint {len(self.explore_breadcrumbs)}")
+            self.get_logger().info(f'  Explore: {len(self.explore_breadcrumbs)} waypoints recorded')
             self.pub_path_explore.publish(Path(header=pose.header, poses=self.explore_breadcrumbs))
 
     def get_robot_pose_in_map_frame(self, tf_buffer=None, clock=None):
@@ -327,13 +343,16 @@ class PathTracingNode(Node):
         2. Stop exploration (awaiting completion) - only if not in testing mode
         3. Start return trajectory following
         """
-        self.get_logger().info("Home trigger received. Coordinating shutdown...")
+        self.get_logger().info('-' * 60)
+        self.get_logger().info('PHASE 3: RETURN HOME TRIGGERED')
+        self.get_logger().info('-' * 60)
+        self.get_logger().info('Home trigger received. Coordinating return sequence...')
         
         self.pub_status.publish(String(data="STOPPING FOR HOME"))
 
         if not self.testing_mode:
             self.stop_exploration()
-        self.get_logger().info("Exploration stopped, starting return sequence...")
+        self.get_logger().info('Exploration stopped, calculating return trajectory...')
         self.start_return_sequence()
 
     def start_return_sequence(self):
@@ -349,9 +368,11 @@ class PathTracingNode(Node):
         self.last_recorded_yaw = None
 
         # Calculate the return trajectory and handle log failures
+        self.get_logger().info(f'  Calculating return trajectory from {len(self.explore_breadcrumbs)} explore waypoints...')
         return_trajectory = calculate_return_trajectory(self.explore_breadcrumbs, self.waypoint_spacing_min, self.waypoint_rotation_min)
         if return_trajectory is not None:
             self.return_path = Path(header=return_trajectory[0].header, poses=return_trajectory)
+            self.get_logger().info(f'  ✓ Return trajectory calculated ({len(return_trajectory)} waypoints)')
         else:
             self.get_logger().error("Failed to calculate return trajectory, no path will be published")
             return
@@ -361,10 +382,10 @@ class PathTracingNode(Node):
         
         # Only navigate if not in testing mode
         if not self.testing_mode:
-            self.get_logger().info('Navigating Home...')
+            self.get_logger().info('  Navigating Home...')
             self.nav.followPath(self.return_path)
         else:
-            self.get_logger().info('Testing mode: Skipping navigation')
+            self.get_logger().info('  Testing mode: Skipping navigation')
 
     
     def wait_for_robot_pose(self):
