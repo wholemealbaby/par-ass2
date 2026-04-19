@@ -21,7 +21,7 @@ Output Topic:
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from rcl_interfaces.msg import ParameterDescriptor, FloatingPointRange
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType, FloatingPointRange
 
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
@@ -46,7 +46,7 @@ class TwistMuxNode(Node):
             False,
             ParameterDescriptor(
                 name='testing_mode',
-                type=Parameter.Type.BOOL,
+                type=ParameterType.PARAMETER_BOOL,
                 description='When True, blocks all Twist commands to prevent movement',
                 read_only=False
             )
@@ -57,7 +57,7 @@ class TwistMuxNode(Node):
             True,
             ParameterDescriptor(
                 name='lock_teleop',
-                type=Parameter.Type.BOOL,
+                type=ParameterType.PARAMETER_BOOL,
                 description='When True, blocks teleop input even when testing_mode=False',
                 read_only=False
             )
@@ -68,7 +68,7 @@ class TwistMuxNode(Node):
             True,
             ParameterDescriptor(
                 name='lock_manual',
-                type=Parameter.Type.BOOL,
+                type=ParameterType.PARAMETER_BOOL,
                 description='When True, blocks manual input even when testing_mode=False',
                 read_only=False
             )
@@ -79,7 +79,7 @@ class TwistMuxNode(Node):
             '/cmd_vel',
             ParameterDescriptor(
                 name='cmd_vel_topic',
-                type=Parameter.Type.STRING,
+                type=ParameterType.PARAMETER_STRING,
                 description='Primary cmd_vel input topic',
                 read_only=False
             )
@@ -90,7 +90,7 @@ class TwistMuxNode(Node):
             '/cmd_vel_teleop',
             ParameterDescriptor(
                 name='cmd_vel_teleop_topic',
-                type=Parameter.Type.STRING,
+                type=ParameterType.PARAMETER_STRING,
                 description='Teleop input topic',
                 read_only=False
             )
@@ -101,7 +101,7 @@ class TwistMuxNode(Node):
             '/cmd_vel_manual',
             ParameterDescriptor(
                 name='cmd_vel_manual_topic',
-                type=Parameter.Type.STRING,
+                type=ParameterType.PARAMETER_STRING,
                 description='Manual override topic',
                 read_only=False
             )
