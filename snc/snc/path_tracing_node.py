@@ -31,7 +31,8 @@ from snc.constants import (
     START_CHALLENGE_BUFFER_SIZE,
     TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE,
     SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE,
-    STARTUP_SYNC_TOPIC, STARTUP_SYNC_INTERFACE, STARTUP_SYNC_BUFFER_SIZE
+    STARTUP_SYNC_TOPIC, STARTUP_SYNC_INTERFACE, STARTUP_SYNC_BUFFER_SIZE,
+    STARTUP_SYNC_QOS,
 )
 import math
 
@@ -102,7 +103,7 @@ class PathTracingNode(Node):
         self.pub_startup_sync = self.create_publisher(
             STARTUP_SYNC_INTERFACE,
             STARTUP_SYNC_TOPIC,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
 
         # Startup synchronization subscriber - waits for all nodes to be ready
@@ -110,7 +111,7 @@ class PathTracingNode(Node):
             STARTUP_SYNC_INTERFACE,
             STARTUP_SYNC_TOPIC,
             self.startup_sync_callback,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
 
         # Track which nodes have published readiness

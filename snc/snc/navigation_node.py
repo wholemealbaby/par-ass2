@@ -40,7 +40,8 @@ from snc.constants import (
     HAZARD_SIGNAL_TOPIC,
     STARTUP_SYNC_TOPIC,
     STARTUP_SYNC_INTERFACE,
-    STARTUP_SYNC_BUFFER_SIZE
+    STARTUP_SYNC_BUFFER_SIZE,
+    STARTUP_SYNC_QOS,
 )
 
 MAP_UNKNOWN = -1
@@ -163,7 +164,7 @@ class NavigationNode(Node):
         self.pub_startup_sync = self.create_publisher(
             STARTUP_SYNC_INTERFACE,
             STARTUP_SYNC_TOPIC,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
 
         # Startup synchronization subscriber - waits for all nodes to be ready
@@ -171,7 +172,7 @@ class NavigationNode(Node):
             STARTUP_SYNC_INTERFACE,
             STARTUP_SYNC_TOPIC,
             self.startup_sync_callback,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
 
         # Track which nodes have published readiness

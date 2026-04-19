@@ -31,6 +31,7 @@ from snc.constants import (
     STARTUP_SYNC_TOPIC,
     STARTUP_SYNC_BUFFER_SIZE,
     STARTUP_SYNC_INTERFACE,
+    STARTUP_SYNC_QOS,
     START_CHALLENGE_TOPIC,
     START_CHALLENGE_BUFFER_SIZE,
     START_CHALLENGE_INTERFACE,
@@ -69,7 +70,7 @@ class PathTracingRuntimeTest(Node):
             STARTUP_SYNC_INTERFACE,
             STARTUP_SYNC_TOPIC,
             self.startup_sync_callback,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
         
         # Subscribe to path topics

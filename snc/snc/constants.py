@@ -1,6 +1,7 @@
 from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
 from find_object_2d.msg import ObjectsStamped
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 # Mapping of hazard names to their ID 
 # from the assignment specification
@@ -108,3 +109,9 @@ SNC_STATUS_BUFFER_SIZE = 1
 STARTUP_SYNC_TOPIC = '/snc_startup_sync'
 STARTUP_SYNC_INTERFACE = String
 STARTUP_SYNC_BUFFER_SIZE = 1
+
+# QoS profile for startup sync with latching to ensure late subscribers receive messages
+STARTUP_SYNC_QOS = QoSProfile(
+    depth=STARTUP_SYNC_BUFFER_SIZE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL
+)

@@ -10,7 +10,7 @@ readiness within a reasonable time frame.
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-from snc.constants import STARTUP_SYNC_TOPIC, STARTUP_SYNC_BUFFER_SIZE
+from snc.constants import STARTUP_SYNC_TOPIC, STARTUP_SYNC_BUFFER_SIZE, STARTUP_SYNC_QOS
 import time
 
 
@@ -32,7 +32,7 @@ class StartupSyncTestNode(Node):
             String,
             STARTUP_SYNC_TOPIC,
             self.startup_sync_callback,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
         
         # Timer to check timeout

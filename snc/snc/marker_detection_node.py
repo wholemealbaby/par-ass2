@@ -12,6 +12,7 @@ from snc.constants import (
     STARTUP_SYNC_TOPIC,
     STARTUP_SYNC_INTERFACE,
     STARTUP_SYNC_BUFFER_SIZE,
+    STARTUP_SYNC_QOS,
 )
 from std_msgs.msg import Empty, String
 from snc.hazard import HazardManager
@@ -50,7 +51,7 @@ class MarkerDetectionNode(Node):
         self.pub_startup_sync = self.create_publisher(
             STARTUP_SYNC_INTERFACE,
             STARTUP_SYNC_TOPIC,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
 
         # Startup synchronization subscriber - waits for all nodes to be ready
@@ -58,7 +59,7 @@ class MarkerDetectionNode(Node):
             STARTUP_SYNC_INTERFACE,
             STARTUP_SYNC_TOPIC,
             self.startup_sync_callback,
-            STARTUP_SYNC_BUFFER_SIZE
+            STARTUP_SYNC_QOS
         )
 
         # Track which nodes have published readiness
