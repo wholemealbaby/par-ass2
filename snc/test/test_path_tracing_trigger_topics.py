@@ -14,6 +14,9 @@ import sys
 import os
 import signal
 import threading
+from datetime import datetime
+from pathlib import Path
+import logging
 
 # Add the snc module to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -101,6 +104,30 @@ class PathTracingRuntimeTest(Node):
         # Flag to indicate if the test was interrupted
         self.interrupted = False
         
+        # Setup logging files with timestamps
+        self.log_dir = os.path.dirname(os.path.abspath(__file__))
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.log_file_path = os.path.join(self.log_dir, f'path_tracing_trigger_topics_{timestamp}.log')
+        self.summary_file_path = os.path.join(self.log_dir, f'path_tracing_trigger_summary_{timestamp}.log')
+        
+        # Setup file logger
+        self.file_logger = logging.getLogger(f'file_logger_{id(self)}')
+        self.file_logger.setLevel(logging.DEBUG)
+        file_handler = logging.FileHandler(self.log_file_path)
+        file_handler.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        file_handler.setFormatter(file_formatter)
+        self.file_logger.addHandler(file_handler)
+        
+        self.file_logger.info('=' * 60)
+        self.file_logger.info('PATH TRACING RUNTIME TEST - INITIALIZING')
+        self.file_logger.info('=' * 60)
+        self.file_logger.info(f'Subscribed to topics:')
+        self.file_logger.info(f'  - {PATH_EXPLORE_TOPIC}')
+        self.file_logger.info(f'  - {PATH_RETURN_TOPIC}')
+        self.file_logger.info(f'  - {TRIGGER_HOME_TOPIC}')
+        self.file_logger.info(f'  - {TRIGGER_START_TOPIC}')
+        
         self.get_logger().info('=' * 60)
         self.get_logger().info('PATH TRACING RUNTIME TEST - INITIALIZING')
         self.get_logger().info('=' * 60)
@@ -109,89 +136,131 @@ class PathTracingRuntimeTest(Node):
         self.get_logger().info(f'  - {PATH_RETURN_TOPIC}')
         self.get_logger().info(f'  - {TRIGGER_HOME_TOPIC}')
         self.get_logger().info(f'  - {TRIGGER_START_TOPIC}')
+        self.get_logger().info(f'Log files will be saved to: {self.log_dir}')
 
     def explore_path_callback(self, msg):
         """Callback for explore path messages"""
         self.explore_path_count += 1
         self.latest_explore_path = msg
-        self.get_logger().info(f'Received explore path #{self.explore_path_count} '
-                              f'with {len(msg.poses)} waypoints')
+        message = f'Received explore path #{self.explore_path_count} with {len(msg.poses)} waypoints'
+        self.get_logger().info(message)
+        self.file_logger.info(message)
     
     def return_path_callback(self, msg):
         """Callback for return path messages"""
         self.return_path_count += 1
         self.latest_return_path = msg
-        self.get_logger().info(f'Received return path #{self.return_path_count} '
-                              f'with {len(msg.poses)} waypoints')
+        message = f'Received return path #{self.return_path_count} with {len(msg.poses)} waypoints'
+        self.get_logger().info(message)
+        self.file_logger.info(message)
 
     def home_trigger_callback(self, msg):
         """Callback for home trigger messages"""
         self.home_trigger_count += 1
-        self.get_logger().info(f'Received home trigger #{self.home_trigger_count}')
+        message = f'Received home trigger #{self.home_trigger_count}'
+        self.get_logger().info(message)
+        self.file_logger.info(message)
 
     def validate_paths(self):
         """Validate that the paths are being published correctly"""
         self.get_logger().info('Validating paths...')
+        self.file_logger.info('Validating paths...')
         
         # Check if we've received any explore paths
         if self.explore_path_count > 0:
-            self.get_logger().info(f'✓ Explore paths received: {self.explore_path_count}')
+            message = f'✓ Explore paths received: {self.explore_path_count}'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
             
             # Validate explore path structure
             if self.latest_explore_path:
                 explore_poses = len(self.latest_explore_path.poses)
-                self.get_logger().info(f'  Latest explore path has {explore_poses} waypoints')
+                message = f'  Latest explore path has {explore_poses} waypoints'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
                 
                 # Basic validation: paths should have headers with correct frame
                 if self.latest_explore_path.header.frame_id == 'map':
-                    self.get_logger().info('  ✓ Explore path frame is correct (map)')
+                    message = '  ✓ Explore path frame is correct (map)'
+                    self.get_logger().info(message)
+                    self.file_logger.info(message)
                 else:
-                    self.get_logger().error(f'  ✗ Explore path frame incorrect: {self.latest_explore_path.header.frame_id}')
+                    message = f'  ✗ Explore path frame incorrect: {self.latest_explore_path.header.frame_id}'
+                    self.get_logger().error(message)
+                    self.file_logger.error(message)
                     return False
                 
                 # Check that waypoints have valid positions
                 if explore_poses > 0:
                     first_pose = self.latest_explore_path.poses[0]
-                    self.get_logger().info(f'  ✓ First explore waypoint position: ({first_pose.pose.position.x:.2f}, {first_pose.pose.position.y:.2f})')
+                    message = f'  ✓ First explore waypoint position: ({first_pose.pose.position.x:.2f}, {first_pose.pose.position.y:.2f})'
+                    self.get_logger().info(message)
+                    self.file_logger.info(message)
                 else:
-                    self.get_logger().info('  ? Explore path has no waypoints yet')
+                    message = '  ? Explore path has no waypoints yet'
+                    self.get_logger().info(message)
+                    self.file_logger.info(message)
             else:
-                self.get_logger().info('  ? No explore path data available')
+                message = '  ? No explore path data available'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
         else:
-            self.get_logger().info('ℹ No explore paths received yet')
+            message = 'ℹ No explore paths received yet'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
             
         # Check if we've received any return paths
         if self.return_path_count > 0:
-            self.get_logger().info(f'✓ Return paths received: {self.return_path_count}')
+            message = f'✓ Return paths received: {self.return_path_count}'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
             
             # Validate return path structure
             if self.latest_return_path:
                 return_poses = len(self.latest_return_path.poses)
-                self.get_logger().info(f'  Latest return path has {return_poses} waypoints')
+                message = f'  Latest return path has {return_poses} waypoints'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
                 
                 # Basic validation: paths should have headers with correct frame
                 if self.latest_return_path.header.frame_id == 'map':
-                    self.get_logger().info('  ✓ Return path frame is correct (map)')
+                    message = '  ✓ Return path frame is correct (map)'
+                    self.get_logger().info(message)
+                    self.file_logger.info(message)
                 else:
-                    self.get_logger().error(f'  ✗ Return path frame incorrect: {self.latest_return_path.header.frame_id}')
+                    message = f'  ✗ Return path frame incorrect: {self.latest_return_path.header.frame_id}'
+                    self.get_logger().error(message)
+                    self.file_logger.error(message)
                     return False
                 
                 # Check that waypoints have valid positions
                 if return_poses > 0:
                     first_pose = self.latest_return_path.poses[0]
-                    self.get_logger().info(f'  ✓ First return waypoint position: ({first_pose.pose.position.x:.2f}, {first_pose.pose.position.y:.2f})')
+                    message = f'  ✓ First return waypoint position: ({first_pose.pose.position.x:.2f}, {first_pose.pose.position.y:.2f})'
+                    self.get_logger().info(message)
+                    self.file_logger.info(message)
                 else:
-                    self.get_logger().info('  ? Return path has no waypoints yet')
+                    message = '  ? Return path has no waypoints yet'
+                    self.get_logger().info(message)
+                    self.file_logger.info(message)
             else:
-                self.get_logger().info('  ? No return path data available')
+                message = '  ? No return path data available'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
         else:
-            self.get_logger().info('ℹ No return paths received yet')
+            message = 'ℹ No return paths received yet'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
             
         # Check home trigger
         if self.home_trigger_count > 0:
-            self.get_logger().info(f'✓ Home triggers received: {self.home_trigger_count}')
+            message = f'✓ Home triggers received: {self.home_trigger_count}'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
         else:
-            self.get_logger().info('ℹ No home triggers received yet')
+            message = 'ℹ No home triggers received yet'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
             
         return True
 
@@ -201,34 +270,53 @@ class PathTracingRuntimeTest(Node):
         
         if not node_name:
             self.get_logger().warn('Received empty node name')
+            self.file_logger.warn('Received empty node name')
             return
             
         current_time = time.time()
         elapsed = current_time - self.start_time if self.start_time else 0.0
         
         if node_name in self.startup_sync_signals:
-            self.get_logger().info(f'[REPEAT] Received startup sync from {node_name} at {elapsed:.2f}s')
+            message = f'[REPEAT] Received startup sync from {node_name} at {elapsed:.2f}s'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
         else:
             self.startup_sync_signals[node_name] = current_time
-            self.get_logger().info(f'Received startup sync from {node_name} at {elapsed:.2f}s')
+            message = f'Received startup sync from {node_name} at {elapsed:.2f}s'
+            self.get_logger().info(message)
+            self.file_logger.info(message)
             
             # Check if all expected nodes are ready
             if set(self.startup_sync_signals.keys()) == self.expected_nodes:
                 self.all_nodes_ready = True
                 elapsed = time.time() - self.start_time
-                self.get_logger().info(f'=== ALL NODES READY! ===')
-                self.get_logger().info(f'Total time to startup sync: {elapsed:.2f} seconds')
-                self.get_logger().info(f'Received signals from: {sorted(self.startup_sync_signals.keys())}')
+                message = f'=== ALL NODES READY! ==='
+                self.get_logger().info(message)
+                self.file_logger.info(message)
+                message = f'Total time to startup sync: {elapsed:.2f} seconds'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
+                message = f'Received signals from: {sorted(self.startup_sync_signals.keys())}'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
                 
                 # Print summary
-                self.get_logger().info('--- Startup Sync Timing Summary ---')
+                message = '--- Startup Sync Timing Summary ---'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
                 for node, timestamp in sorted(self.startup_sync_signals.items()):
-                    self.get_logger().info(f'{node}: {timestamp - self.start_time:.2f}s')
+                    message = f'{node}: {timestamp - self.start_time:.2f}s'
+                    self.get_logger().info(message)
+                    self.file_logger.info(message)
                 
                 # Publish trigger_start to trigger the challenge
-                self.get_logger().info('Publishing trigger_start to start challenge...')
+                message = 'Publishing trigger_start to start challenge...'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
                 self.pub_trigger_start.publish(TRIGGER_START_INTERFACE())
-                self.get_logger().info(f'Published to {TRIGGER_START_TOPIC}')
+                message = f'Published to {TRIGGER_START_TOPIC}'
+                self.get_logger().info(message)
+                self.file_logger.info(message)
 
     def run_test(self):
        """Run the runtime test until interrupted by keyboard signal"""
@@ -236,27 +324,41 @@ class PathTracingRuntimeTest(Node):
        self.get_logger().info('PHASE 0: TEST INITIALIZATION')
        self.get_logger().info('-' * 60)
        self.get_logger().info('Starting runtime test - will run until interrupted by Ctrl+C...')
+       self.file_logger.info('-' * 60)
+       self.file_logger.info('PHASE 0: TEST INITIALIZATION')
+       self.file_logger.info('-' * 60)
+       self.file_logger.info('Starting runtime test - will run until interrupted by Ctrl+C...')
        
        # Wait for startup sync to complete before proceeding
        self.get_logger().info(f'Waiting for startup sync from nodes: {sorted(self.expected_nodes)}...')
+       self.file_logger.info(f'Waiting for startup sync from nodes: {sorted(self.expected_nodes)}...')
        startup_sync_start = time.time()
        
        while not self.interrupted and not self.all_nodes_ready:
            rclpy.spin_once(self, timeout_sec=0.1)
            elapsed = time.time() - startup_sync_start
            if elapsed > TEST_SYNC_CHECK_TIMEOUT and not self.all_nodes_ready:
-               self.get_logger().warn('Startup sync timeout - continuing anyway...')
+               message = 'Startup sync timeout - continuing anyway...'
+               self.get_logger().warn(message)
+               self.file_logger.warn(message)
                break
        
        if self.all_nodes_ready:
-           self.get_logger().info(f'Startup sync completed successfully in {time.time() - startup_sync_start:.2f} seconds')
+           message = f'Startup sync completed successfully in {time.time() - startup_sync_start:.2f} seconds'
+           self.get_logger().info(message)
+           self.file_logger.info(message)
        else:
-           self.get_logger().error('Startup sync did not complete within timeout')
+           message = 'Startup sync did not complete within timeout'
+           self.get_logger().error(message)
+           self.file_logger.error(message)
        
        # Run indefinitely until interrupted (after startup sync is done)
        self.get_logger().info('-' * 60)
        self.get_logger().info('PHASE 4: CHALLENGE IN PROGRESS')
        self.get_logger().info('-' * 60)
+       self.file_logger.info('-' * 60)
+       self.file_logger.info('PHASE 4: CHALLENGE IN PROGRESS')
+       self.file_logger.info('-' * 60)
        while not self.interrupted:
            rclpy.spin_once(self, timeout_sec=0.1)
        
@@ -265,10 +367,30 @@ class PathTracingRuntimeTest(Node):
        self.get_logger().info('PHASE 5: TEST COMPLETED')
        self.get_logger().info('-' * 60)
        self.get_logger().info('Test interrupted by user. Performing final validation on current data...')
+       self.file_logger.info('-' * 60)
+       self.file_logger.info('PHASE 5: TEST COMPLETED')
+       self.file_logger.info('-' * 60)
+       self.file_logger.info('Test interrupted by user. Performing final validation on current data...')
        
        success = self.validate_paths()
        
-       # Summary
+       # Write summary to summary file
+       test_duration = time.time() - self.start_time
+       with open(self.summary_file_path, 'w') as f:
+           f.write('=' * 60 + '\n')
+           f.write('TEST SUMMARY\n')
+           f.write('=' * 60 + '\n')
+           f.write(f'Explore paths: {self.explore_path_count}\n')
+           f.write(f'Return paths: {self.return_path_count}\n')
+           f.write(f'Home triggers: {self.home_trigger_count}\n')
+           f.write(f'Test duration: {test_duration:.2f} seconds\n')
+           f.write(f'Test completed successfully: {success}\n')
+           f.write(f'Log file: {self.log_file_path}\n')
+           f.write('\n')
+           f.write('Startup Sync Timing Summary:\n')
+           for node, timestamp in sorted(self.startup_sync_signals.items()):
+               f.write(f'  {node}: {timestamp - self.start_time:.2f}s\n')
+       
        self.get_logger().info('')
        self.get_logger().info('=' * 60)
        self.get_logger().info('TEST SUMMARY')
@@ -276,7 +398,9 @@ class PathTracingRuntimeTest(Node):
        self.get_logger().info(f'Explore paths: {self.explore_path_count}')
        self.get_logger().info(f'Return paths: {self.return_path_count}')
        self.get_logger().info(f'Home triggers: {self.home_trigger_count}')
-       self.get_logger().info('Test duration: indefinite (until interrupted)')
+       self.get_logger().info(f'Test duration: {test_duration:.2f} seconds')
+       self.get_logger().info(f'Test completed successfully: {success}')
+       self.get_logger().info(f'Summary file: {self.summary_file_path}')
        
        if success:
            self.get_logger().info('✓ Test completed successfully')
@@ -289,6 +413,10 @@ class PathTracingRuntimeTest(Node):
         """Handle keyboard interrupt signal"""
         self.interrupted = True
         self.get_logger().info('Received interrupt signal. Stopping test...')
+        self.file_logger.info('Received interrupt signal. Stopping test...')
+        # Flush the log file
+        for handler in self.file_logger.handlers:
+            handler.flush()
         # Cancel the timer if it exists
         return True
 
@@ -306,7 +434,11 @@ def main():
         # Run the test
         success = test_node.run_test()
         
-        # Clean shutdown
+        # Clean shutdown - close file logger handlers
+        for handler in test_node.file_logger.handlers:
+            handler.close()
+        test_node.file_logger.handlers.clear()
+        
         test_node.destroy_node()
         rclpy.shutdown()
         
