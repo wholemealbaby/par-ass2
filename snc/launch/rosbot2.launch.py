@@ -61,6 +61,7 @@ def generate_launch_description():
             'base_frame': 'base_link',
             'odom_frame': 'odom',
             'scan_topic': '/scan',
+            'scan_frame': 'laser',
             'use_sim_time': False,
         }]
     )
