@@ -269,7 +269,7 @@ class NavigationNode(Node):
             self.get_logger().info(f'Received ready signal from: {node_name}. Ready nodes: {len(self.nodes_ready) + 1}/3')
             
             # Check if all expected nodes are ready (3 nodes: path_tracing, navigation, marker_detection)
-            if len(self.nodes_ready) >= 2:  # +1 for self
+            if len(self.nodes_ready) + 1 >= 2:  # +1 for self
                 self.all_nodes_ready = True
                 self.get_logger().info('All nodes are ready! Starting startup synchronization complete.')
     
@@ -1008,7 +1008,7 @@ def main():
     node = NavigationNode()
 
     # Wait for all nodes to be ready before starting
-    node.wait_for_all_nodes_ready()
+    #node.wait_for_all_nodes_ready()
 
     executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(node)
