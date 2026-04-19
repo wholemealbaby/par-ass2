@@ -1,7 +1,7 @@
 from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
 from find_object_2d.msg import ObjectsStamped
-from rclpy.qos import QoSProfile, DurabilityPolicy
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 
 # Mapping of hazard names to their ID 
 # from the assignment specification
@@ -114,4 +114,11 @@ STARTUP_SYNC_BUFFER_SIZE = 1
 STARTUP_SYNC_QOS = QoSProfile(
     depth=STARTUP_SYNC_BUFFER_SIZE,
     durability=DurabilityPolicy.TRANSIENT_LOCAL
+)
+
+# QoS profile for trigger topics to match ros2 topic pub default behavior
+TRIGGER_QOS = QoSProfile(
+    depth=1,
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    history=HistoryPolicy.KEEP_LAST
 )

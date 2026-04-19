@@ -42,6 +42,7 @@ from snc.constants import (
     STARTUP_SYNC_INTERFACE,
     STARTUP_SYNC_BUFFER_SIZE,
     STARTUP_SYNC_QOS,
+    TRIGGER_QOS,
 )
 
 MAP_UNKNOWN = -1
@@ -183,7 +184,7 @@ class NavigationNode(Node):
         self.return_pub = self.create_publisher(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
-            TRIGGER_HOME_BUFFER_SIZE
+            TRIGGER_QOS
         )
 
         self.cmd_vel_pub = self.create_publisher(

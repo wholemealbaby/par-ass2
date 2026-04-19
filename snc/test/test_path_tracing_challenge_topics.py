@@ -37,7 +37,8 @@ from snc.constants import (
     START_CHALLENGE_INTERFACE,
     GO_HOME_TOPIC,
     GO_HOME_BUFFER_SIZE,
-    GO_HOME_INTERFACE
+    GO_HOME_INTERFACE,
+    TRIGGER_QOS,
 )
 
 class PathTracingRuntimeTest(Node):

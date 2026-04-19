@@ -33,6 +33,7 @@ from snc.constants import (
     SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE,
     STARTUP_SYNC_TOPIC, STARTUP_SYNC_INTERFACE, STARTUP_SYNC_BUFFER_SIZE,
     STARTUP_SYNC_QOS,
+    TRIGGER_QOS,
 )
 import math
 
@@ -124,33 +125,33 @@ class PathTracingNode(Node):
             START_CHALLENGE_INTERFACE,
             START_CHALLENGE_TOPIC,
             self.start_challenge_callback,
-            START_CHALLENGE_BUFFER_SIZE
+            TRIGGER_QOS
         )
         # Go home trigger subscription to start return path tracing
         self.sub_go_home = self.create_subscription(
             GO_HOME_INTERFACE,
             GO_HOME_TOPIC,
             self.home_trigger_callback,
-            GO_HOME_BUFFER_SIZE
-        )  
+            TRIGGER_QOS
+        )
         # Contingency triggers
         self.sub_home_trigger = self.create_subscription(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.home_trigger_callback,
-            TRIGGER_HOME_BUFFER_SIZE
+            TRIGGER_QOS
         )
         self.sub_start_trigger = self.create_subscription(
             TRIGGER_START_INTERFACE,
             TRIGGER_START_TOPIC,
             self.start_challenge_callback,
-            TRIGGER_START_BUFFER_SIZE
+            TRIGGER_QOS
         )
         self.sub_teleop_trigger = self.create_subscription(
             TRIGGER_TELEOP_INTERFACE,
             TRIGGER_TELEOP_TOPIC,
             self.teleop_trigger_callback,
-            TRIGGER_TELEOP_BUFFER_SIZE
+            TRIGGER_QOS
         )
         # Publisher for /path_explore to publish the path taken during exploration 
         # for assessors to evaluate

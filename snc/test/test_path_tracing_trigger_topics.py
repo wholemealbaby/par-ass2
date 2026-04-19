@@ -33,7 +33,8 @@ from snc.constants import (
     TRIGGER_START_INTERFACE,
     STARTUP_SYNC_TOPIC,
     STARTUP_SYNC_BUFFER_SIZE,
-    STARTUP_SYNC_INTERFACE
+    STARTUP_SYNC_INTERFACE,
+    TRIGGER_QOS,
 )
 
 class PathTracingRuntimeTest(Node):
@@ -58,7 +59,7 @@ class PathTracingRuntimeTest(Node):
         self.pub_trigger_start = self.create_publisher(
             TRIGGER_START_INTERFACE,
             TRIGGER_START_TOPIC,
-            TRIGGER_START_BUFFER_SIZE
+            TRIGGER_QOS
         )
         
         # Subscriber for startup sync topic
