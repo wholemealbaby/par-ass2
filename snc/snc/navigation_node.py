@@ -75,7 +75,7 @@ class NavigationNode(Node):
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 50)
-        self.declare_parameter('frontier_standoff_m', 0)
+        self.declare_parameter('frontier_standoff_m', 0.1)
 
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
@@ -101,6 +101,8 @@ class NavigationNode(Node):
 
         self.covered = None
         self.last_path_len = 0
+        self.latest_path_msg = None
+        self.covered_map_info = None
         self.last_processed_cell = None
         self.robot_radius_m = 0.15
         self.safety_margin_m = 0.05
@@ -142,7 +144,7 @@ class NavigationNode(Node):
         )
 
         self.hazards_sub = self.create_subscription(
-            MarkerArray,   # replace if your /hazards topic uses another type
+            MarkerArray,
             '/hazards',
             self.hazards_callback,
             10
@@ -389,6 +391,8 @@ class NavigationNode(Node):
         return response
 
     def path_explore_callback(self, msg):
+        self.latest_path_msg = msg
+
         if self.latest_map is None:
             return
 
@@ -416,7 +420,6 @@ class NavigationNode(Node):
             self.last_processed_cell = cell
 
         self.last_path_len = n
-        self.get_logger().info(f"New last path len: {self.last_path_len}")
 
     def publish_coverage_marker(self):#
         if self.latest_map is None or self.covered is None:
@@ -431,7 +434,7 @@ class NavigationNode(Node):
         msg.action = Marker.ADD
         msg.scale.x = self.latest_map.info.resolution
         msg.scale.y = self.latest_map.info.resolution
-        msg.scale.z = 0.01
+        msg.scale.z = 0.05
         msg.pose.orientation.w = 1.0
         msg.frame_locked = True
         
@@ -450,19 +453,33 @@ class NavigationNode(Node):
             p = Point()
             p.x = origin.x + (x + 0.5) * res
             p.y = origin.y + (y + 0.5) * res
-            p.z = 0.01
+            p.z = 0.03
             msg.points.append(p)
             
+        num_points = len(msg.points)
         self.coverage_marker_pub.publish(msg)
 
     def ensure_coverage_grid(self):
         h = self.latest_map.info.height
         w = self.latest_map.info.width
 
-        if self.covered is None or self.covered.shape != (h, w):
+        map_changed = (
+            self.covered is None or
+            self.covered.shape != (h, w) or
+            self.covered_map_info is None or
+            self.covered_map_info.resolution != self.latest_map.info.resolution or
+            self.covered_map_info.origin.position.x != self.latest_map.info.origin.position.x or
+            self.covered_map_info.origin.position.y != self.latest_map.info.origin.position.y
+        )
+
+        if map_changed:
             self.covered = np.zeros((h, w), dtype=bool)
             self.last_path_len = 0
-            self.last_processed_cell = None 
+            self.last_processed_cell = None
+            self.covered_map_info = self.latest_map.info
+
+            if self.latest_path_msg is not None:
+                self.rebuild_coverage_from_full_path(self.latest_path_msg.poses) 
 
     def world_to_map(self, x, y):
         info = self.latest_map.info
@@ -476,7 +493,7 @@ class NavigationNode(Node):
 
     def paint_disk(self, mx, my):
         res = self.latest_map.info.resolution
-        radius_cells = max(1, int(math.ceil(self.robot_radius_m / res)))
+        radius_cells = max(1, int(math.ceil((self.robot_radius_m * 3) / res)))
 
         h, w = self.covered.shape
         for dx in range(-radius_cells, radius_cells + 1):
@@ -504,7 +521,7 @@ class NavigationNode(Node):
         self.last_processed_cell = None
 
         for p in path:
-            cell = self.world_to_map(p.x, p.y)
+            cell = self.world_to_map(p.pose.position.x, p.pose.position.y)
             if cell is None:
                 continue
 
@@ -926,7 +943,7 @@ class NavigationNode(Node):
                 if frontier_goal is not None:
                     return frontier_goal
 
-        self.get_logger().info('No more frontiers/uncovered cells found')
+        self.get_logger().info('No more frontiers/uncovered cells found. Maze fully explored')
         return None
 
     def find_coverage_goal(self, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
@@ -958,7 +975,7 @@ class NavigationNode(Node):
 
             return self.create_pose(goal_x, goal_y, res, origin)
 
-        self.get_logger().warn('Uncovered clusters exist, but no valid backed-off goal was found')
+        self.get_logger().warn('Uncovered clusters exist, but no valid goal was found')
         return None
 
     def find_frontier_goal(self, grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res):
