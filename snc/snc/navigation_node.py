@@ -493,7 +493,7 @@ class NavigationNode(Node):
 
     def paint_disk(self, mx, my):
         res = self.latest_map.info.resolution
-        radius_cells = max(1, int(math.ceil((self.robot_radius_m * 3) / res)))
+        radius_cells = max(1, int(math.ceil((self.robot_radius_m * 4) / res)))
 
         h, w = self.covered.shape
         for dx in range(-radius_cells, radius_cells + 1):
