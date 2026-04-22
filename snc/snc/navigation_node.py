@@ -434,7 +434,7 @@ class NavigationNode(Node):
         msg.action = Marker.ADD
         msg.scale.x = self.latest_map.info.resolution
         msg.scale.y = self.latest_map.info.resolution
-        msg.scale.z = 0.05
+        msg.scale.z = 0.01
         msg.pose.orientation.w = 1.0
         msg.frame_locked = True
         
@@ -453,7 +453,7 @@ class NavigationNode(Node):
             p = Point()
             p.x = origin.x + (x + 0.5) * res
             p.y = origin.y + (y + 0.5) * res
-            p.z = 0.03
+            p.z = 0.01
             msg.points.append(p)
             
         num_points = len(msg.points)
