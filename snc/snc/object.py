@@ -2,16 +2,25 @@ import math
 
 import numpy as np
 from std_msgs.msg import Header
-import math
 from geometry_msgs.msg import PoseStamped
+from rclpy.duration import Duration
 from snc.constants import OBJECT_MAP
+
+# Camera calibration values for OAK-D camera on ROSbot PRO 3.
+# To get exact values:  ros2 topic echo /oak/rgb/camera_info --once
+FOCAL_LENGTH_X = 554.0       # fx  (pixels)
+FOCAL_LENGTH_Y = 554.0       # fy  (pixels)
+PRINCIPAL_POINT_X = 320.0    # cx  (pixels) — usually image_width  / 2
+PRINCIPAL_POINT_Y = 240.0    # cy  (pixels) — usually image_height / 2
+IMAGE_WIDTH = 640
+LASER_WINDOW_DEG = 5.0
 
 class DetectedObject:
     def __init__(self, data_slice: list, header: Header):
         """
         Abstract representation of an object detected via find_object_2d.
-        
-        :param data_slice: 12 floats (ID, Width, Height, and 3x3 Matrix)
+
+        :param data_slice: 12 floats (ID, Width, Height, and 3x3 homography matrix)
         :param header: The header from the incoming ROS message
         """
         self.raw_data = data_slice
@@ -21,47 +30,125 @@ class DetectedObject:
         self.ref_width = data_slice[1]
         self.ref_height = data_slice[2]
 
-        # Reconstruct Homography Matrix
-        # [h11, h12, h13, h21, h22, h23, h31, h32, h33]
+        # Reconstruct 3x3 Homography Matrix from flat array
+        # Layout: [h11, h12, h13, h21, h22, h23, h31, h32, h33]
         self.h_matrix = np.array(data_slice[3:12]).reshape(3, 3)
 
-        # Calculate Center Point (Pixels)
-        # multiply the center of the reference image by the matrix
+        # Project the centre of the reference image through the homography
+        # to get the pixel location in the camera frame
         ref_center = np.array([self.ref_width / 2.0, self.ref_height / 2.0, 1.0])
         cam_center = np.dot(self.h_matrix, ref_center)
-        
-        # Normalize by the homogeneous coordinate (w)
+
+        # Normalise by the homogeneous coordinate w
         self.pixel_x = cam_center[0] / cam_center[2]
         self.pixel_y = cam_center[1] / cam_center[2]
 
-        # Extract Yaw (Rotation around optical Z-axis)
+        # Extract yaw — rotation of the object around the camera optical Z-axis
         self.yaw = math.atan2(self.h_matrix[1, 0], self.h_matrix[0, 0])
 
-        # Initialize Pose (Stored in camera optical frame for now)
+        # Depth: initialised from homography scale as a fallback only.
+        # Call update_depth_from_laser() to replace with a real sensor value.
+        scale = math.sqrt(self.h_matrix[0, 0] ** 2 + self.h_matrix[1, 0] ** 2)
+        self._homography_depth = FOCAL_LENGTH_X / scale if scale > 1e-6 else 0.5
+        self.depth = self._homography_depth
+        self.depth_source = "homography"  # set to "laser" after scan update
+ 
+        # Camera-frame PoseStamped — rebuilt after update_depth_from_laser()
         self.pose_stamped = self._create_camera_pose()
 
+    def update_depth_from_laser(self, scan_msg) -> None:
+        """
+        Estimate object depth using the laser scan as the secondary sensor.
+ 
+        The horizontal angle to the object is derived from pixel_x and the
+        camera FOV.  We sample the scan at that angle (±LASER_WINDOW_DEG)
+        and take the minimum valid range as the depth.
+ 
+        After calling this, pose_stamped is rebuilt with the corrected depth.
+ 
+        :param scan_msg: sensor_msgs/msg/LaserScan (latest scan)
+        """
+        if scan_msg is None:
+            return
+ 
+        # Horizontal FOV of the camera (radians)
+        hfov = 2.0 * math.atan2(IMAGE_WIDTH / 2.0, FOCAL_LENGTH_X)
+ 
+        # Angle from the optical axis to the object centre (radians)
+        # pixel_x == cx  →  0 rad  (straight ahead)
+        object_angle = ((self.pixel_x - PRINCIPAL_POINT_X) / IMAGE_WIDTH) * hfov
+ 
+        # Map camera angle into laser frame.
+        # On ROSbot PRO 3 the laser is forward-facing and aligned with the
+        # camera so a direct negation is used (right in camera = negative laser
+        # angle).  Adjust if your physical setup differs.
+        laser_angle = -object_angle
+ 
+        window = math.radians(LASER_WINDOW_DEG)
+        min_range = float('inf')
+ 
+        for i, r in enumerate(scan_msg.ranges):
+            beam_angle = scan_msg.angle_min + i * scan_msg.angle_increment
+            if abs(beam_angle - laser_angle) <= window:
+                if scan_msg.range_min <= r <= scan_msg.range_max and not math.isnan(r):
+                    min_range = min(min_range, r)
+ 
+        if math.isfinite(min_range):
+            self.depth = min_range
+            self.depth_source = "laser"
+            self.pose_stamped = self._create_camera_pose()
+
     def _create_camera_pose(self) -> PoseStamped:
+        """Create a PoseStamped in the camera optical frame using pinhole projection."""
         ps = PoseStamped()
         ps.header = self.header
-        
-        # These remain pixels until you apply your camera intrinsic projection
-        ps.pose.position.x = float(self.pixel_x)
-        ps.pose.position.y = float(self.pixel_y)
-        ps.pose.position.z = 0.0 
-        
-        # Yaw to Quaternion (Rotation around Z)
+
+        # Back-project pixel coords + depth into 3-D camera space
+        ps.pose.position.x = (self.pixel_x - PRINCIPAL_POINT_X) * self.depth / FOCAL_LENGTH_X
+        ps.pose.position.y = (self.pixel_y - PRINCIPAL_POINT_Y) * self.depth / FOCAL_LENGTH_Y
+        ps.pose.position.z = self.depth
+
+        # Encode yaw as a quaternion (rotation around optical Z-axis)
+        ps.pose.orientation.x = 0.0
+        ps.pose.orientation.y = 0.0
         ps.pose.orientation.z = math.sin(self.yaw / 2.0)
         ps.pose.orientation.w = math.cos(self.yaw / 2.0)
-        
+
         return ps
 
-    def get_map_pose(self, tf_buffer, target_frame="map", depth_value=1.0) -> PoseStamped:
+    def get_map_pose(self, tf_buffer, target_frame: str = "map") -> PoseStamped:
         """
-        Converts pixel coordinates to meters and transforms to the target frame.
+        Transform the camera-frame pose into target_frame (default: map).
+ 
+        Waits up to 0.5 s for the TF transform before giving up.
+ 
+        :param tf_buffer: tf2_ros.Buffer
+        :param target_frame: destination TF frame name
+        :return: PoseStamped in target_frame, or None on failure
         """
-        # TODO: Implement the Pinhole Camera Model projection here
-        # Then use tf_buffer.transform(self.pose_stamped, target_frame)
-        pass
+        source_frame = self.pose_stamped.header.frame_id
+        if not source_frame:
+            print(
+                "[DetectedObject] pose_stamped.header.frame_id is empty. "
+                "Check: ros2 topic echo /oak/rgb/image_raw/compressed --once | grep frame_id"
+            )
+            return None
+ 
+        try:
+            tf_buffer.can_transform(
+                target_frame,
+                source_frame,
+                self.pose_stamped.header.stamp,
+                timeout=Duration(seconds=0.5),
+            )
+            return tf_buffer.transform(self.pose_stamped, target_frame)
+        except Exception as e:
+            print(
+                f"[DetectedObject] TF transform failed: "
+                f"{source_frame} -> {target_frame}: {e}"
+            )
+            return None
+
 
 class ObjectHandler:
     def __init__(self):
@@ -93,27 +180,29 @@ class ObjectHandler:
 
     def add_objects_from_message(self, msg) -> None:
         """
-        Parses the incoming message (likely ObjectsStamped) and populates the list.
-        
-        Note: msg.objects.data is the Float32MultiArray part.
+        Parse an ObjectsStamped message and populate self.objects.
+        Clears previous detections — only current-frame objects are kept.
         """
-        # Clear previous detections if you only want 'current' frame objects
         self.objects = []
-        
         header = msg.header
-        # Access the flat float array
-        data = msg.objects.data 
+        data = msg.objects.data  # flat Float32MultiArray
 
-        # Iterate through the flat array in steps of 12
+        # Each detected object occupies exactly 12 floats
         for i in range(0, len(data), 12):
-            data_slice = data[i : i + 12]
+            data_slice = data[i: i + 12]
             if len(data_slice) == 12:
-                new_obj = DetectedObject(data_slice, header)
-                self.objects.append(new_obj)
-        
-    def start_marker_detected(self) -> bool:
-        """Checks if the 'Start' object is among the detected objects."""
+                self.objects.append(DetectedObject(data_slice, header))
+            else:
+                print(
+                    f"[ObjectHandler] Skipping malformed slice at index {i}: "
+                    f"expected 12 floats, got {len(data_slice)}"
+                )
+    
+    def update_depths_from_laser(self, scan_msg) -> None:
+        """Apply the latest laser scan depth to all current objects."""
         for obj in self.objects:
-            if obj.name == "Start":
-                return True
-        return False
+            obj.update_depth_from_laser(scan_msg)
+
+    def start_marker_detected(self) -> bool:
+        """Return True if the 'Start' marker is among the currently detected objects."""
+        return any(obj.name == "Start" for obj in self.objects)
