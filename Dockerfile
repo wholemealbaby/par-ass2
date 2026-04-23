@@ -16,10 +16,6 @@ RUN apt update && apt install -y \
 # 3. Ensure the Python transformations3d is available to the ROS environment
 RUN pip install --no-cache-dir transforms3d --break-system-packages
 
-# 4. Install direnv
-RUN apt update && apt install -y direnv \
-    && apt clean && rm -rf /var/lib/apt/lists/*
-
 # 5. Add direnv hook to bashrc
 RUN echo 'eval "$(direnv hook bash)"' >> /root/.bashrc
 
