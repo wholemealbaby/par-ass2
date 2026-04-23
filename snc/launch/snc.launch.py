@@ -49,19 +49,26 @@ def generate_launch_description():
         ]
     )
 
+    image_topic = '/oak/rgb/image_raw/compressed'
+    image_topic_repeat = image_topic + '/repeat'
 
-    # find_object_node = Node(
-    #     package='find_object_2d',
-    #     executable='find_object_2d',
-    #     name='find_object_node',
-    #     output='screen'
-    # )
-
+    best_effort_repeater_node = Node(
+        package=package_name,
+        executable='best_effort_repeater',
+        name='best_effort_repeater',
+        output='screen',
+        parameters=[
+            {'sub_topic_name': image_topic},
+            {'repeat_topic_name': image_topic_repeat},
+            {'use_compressed': True},   # True — topic is /compressed
+        ]
+    )
 
     return LaunchDescription([
         navigation_node,
         marker_detection_node,
         path_tracing_node,
         twist_mux_node,
+        best_effort_repeater_node,
         # find_object_node
     ])
