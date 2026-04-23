@@ -34,7 +34,6 @@ setup(
             'path_tracing_node = snc.path_tracing_node:main',
             'twist_mux = snc.twist_mux:main',
             'best_effort_repeater = snc.best_effort_repeater:main',
-            'trigger_listener = snc.trigger_listener:main',
         ],
     },
 )
