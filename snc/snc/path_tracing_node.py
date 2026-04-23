@@ -406,21 +406,28 @@ class PathTracingNode(Node):
 
         if not self.client.wait_for_service(timeout_sec=1.0):
             self.get_logger().error(f"Service not available: {command}")
-            return
+            return None
         
         request = ExplorationControl.Request()
         request.command = command
         
+        # Use synchronous service call to ensure the service completes before returning
         future = self.client.call_async(request)
-
-        future.add_done_callback(self._service_response_callback)
-
-    def _service_response_callback(self, future):
-        try:
-            response = future.result()
-            self.get_logger().info("Service call succeeded")
-        except Exception as e:
-            self.get_logger().error(f"Service call failed: {e}")
+        
+        # Wait for the service to complete
+        while rclpy.ok():
+            if future.done():
+                try:
+                    response = future.result()
+                    self.get_logger().info(f"Service call '{command}' succeeded: {response.message}")
+                    return response
+                except Exception as e:
+                    self.get_logger().error(f"Service call '{command}' failed: {e}")
+                    return None
+            # Spin briefly to process the service response
+            rclpy.spin_once(self, timeout_sec=0.1)
+        
+        return None
 
     def stop_exploration(self):
         """Stops the exploration process."""
