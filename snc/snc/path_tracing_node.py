@@ -261,11 +261,13 @@ class PathTracingNode(Node):
         if self.return_triggered:
             self.return_breadcrumbs.append(pose)
             self.get_logger().info(f'  Return: {len(self.return_breadcrumbs)} waypoints recorded')
-            self.pub_path_return.publish(Path(header=pose.header, poses=self.return_breadcrumbs))
+            if self.return_breadcrumbs:  # Only publish if we have waypoints
+                self.pub_path_return.publish(Path(header=self.return_breadcrumbs[0].header, poses=self.return_breadcrumbs))
         else:
             self.explore_breadcrumbs.append(pose)
             self.get_logger().info(f'  Explore: {len(self.explore_breadcrumbs)} waypoints recorded')
-            self.pub_path_explore.publish(Path(header=pose.header, poses=self.explore_breadcrumbs))
+            if self.explore_breadcrumbs:  # Only publish if we have waypoints
+                self.pub_path_explore.publish(Path(header=self.explore_breadcrumbs[0].header, poses=self.explore_breadcrumbs))
 
     def get_robot_pose_in_map_frame(self, tf_buffer=None, clock=None):
         """
