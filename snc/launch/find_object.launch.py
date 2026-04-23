@@ -36,9 +36,9 @@ def generate_launch_description():
         # Uses the path to the AIIL Workspace, but this could be set to anywhere
         LogInfo(msg=['AIIL_CHECKOUT_DIR: ', EnvironmentVariable(name='AIIL_CHECKOUT_DIR')]),
         DeclareLaunchArgument('objects_path',
-                                # default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '~/ros2_ws/src/par_coursework/g30/snc/resource/hazards/'],
-                               default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '/humble_workspace/src/par_coursework/g30/snc/resource/hazards/'],
-                               description='Directory containing objects to load on initialization.'),
+                                default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '~/ros2_ws/src/par_coursework/g30/snc/resource/hazards/'],
+                                # default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '/humble_workspace/src/par_coursework/g30/snc/resource/hazards/'],
+                                description='Directory containing objects to load on initialization.'),
         
         # Find Object 2D Setting. By default just use the standard settings, but you can copy and tweak this file if you wish
         DeclareLaunchArgument('settings_path', default_value='~/.ros/find_object_2d.ini', description='Config file.'),      
