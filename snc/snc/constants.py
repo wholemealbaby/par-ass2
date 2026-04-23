@@ -121,6 +121,8 @@ STARTUP_SYNC_QOS = QoSProfile(
 # QoS profile for trigger topics to match ros2 topic pub default behavior
 TRIGGER_QOS = QoSProfile(
     depth=1,
-    reliability=ReliabilityPolicy.BEST_EFFORT,
+    reliability=ReliabilityPolicy.RELIABLE,
     history=HistoryPolicy.KEEP_LAST
 )
+
+COVERAGE_TOPIC = '/covered_cells_marker'
