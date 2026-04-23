@@ -23,6 +23,7 @@ from snc.constants import (
     TRIGGER_HOME_TOPIC,
     TRIGGER_HOME_INTERFACE,
     TRIGGER_HOME_BUFFER_SIZE,
+    TRIGGER_QOS,
     SNC_STATUS_TOPIC,
     SNC_STATUS_INTERFACE,
     SNC_STATUS_BUFFER_SIZE,
@@ -106,7 +107,7 @@ class MarkerDetectionNode(Node):
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
             self.trigger_home_callback,
-            TRIGGER_HOME_BUFFER_SIZE,
+            TRIGGER_QOS,
         )
 
         self.pub_start_challenge = self.create_publisher(
