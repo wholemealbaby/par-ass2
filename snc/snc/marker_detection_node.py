@@ -119,7 +119,7 @@ class MarkerDetectionNode(Node):
         self.pub_go_home = self.create_publisher(
             GO_HOME_INTERFACE,
             GO_HOME_TOPIC,
-            GO_HOME_BUFFER_SIZE,
+            TRIGGER_QOS,
         )
  
         self.pub_hazard_marker = self.create_publisher(

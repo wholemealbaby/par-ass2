@@ -126,7 +126,7 @@ class NavigationNode(Node):
             TRIGGER_START_INTERFACE,
             TRIGGER_START_TOPIC,
             self.start_callback,
-            TRIGGER_START_BUFFER_SIZE
+            TRIGGER_QOS
         )
 
         self.hazard_signal_sub = self.create_subscription(
@@ -140,7 +140,7 @@ class NavigationNode(Node):
             TRIGGER_TELEOP_INTERFACE,
             TRIGGER_TELEOP_TOPIC,
             self.teleop_callback,
-            TRIGGER_TELEOP_BUFFER_SIZE
+            TRIGGER_QOS
         )
 
         self.hazards_sub = self.create_subscription(
