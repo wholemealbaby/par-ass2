@@ -595,6 +595,7 @@ class NavigationNode(Node):
         if self.pending_resume_after_spin:
             self.pending_resume_after_spin = False
             self.state = STATE_EXPLORING
+            self.exploration_active = True
             self.get_logger().info('Spin complete, resuming exploration')
 
     # ---------- robot pose ----------
