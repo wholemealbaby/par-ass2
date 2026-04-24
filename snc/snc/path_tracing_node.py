@@ -82,7 +82,6 @@ class PathTracingNode(Node):
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
         self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
         self.waypoint_rotation_min = math.radians(params.get('waypoint_rotation_min', 15))
-        self.started = False # Flag to indicate if path tracing has started, prevents pose sampling before the challenge starts
         
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -230,7 +229,6 @@ class PathTracingNode(Node):
         self.get_logger().info('Start challenge trigger received. Beginning path exploration...')
         # Start the pose sampling timer immediately without waiting for TF
         self.sample_pose_timer.reset()
-        self.started = True
         self.start_exploration()
         self.get_logger().info('  ✓ Path exploration active - recording waypoints')
 
@@ -248,8 +246,6 @@ class PathTracingNode(Node):
         """
         # Check that the transform is possible
         if not self.check_base_link_map_transform_possible():
-            return
-        if not self.started:
             return
 
         pose = self.get_robot_pose_in_map_frame()
