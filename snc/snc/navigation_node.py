@@ -43,6 +43,9 @@ from snc.constants import (
     STARTUP_SYNC_BUFFER_SIZE,
     STARTUP_SYNC_QOS,
     TRIGGER_QOS,
+    COVERAGE_TOPIC,
+    COVERAGE_INTERFACE,
+    COVERAGE_QOS,
 )
 
 MAP_UNKNOWN = -1
@@ -90,7 +93,7 @@ class NavigationNode(Node):
         self.is_ready = False
 
         self.state = STATE_IDLE
-        self.started = False
+        self.exploration_active = False
         self.exploration_start_time = None
         self.hazard_ids = set()
         self.pending_resume_after_spin = False
@@ -196,9 +199,9 @@ class NavigationNode(Node):
         )
         
         self.coverage_marker_pub = self.create_publisher(
-            Marker, 
-            '/covered_cells_marker',
-            1    
+            COVERAGE_INTERFACE,
+            COVERAGE_TOPIC,
+            COVERAGE_QOS
         )
         self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
 
@@ -360,6 +363,7 @@ class NavigationNode(Node):
         if cmd == 'STOP':
             self.cancel_navigation()
             self.state = STATE_IDLE
+            self.exploration_active = False
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
@@ -369,6 +373,7 @@ class NavigationNode(Node):
         if cmd == 'RESUME':
             if self.state in [STATE_IDLE, STATE_TELEOP]:
                 self.state = STATE_EXPLORING
+                self.exploration_active = True
                 response.success = True
                 response.state = self.state
                 response.hazards_found = len(self.hazard_ids)
@@ -378,6 +383,7 @@ class NavigationNode(Node):
         if cmd == 'TELEOP':
             self.cancel_navigation()
             self.state = STATE_TELEOP
+            self.exploration_active = False
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
@@ -536,7 +542,7 @@ class NavigationNode(Node):
 
     # ---------- exploration control ----------
     def start_exploration(self):
-        self.started = True
+        self.exploration_active = True
         self.goal_active = False
         self.no_frontier_count = 0
         self.pending_resume_after_spin = False
@@ -592,6 +598,7 @@ class NavigationNode(Node):
         if self.pending_resume_after_spin:
             self.pending_resume_after_spin = False
             self.state = STATE_EXPLORING
+            self.exploration_active = True
             self.get_logger().info('Spin complete, resuming exploration')
 
     # ---------- robot pose ----------
@@ -623,7 +630,7 @@ class NavigationNode(Node):
 
         self.update_spin()
 
-        if self.state != STATE_EXPLORING:
+        if self.state != STATE_EXPLORING or not self.exploration_active:
             return
 
         if self.exploration_start_time is not None:

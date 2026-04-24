@@ -1,0 +1,253 @@
+641, reachable=6553, covered=0, uncovered=6553, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991661.331880648] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991661.383542994] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991661.385080358] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991661.445807371] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991661.449814589] [navigation_node_ex]: selected uncovered cluster size=6553, goal=(9,81)
+[navigation_node-1] [INFO] [1776991661.453909844] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991662.164871386] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991662.507040577] [navigation_node_ex]: free=9641, reachable=6553, covered=0, uncovered=6553, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991662.508548293] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991662.597495202] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991662.599541218] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991662.664971991] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991662.670355942] [navigation_node_ex]: selected uncovered cluster size=6553, goal=(9,81)
+[navigation_node-1] [INFO] [1776991662.677925226] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991663.165513303] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991663.426521852] [navigation_node_ex]: free=9639, reachable=6552, covered=0, uncovered=6552, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991663.428482072] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991663.488276447] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991663.492712409] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991663.569924167] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991663.575946809] [navigation_node_ex]: selected uncovered cluster size=6552, goal=(9,81)
+[navigation_node-1] [INFO] [1776991663.592955817] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991664.159271794] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991664.373634001] [navigation_node_ex]: free=9639, reachable=6552, covered=0, uncovered=6552, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991664.376827119] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991664.460519689] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991664.462294481] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991664.586999088] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991664.593887551] [navigation_node_ex]: selected uncovered cluster size=6552, goal=(9,81)
+[navigation_node-1] [INFO] [1776991664.601628874] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991665.153871977] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991665.316342557] [navigation_node_ex]: free=9639, reachable=6552, covered=0, uncovered=6552, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991665.317859996] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991665.378348136] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991665.379360922] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991665.472435679] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991665.493188533] [navigation_node_ex]: selected uncovered cluster size=6552, goal=(9,81)
+[navigation_node-1] [INFO] [1776991665.501334803] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991666.159944567] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991666.443687894] [navigation_node_ex]: free=9639, reachable=6552, covered=0, uncovered=6552, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991666.447864595] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991666.529600185] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991666.535980885] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991666.620098366] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991666.624013842] [navigation_node_ex]: selected uncovered cluster size=6552, goal=(9,81)
+[navigation_node-1] [INFO] [1776991666.629980206] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991667.162723428] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991667.324418799] [navigation_node_ex]: free=9639, reachable=6552, covered=0, uncovered=6552, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991667.326503353] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991667.411503988] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991667.416852087] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991667.582713807] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991667.587158658] [navigation_node_ex]: selected uncovered cluster size=6552, goal=(9,81)
+[navigation_node-1] [INFO] [1776991667.591880122] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991669.158790034] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991669.409856817] [navigation_node_ex]: free=9639, reachable=6552, covered=0, uncovered=6552, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991669.411312070] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991669.527967593] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991669.529758200] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991669.603876691] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991669.606977106] [navigation_node_ex]: selected uncovered cluster size=6552, goal=(9,81)
+[navigation_node-1] [INFO] [1776991669.610527134] [navigation_node_ex]: Navigating to goal: -3.2235621785013997 -1.3096296471676236...
+[navigation_node-1] [WARN] [1776991680.169369776] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991680.710479792] [navigation_node_ex]: free=9625, reachable=6536, covered=0, uncovered=6536, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991680.716246641] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991680.794666940] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991680.796014712] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991680.874598215] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991680.879765411] [navigation_node_ex]: selected uncovered cluster size=6536, goal=(93,120)
+[navigation_node-1] [INFO] [1776991680.885960098] [navigation_node_ex]: Navigating to goal: 0.13643774639674788 0.25037031796365916...
+[navigation_node-1] [WARN] [1776991681.170302002] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991681.387561657] [navigation_node_ex]: free=9703, reachable=6596, covered=0, uncovered=6596, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991681.389317302] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991681.460234513] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991681.461932603] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991681.559420188] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991681.570400512] [navigation_node_ex]: selected uncovered cluster size=6596, goal=(93,120)
+[navigation_node-1] [INFO] [1776991681.583346650] [navigation_node_ex]: Navigating to goal: 0.10955994067545394 0.25037031796365916...
+[navigation_node-1] [WARN] [1776991683.241266370] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991683.447933261] [navigation_node_ex]: free=9703, reachable=6596, covered=0, uncovered=6596, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991683.448849417] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991683.499441958] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991683.500457079] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991683.564330410] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991683.568270298] [navigation_node_ex]: selected uncovered cluster size=6596, goal=(93,120)
+[navigation_node-1] [INFO] [1776991683.573812812] [navigation_node_ex]: Navigating to goal: 0.10955994067545394 0.25037031796365916...
+[navigation_node-1] [WARN] [1776991685.164123426] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991685.445241004] [navigation_node_ex]: free=9703, reachable=6596, covered=0, uncovered=6596, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991685.448637202] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991685.539631043] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991685.541429133] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991685.617751338] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991685.622334881] [navigation_node_ex]: selected uncovered cluster size=6596, goal=(93,120)
+[navigation_node-1] [INFO] [1776991685.627945655] [navigation_node_ex]: Navigating to goal: 0.10955994067545394 0.25037031796365916...
+[navigation_node-1] [WARN] [1776991687.179242834] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991687.538214891] [navigation_node_ex]: free=9703, reachable=6596, covered=0, uncovered=6596, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991687.539682626] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991687.613344603] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991687.614913229] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991687.690846763] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991687.695822939] [navigation_node_ex]: selected uncovered cluster size=6596, goal=(93,120)
+[navigation_node-1] [INFO] [1776991687.701523103] [navigation_node_ex]: Navigating to goal: 0.10955994067545394 0.25037031796365916...
+[navigation_node-1] [WARN] [1776991692.164412767] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991692.492657891] [navigation_node_ex]: free=9703, reachable=6596, covered=0, uncovered=6596, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991692.494006385] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991692.556878003] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991692.558960744] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991692.631552767] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991692.635837843] [navigation_node_ex]: selected uncovered cluster size=6596, goal=(93,120)
+[navigation_node-1] [INFO] [1776991692.644330625] [navigation_node_ex]: Navigating to goal: 0.10955994067545394 0.25037031796365916...
+[navigation_node-1] [WARN] [1776991693.179737015] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991693.475929269] [navigation_node_ex]: free=9692, reachable=6583, covered=0, uncovered=6583, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991693.477310819] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991693.583059129] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991693.584020767] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991693.665764504] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991693.679927746] [navigation_node_ex]: selected uncovered cluster size=6583, goal=(93,120)
+[navigation_node-1] [INFO] [1776991693.690690568] [navigation_node_ex]: Navigating to goal: 0.10955994067545394 0.25037031796365916...
+[navigation_node-1] [WARN] [1776991696.165021254] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991696.437250898] [navigation_node_ex]: free=9690, reachable=6584, covered=0, uncovered=6584, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991696.456529835] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991696.586191422] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991696.588492554] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991696.686844592] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991696.691384486] [navigation_node_ex]: selected uncovered cluster size=6584, goal=(10,84)
+[navigation_node-1] [INFO] [1776991696.696051603] [navigation_node_ex]: Navigating to goal: -3.2104399851167633 -1.1896296498498327...
+[navigation_node-1] [WARN] [1776991699.154012583] [navigation_node_ex]: Navigation result: TaskResult.FAILED, replanning...
+[navigation_node-1] [INFO] [1776991699.385188440] [navigation_node_ex]: free=9690, reachable=6584, covered=0, uncovered=6584, covered/free=0.0%, covered/reachable=0.0%, reachable_covered=0
+[navigation_node-1] [INFO] [1776991699.388945623] [navigation_node_ex]: Choosing frontier goal...
+[navigation_node-1] [WARN] [1776991699.456953974] [navigation_node_ex]: No frontier clusters found
+[navigation_node-1] [INFO] [1776991699.458467951] [navigation_node_ex]: No frontier goal found. Choosing coverage goal instead...
+[navigation_node-1] [INFO] [1776991699.514648488] [navigation_node_ex]: #uncovered clusters=1, #ranked_uncovered_clusters=1
+[navigation_node-1] [INFO] [1776991699.518878008] [navigation_node_ex]: selected uncovered cluster size=6584, goal=(10,84)
+[navigation_node-1] [INFO] [1776991699.528497542] [navigation_node_ex]: Navigating to goal: -3.2104399851167633 -1.1896296498498327...
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[best_effort_repeater-5] Traceback (most recent call last):
+[best_effort_repeater-5]   File "/ros2_ws/install/snc/lib/snc/best_effort_repeater", line 33, in <module>
+[best_effort_repeater-5]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'best_effort_repeater')())
+[best_effort_repeater-5]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[best_effort_repeater-5]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/best_effort_repeater.py", line 94, in main
+[best_effort_repeater-5]     rclpy.shutdown()
+[best_effort_repeater-5]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 134, in shutdown
+[best_effort_repeater-5]     _shutdown(context=context)
+[best_effort_repeater-5]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/utilities.py", line 82, in shutdown
+[best_effort_repeater-5]     context.shutdown()
+[best_effort_repeater-5]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/context.py", line 129, in shutdown
+[best_effort_repeater-5]     self.__context.shutdown()
+[best_effort_repeater-5] rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:333
+[path_tracing_node-3] Traceback (most recent call last):
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/snc/path_tracing_node", line 33, in <module>
+[path_tracing_node-3]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'path_tracing_node')())
+[path_tracing_node-3]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/path_tracing_node.py", line 459, in main
+[path_tracing_node-3]     node.wait_for_all_nodes_ready()
+[path_tracing_node-3]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/path_tracing_node.py", line 205, in wait_for_all_nodes_ready
+[path_tracing_node-3]     executor.spin_once(timeout_sec=0.1)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 923, in spin_once
+[path_tracing_node-3]     self._spin_once_impl(timeout_sec)
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 904, in _spin_once_impl
+[path_tracing_node-3]     handler, entity, node = self.wait_for_ready_callbacks(
+[path_tracing_node-3]                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 874, in wait_for_ready_callbacks
+[path_tracing_node-3]     return next(self._cb_iter)
+[path_tracing_node-3]            ^^^^^^^^^^^^^^^^^^^
+[path_tracing_node-3]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 682, in _wait_for_ready_callbacks
+[path_tracing_node-3]     subscriptions.extend(filter(self.can_execute, node.subscriptions))
+[path_tracing_node-3]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[path_tracing_node-3] KeyboardInterrupt
+[navigation_node-1] [INFO] [1776991703.654646596] [navigation_node_ex]: Canceling current task.
+[navigation_node-1] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[twist_mux-4] [INFO] [1776991703.655521511] [twist_mux_node]: Received keyboard interrupt
+[twist_mux-4] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[twist_mux-4] [INFO] [1776991703.662848264] [twist_mux_node]: Twist mux node shutting down
+[twist_mux-4] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT) again, ignoring...
+[twist_mux-4] Traceback (most recent call last):
+[twist_mux-4]   File "/ros2_ws/install/snc/lib/snc/twist_mux", line 33, in <module>
+[twist_mux-4]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'twist_mux')())
+[twist_mux-4]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[twist_mux-4]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/twist_mux.py", line 262, in main
+[twist_mux-4]     node.destroy_node()
+[twist_mux-4]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/twist_mux.py", line 248, in destroy_node
+[twist_mux-4]     super().destroy_node()
+[twist_mux-4]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 1962, in destroy_node
+[twist_mux-4]     self.destroy_service(self._services[0])
+[twist_mux-4]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 1886, in destroy_service
+[twist_mux-4]     service.destroy()
+[twist_mux-4]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/service.py", line 123, in destroy
+[twist_mux-4]     self.__service.destroy_when_not_in_use()
+[twist_mux-4] KeyboardInterrupt
+[navigation_node-1] Traceback (most recent call last):
+[navigation_node-1]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/navigation_node.py", line 1036, in main
+[navigation_node-1]     executor.spin_once(timeout_sec=0.1)
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 923, in spin_once
+[navigation_node-1]     self._spin_once_impl(timeout_sec)
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 904, in _spin_once_impl
+[navigation_node-1]     handler, entity, node = self.wait_for_ready_callbacks(
+[navigation_node-1]                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 874, in wait_for_ready_callbacks
+[navigation_node-1]     return next(self._cb_iter)
+[navigation_node-1]            ^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 682, in _wait_for_ready_callbacks
+[navigation_node-1]     subscriptions.extend(filter(self.can_execute, node.subscriptions))
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 621, in can_execute
+[navigation_node-1]     return not entity._executor_event and entity.callback_group.can_execute(entity)
+[navigation_node-1]                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/callback_groups.py", line 102, in can_execute
+[navigation_node-1]     with self._lock:
+[navigation_node-1] KeyboardInterrupt
+[navigation_node-1] 
+[navigation_node-1] During handling of the above exception, another exception occurred:
+[navigation_node-1] 
+[navigation_node-1] Traceback (most recent call last):
+[navigation_node-1]   File "/ros2_ws/install/snc/lib/snc/navigation_node", line 33, in <module>
+[navigation_node-1]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'navigation_node')())
+[navigation_node-1]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[navigation_node-1]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/navigation_node.py", line 1043, in main
+[navigation_node-1]     node.destroy_node()
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 1958, in destroy_node
+[navigation_node-1]     self.destroy_subscription(self._subscriptions[0])
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 1854, in destroy_subscription
+[navigation_node-1]     subscription.destroy()
+[navigation_node-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/subscription.py", line 101, in destroy
+[navigation_node-1]     self.handle.destroy_when_not_in_use()
+[navigation_node-1] KeyboardInterrupt
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[marker_detection_node-2] [DetectedObject] TF transform failed: oak_rgb_camera_optical_frame -> map: Type <class 'geometry_msgs.msg._pose_stamped.PoseStamped'> is not loaded or supported
+[ERROR] [path_tracing_node-3]: process has died [pid 485, exit code -2, cmd '/ros2_ws/install/snc/lib/snc/path_tracing_node --ros-args -r __node:=path_tracing_node_ex --params-file /tmp/launch_params_4n62x0hr'].
+[marker_detection_node-2] Traceback (most recent call last):
+[marker_detection_node-2]   File "/ros2_ws/install/snc/lib/snc/marker_detection_node", line 33, in <module>
+[marker_detection_node-2]     sys.exit(load_entry_point('snc==0.0.0', 'console_scripts', 'marker_detection_node')())
+[marker_detection_node-2]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[marker_detection_node-2]   File "/ros2_ws/install/snc/lib/python3.12/site-packages/snc/marker_detection_node.py", line 276, in main
+[marker_detection_node-2]     node.destroy_node()
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 1962, in destroy_node
+[marker_detection_node-2]     self.destroy_service(self._services[0])
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 1886, in destroy_service
+[marker_detection_node-2]     service.destroy()
+[marker_detection_node-2]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/service.py", line 123, in destroy
+[marker_detection_node-2]     self.__service.destroy_when_not_in_use()
+[marker_detection_node-2] KeyboardInterrupt
+[ERROR] [best_effort_repeater-5]: process has died [pid 487, exit code -2, cmd '/ros2_ws/install/snc/lib/snc/best_effort_repeater --ros-args -r __node:=best_effort_repeater --params-file /tmp/launch_params_04ginkm6 --params-file /tmp/launch_params_nweog1az --params-file /tmp/launch_params_cqdp8887'].
+[ERROR] [marker_detection_node-2]: process has died [pid 484, exit code -2, cmd '/ros2_ws/install/snc/lib/snc/marker_detection_node --ros-args -r __node:=marker_detection_node_ex'].
+[ERROR] [twist_mux-4]: process has died [pid 486, exit code -2, cmd '/ros2_ws/install/snc/lib/snc/twist_mux --ros-args -r __node:=twist_mux_node --params-file /tmp/launch_params_8umimlsc --params-file /tmp/launch_params_v03lpmfo --params-file /tmp/launch_params__xa4xt0n --params-file /tmp/launch_params_7qkbn041 --params-file /tmp/launch_params_u7ox_bcn --params-file /tmp/launch_params_035sylp8'].
+[ERROR] [navigation_node-1]: process has died [pid 483, exit code -2, cmd '/ros2_ws/install/snc/lib/snc/navigation_node --ros-args -r __node:=navigation_node_ex'].
+root@urdtree:/ros2_ws# 

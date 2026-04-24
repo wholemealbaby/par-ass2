@@ -258,12 +258,18 @@ class PathTracingNode(Node):
             self.return_breadcrumbs.append(pose)
             self.get_logger().info(f'  Return: {len(self.return_breadcrumbs)} waypoints recorded')
             if self.return_breadcrumbs:  # Only publish if we have waypoints
-                self.pub_path_return.publish(Path(header=self.return_breadcrumbs[0].header, poses=self.return_breadcrumbs))
+                # Use the header from the most recent breadcrumb and update the timestamp to current
+                path_msg = Path(header=self.return_breadcrumbs[-1].header, poses=self.return_breadcrumbs)
+                path_msg.header.stamp = self.get_clock().now().to_msg()
+                self.pub_path_return.publish(path_msg)
         else:
             self.explore_breadcrumbs.append(pose)
             self.get_logger().info(f'  Explore: {len(self.explore_breadcrumbs)} waypoints recorded')
             if self.explore_breadcrumbs:  # Only publish if we have waypoints
-                self.pub_path_explore.publish(Path(header=self.explore_breadcrumbs[0].header, poses=self.explore_breadcrumbs))
+                # Use the header from the most recent breadcrumb and update the timestamp to current
+                path_msg = Path(header=self.explore_breadcrumbs[-1].header, poses=self.explore_breadcrumbs)
+                path_msg.header.stamp = self.get_clock().now().to_msg()
+                self.pub_path_explore.publish(path_msg)
 
     def get_robot_pose_in_map_frame(self, tf_buffer=None, clock=None):
         """

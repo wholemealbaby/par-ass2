@@ -1,6 +1,7 @@
 from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
 from find_object_2d.msg import ObjectsStamped
+from visualization_msgs.msg import Marker
 from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 
 # Mapping of hazard names to their ID 
@@ -126,3 +127,12 @@ TRIGGER_QOS = QoSProfile(
 )
 
 COVERAGE_TOPIC = '/covered_cells_marker'
+COVERAGE_BUFFER_SIZE = 1
+COVERAGE_INTERFACE = Marker
+
+# QoS profile for coverage marker to ensure RViz can subscribe correctly
+COVERAGE_QOS = QoSProfile(
+    depth=COVERAGE_BUFFER_SIZE,
+    reliability=ReliabilityPolicy.RELIABLE,
+    history=HistoryPolicy.KEEP_LAST
+)
