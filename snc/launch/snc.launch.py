@@ -57,7 +57,7 @@ def generate_launch_description():
             {'testing_mode': testing_mode},
             {'lock_teleop': True},
             {'lock_manual': True},
-            {'cmd_vel_topic': '/cmd_vel'},
+            {'cmd_vel_topic': '/cmd_vel_raw'},  # Changed from /cmd_vel to /cmd_vel_raw
             {'cmd_vel_teleop_topic': '/cmd_vel_teleop'},
             {'cmd_vel_manual_topic': '/cmd_vel_manual'}
         ]

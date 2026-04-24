@@ -145,6 +145,7 @@ class TwistMuxNode(Node):
         )
         
         # Subscribers for each input source
+        # Note: cmd_vel_topic parameter is now used for the input topic (should be /cmd_vel_raw)
         self.sub_cmd_vel = self.create_subscription(
             Twist,
             self.cmd_vel_topic,
