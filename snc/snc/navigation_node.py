@@ -43,6 +43,9 @@ from snc.constants import (
     STARTUP_SYNC_BUFFER_SIZE,
     STARTUP_SYNC_QOS,
     TRIGGER_QOS,
+    COVERAGE_TOPIC,
+    COVERAGE_INTERFACE,
+    COVERAGE_QOS,
 )
 
 MAP_UNKNOWN = -1
@@ -196,9 +199,9 @@ class NavigationNode(Node):
         )
         
         self.coverage_marker_pub = self.create_publisher(
-            Marker, 
-            '/covered_cells_marker',
-            1    
+            COVERAGE_INTERFACE,
+            COVERAGE_TOPIC,
+            COVERAGE_QOS
         )
         self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
 
