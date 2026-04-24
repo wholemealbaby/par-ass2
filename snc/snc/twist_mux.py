@@ -130,10 +130,10 @@ class TwistMuxNode(Node):
         self.has_teleop = False
         self.has_manual = False
         
-        # Publisher for authorized cmd_vel
+        # Publisher for authorized cmd_vel (publishes to /cmd_vel to control the robot)
         self.pub_authorized = self.create_publisher(
             Twist,
-            '/cmd_vel_authorized',
+            '/cmd_vel',
             10
         )
         
