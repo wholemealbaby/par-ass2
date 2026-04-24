@@ -82,7 +82,6 @@ class PathTracingNode(Node):
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
         self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
         self.waypoint_rotation_min = math.radians(params.get('waypoint_rotation_min', 15))
-        self.started = False # Flag to indicate if path tracing has started, prevents pose sampling before the challenge starts
         
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -230,7 +229,6 @@ class PathTracingNode(Node):
         self.get_logger().info('Start challenge trigger received. Beginning path exploration...')
         # Start the pose sampling timer immediately without waiting for TF
         self.sample_pose_timer.reset()
-        self.started = True
         self.start_exploration()
         self.get_logger().info('  ✓ Path exploration active - recording waypoints')
 
@@ -249,8 +247,7 @@ class PathTracingNode(Node):
         # Check that the transform is possible
         if not self.check_base_link_map_transform_possible():
             return
-        if not self.started:
-            return
+
 
         pose = self.get_robot_pose_in_map_frame()
         if pose == SAMPLE_SKIPPED or pose == SAMPLE_FAILED:
@@ -261,19 +258,11 @@ class PathTracingNode(Node):
         if self.return_triggered:
             self.return_breadcrumbs.append(pose)
             self.get_logger().info(f'  Return: {len(self.return_breadcrumbs)} waypoints recorded')
-            if self.return_breadcrumbs:  # Only publish if we have waypoints
-                # Use the header from the most recent breadcrumb and update the timestamp to current
-                path_msg = Path(header=self.return_breadcrumbs[-1].header, poses=self.return_breadcrumbs)
-                path_msg.header.stamp = self.get_clock().now().to_msg()
-                self.pub_path_return.publish(path_msg)
+            self.pub_path_return.publish(Path(header=pose.header, poses=self.return_breadcrumbs))
         else:
             self.explore_breadcrumbs.append(pose)
             self.get_logger().info(f'  Explore: {len(self.explore_breadcrumbs)} waypoints recorded')
-            if self.explore_breadcrumbs:  # Only publish if we have waypoints
-                # Use the header from the most recent breadcrumb and update the timestamp to current
-                path_msg = Path(header=self.explore_breadcrumbs[-1].header, poses=self.explore_breadcrumbs)
-                path_msg.header.stamp = self.get_clock().now().to_msg()
-                self.pub_path_explore.publish(path_msg)
+            self.pub_path_explore.publish(Path(header=pose.header, poses=self.explore_breadcrumbs))
 
     def get_robot_pose_in_map_frame(self, tf_buffer=None, clock=None):
         """
