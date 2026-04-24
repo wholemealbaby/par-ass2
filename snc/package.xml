@@ -20,6 +20,8 @@
   <depend>slam_toolbox</depend>
   <depend>find_object_2d</depend>
   <depend>visualization_msgs</depend>
+  # DEPRECATED
+  # TODO: Implement any function uses from this dependency so it can be removed
   <depend>tf_transformations</depend>
   <depend>snc_interfaces</depend>
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -12,10 +12,10 @@ from rclpy.executors import MultiThreadedExecutor
 
 from tf2_ros import Buffer, TransformListener, TransformException
 
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import OccupancyGrid
-from std_msgs.msg import Empty, String
-from visualization_msgs.msg import MarkerArray
+from std_msgs.msg import Empty, String, ColorRGBA
+from visualization_msgs.msg import MarkerArray, Marker
 
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
@@ -37,7 +37,12 @@ from snc.constants import (
     TRIGGER_TELEOP_TOPIC,
     TRIGGER_TELEOP_INTERFACE,
     TRIGGER_TELEOP_BUFFER_SIZE,
-    HAZARD_SIGNAL_TOPIC
+    HAZARD_SIGNAL_TOPIC,
+    STARTUP_SYNC_TOPIC,
+    STARTUP_SYNC_INTERFACE,
+    STARTUP_SYNC_BUFFER_SIZE,
+    STARTUP_SYNC_QOS,
+    TRIGGER_QOS,
 )
 
 MAP_UNKNOWN = -1
@@ -54,7 +59,7 @@ STATE_DONE = 'STATUS_DONE'
 
 class NavigationNode(Node):
     def __init__(self):
-        super().__init__('exploration_node')
+        super().__init__('navigation_node')
 
         self.navigator = BasicNavigator()
 
@@ -70,7 +75,7 @@ class NavigationNode(Node):
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 50)
-        self.declare_parameter('frontier_standoff_m', 0)
+        self.declare_parameter('frontier_standoff_m', 0.1)
 
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
@@ -96,8 +101,12 @@ class NavigationNode(Node):
 
         self.covered = None
         self.last_path_len = 0
+        self.latest_path_msg = None
+        self.covered_map_info = None
         self.last_processed_cell = None
-        self.coverage_radius_m = 0.18
+        self.robot_radius_m = 0.15
+        self.safety_margin_m = 0.05
+        self.choose_frontier_goal = True
 
         map_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -117,7 +126,7 @@ class NavigationNode(Node):
             TRIGGER_START_INTERFACE,
             TRIGGER_START_TOPIC,
             self.start_callback,
-            TRIGGER_START_BUFFER_SIZE
+            TRIGGER_QOS
         )
 
         self.hazard_signal_sub = self.create_subscription(
@@ -131,11 +140,11 @@ class NavigationNode(Node):
             TRIGGER_TELEOP_INTERFACE,
             TRIGGER_TELEOP_TOPIC,
             self.teleop_callback,
-            TRIGGER_TELEOP_BUFFER_SIZE
+            TRIGGER_QOS
         )
 
         self.hazards_sub = self.create_subscription(
-            MarkerArray,   # replace if your /hazards topic uses another type
+            MarkerArray,
             '/hazards',
             self.hazards_callback,
             10
@@ -154,10 +163,30 @@ class NavigationNode(Node):
             SNC_STATUS_BUFFER_SIZE
         )
 
+        # Startup synchronization publisher - publishes node readiness
+        self.pub_startup_sync = self.create_publisher(
+            STARTUP_SYNC_INTERFACE,
+            STARTUP_SYNC_TOPIC,
+            STARTUP_SYNC_QOS
+        )
+
+        # Startup synchronization subscriber - waits for all nodes to be ready
+        self.sub_startup_sync = self.create_subscription(
+            STARTUP_SYNC_INTERFACE,
+            STARTUP_SYNC_TOPIC,
+            self.startup_sync_callback,
+            STARTUP_SYNC_QOS
+        )
+
+        # Track which nodes have published readiness
+        self.nodes_ready = set()
+        self.node_name = self.get_name()  # Use actual node name
+        self.all_nodes_ready = False
+
         self.return_pub = self.create_publisher(
-            TRIGGER_HOME_INTERFACE, 
+            TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
-            TRIGGER_HOME_BUFFER_SIZE
+            TRIGGER_QOS
         )
 
         self.cmd_vel_pub = self.create_publisher(
@@ -165,6 +194,13 @@ class NavigationNode(Node):
             '/cmd_vel', 
             10
         )
+        
+        self.coverage_marker_pub = self.create_publisher(
+            Marker, 
+            '/covered_cells_marker',
+            1    
+        )
+        self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
 
         self.control_srv = self.create_service(
             ExplorationControl,
@@ -189,6 +225,10 @@ class NavigationNode(Node):
         self.get_logger().info('Waiting for Nav2 to become active...')
         self.navigator.waitUntilNav2Active(localizer='slam_toolbox')
         self.get_logger().info('Nav2 is active')
+
+        # Set is_ready early so other nodes can proceed with startup sync
+        self.is_ready = True
+        self.get_logger().info('Exploration node is ready')
 
         self.get_logger().info(
             f'Waiting for TF {self.global_frame} -> {self.robot_base_frame}...'
@@ -217,8 +257,43 @@ class NavigationNode(Node):
             ):
                 break
 
-        self.is_ready = True
-        self.get_logger().info('Exploration node is ready and waiting for /snc_start')
+        self.get_logger().info('Occupancy grid received, ready for exploration')
+
+    def startup_sync_callback(self, msg):
+        """Callback for startup synchronization topic. Tracks which nodes have published readiness."""
+        if self.all_nodes_ready:
+            return
+        
+        # Extract node name from the message data
+        node_name = msg.data if hasattr(msg, 'data') else str(msg)
+        if node_name and node_name != self.node_name:
+            self.nodes_ready.add(node_name)
+            self.get_logger().info(f'Received ready signal from: {node_name}. Ready nodes: {len(self.nodes_ready) + 1}/3')
+            
+            # Check if all expected nodes are ready (3 nodes: path_tracing, navigation, marker_detection)
+            if len(self.nodes_ready) + 1 >= 2:  # +1 for self
+                self.all_nodes_ready = True
+                self.get_logger().info('All nodes are ready! Starting startup synchronization complete.')
+    
+    def wait_for_all_nodes_ready(self):
+        """Wait for all nodes to publish their readiness on the startup sync topic."""
+        self.get_logger().info('Waiting for all nodes to be ready...')
+        
+        # Publish this node's readiness
+        self.pub_startup_sync.publish(String(data=self.node_name))
+        
+        # Use a separate executor to process callbacks during startup sync
+        executor = rclpy.executors.SingleThreadedExecutor()
+        executor.add_node(self)
+        
+        try:
+            while rclpy.ok() and not self.all_nodes_ready:
+                executor.spin_once(timeout_sec=0.1)
+        finally:
+            executor.remove_node(self)
+            executor.shutdown()
+        
+        self.get_logger().info('All nodes ready, proceeding with initialization.')
 
     # ---------- callbacks ----------
     def map_callback(self, msg: OccupancyGrid):
@@ -246,9 +321,6 @@ class NavigationNode(Node):
         self.pending_resume_after_spin = False
 
     def hazards_callback(self, msg: MarkerArray):
-        # Example for MarkerArray: use marker.id as unique hazard ID.
-        # Replace this logic if /hazards has a different message type.
-        # TODO: Add mapping logic for the markers.
         before = len(self.hazard_ids)
         for marker in msg.markers:
             self.hazard_ids.add(int(marker.id))
@@ -319,6 +391,8 @@ class NavigationNode(Node):
         return response
 
     def path_explore_callback(self, msg):
+        self.latest_path_msg = msg
+
         if self.latest_map is None:
             return
 
@@ -346,16 +420,66 @@ class NavigationNode(Node):
             self.last_processed_cell = cell
 
         self.last_path_len = n
-        self.get_logger().info(f"New last path len: {self.last_path_len}")
+
+    def publish_coverage_marker(self):#
+        if self.latest_map is None or self.covered is None:
+            return
+        
+        msg = Marker()
+        msg.header.frame_id = self.global_frame
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.ns = 'coverage'
+        msg.id = 0
+        msg.type = Marker.CUBE_LIST
+        msg.action = Marker.ADD
+        msg.scale.x = self.latest_map.info.resolution
+        msg.scale.y = self.latest_map.info.resolution
+        msg.scale.z = 0.01
+        msg.pose.orientation.w = 1.0
+        msg.frame_locked = True
+        
+        color = ColorRGBA()
+        color.r = 0.0
+        color.g = 1.0
+        color.b = 1.0
+        color.a = 0.7
+        msg.color = color
+        
+        origin = self.latest_map.info.origin.position
+        res = self.latest_map.info.resolution
+        
+        ys, xs = np.where(self.covered)
+        for y, x in zip(ys, xs):
+            p = Point()
+            p.x = origin.x + (x + 0.5) * res
+            p.y = origin.y + (y + 0.5) * res
+            p.z = 0.01
+            msg.points.append(p)
+            
+        num_points = len(msg.points)
+        self.coverage_marker_pub.publish(msg)
 
     def ensure_coverage_grid(self):
         h = self.latest_map.info.height
         w = self.latest_map.info.width
 
-        if self.covered is None or self.covered.shape != (h, w):
+        map_changed = (
+            self.covered is None or
+            self.covered.shape != (h, w) or
+            self.covered_map_info is None or
+            self.covered_map_info.resolution != self.latest_map.info.resolution or
+            self.covered_map_info.origin.position.x != self.latest_map.info.origin.position.x or
+            self.covered_map_info.origin.position.y != self.latest_map.info.origin.position.y
+        )
+
+        if map_changed:
             self.covered = np.zeros((h, w), dtype=bool)
             self.last_path_len = 0
-            self.last_processed_cell = None 
+            self.last_processed_cell = None
+            self.covered_map_info = self.latest_map.info
+
+            if self.latest_path_msg is not None:
+                self.rebuild_coverage_from_full_path(self.latest_path_msg.poses) 
 
     def world_to_map(self, x, y):
         info = self.latest_map.info
@@ -365,11 +489,11 @@ class NavigationNode(Node):
         if 0 <= mx < info.width and 0 <= my < info.height:
             return (mx, my)
 
-        return None
+        return None   
 
     def paint_disk(self, mx, my):
         res = self.latest_map.info.resolution
-        radius_cells = max(1, int(math.ceil(self.coverage_radius_m / res)))
+        radius_cells = max(1, int(math.ceil((self.robot_radius_m * 4) / res)))
 
         h, w = self.covered.shape
         for dx in range(-radius_cells, radius_cells + 1):
@@ -397,7 +521,7 @@ class NavigationNode(Node):
         self.last_processed_cell = None
 
         for p in path:
-            cell = self.world_to_map(p.x, p.y)
+            cell = self.world_to_map(p.pose.position.x, p.pose.position.y)
             if cell is None:
                 continue
 
@@ -558,10 +682,53 @@ class NavigationNode(Node):
                         return True
         return False
 
-    def get_reachable_cells_and_distance(self, grid, start_x, start_y):
+    def build_safe_free_mask(self, grid):
+        res = self.latest_map.info.resolution
+        
+        inflation_cells = max(
+            1, 
+            int(math.ceil((self.robot_radius_m + self.safety_margin_m) / res))
+        )
+        
         height, width = grid.shape
+        
+        known_free = (grid >= 0) & (grid < MAP_OCCUPIED_THRESHOLD)
+        occupied = (grid >= MAP_OCCUPIED_THRESHOLD)
+        
+        inflated_occupied = np.copy(occupied)
+        
+        ys, xs = np.where(occupied)
+        for y, x in zip(ys, xs):
+            for dy in range(-inflation_cells, inflation_cells + 1):
+                for dx in range(-inflation_cells, inflation_cells + 1):
+                    if dx**2 + dy**2 > inflation_cells**2:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < width and 0 <= ny < height:
+                        inflated_occupied[ny, nx] = True
+                    
+        safe_free = known_free & (~inflated_occupied)
+        return safe_free
+
+    def find_nearby_safe_cell(self, safe_free_mask, start_x, start_y, max_radius=10):
+        height, width = safe_free_mask.shape
+
+        for radius in range(0, max_radius + 1):
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    nx, ny = start_x + dx, start_y + dy
+                    if 0 <= nx < width and 0 <= ny < height and safe_free_mask[ny, nx]:
+                        return nx, ny
+
+        return None, None
+
+    def get_reachable_cells_and_distance(self, safe_free_mask, start_x, start_y):
+        height, width = safe_free_mask.shape
         reachable = np.zeros((height, width), dtype=bool)
         dist = np.full((height, width), -1, dtype=np.int32)
+
+        if not safe_free_mask[start_y, start_x]:
+            return reachable, dist
 
         q = collections.deque([(start_x, start_y)])
         reachable[start_y, start_x] = True
@@ -575,7 +742,7 @@ class NavigationNode(Node):
                     continue
                 if reachable[ny, nx]:
                     continue
-                if not self.is_cell_traversable(grid[ny, nx]):
+                if not safe_free_mask[ny, nx]:
                     continue
 
                 reachable[ny, nx] = True
@@ -651,6 +818,8 @@ class NavigationNode(Node):
         centroid_x = sum(c[0] for c in cluster) / len(cluster)
         centroid_y = sum(c[1] for c in cluster) / len(cluster)
 
+        self.get_logger().info(f'Centroid of chosen cluster: ({centroid_x},{centroid_y})')
+
         closest = min(
             cluster,
             key=lambda c: math.hypot(c[0] - centroid_x, c[1] - centroid_y)
@@ -664,6 +833,9 @@ class NavigationNode(Node):
         standoff_cells = max(1, int(self.frontier_standoff_m / self.latest_map.info.resolution))
         gx = int(round(fx + standoff_cells * vx / norm))
         gy = int(round(fy + standoff_cells * vy / norm))
+        
+        self.get_logger().info(f'Computed back off goal cell based on centroid and standoff ({self.frontier_standoff_m}): ({gx},{gy})')
+
         return gx, gy
 
     def choose_coverage_goal_from_cluster(self, cluster, dists):
@@ -718,25 +890,63 @@ class NavigationNode(Node):
                 self.get_logger().warn('Could not find traversable start cell near robot')
                 return None
 
-        reachable_cells, dists = self.get_reachable_cells_and_distance(grid, robot_x, robot_y)
+        safe_free_mask = self.build_safe_free_mask(grid)
+        if not safe_free_mask[robot_y, robot_x]:
+            robot_x, robot_y = self.find_nearby_safe_cell(safe_free_mask, robot_x, robot_y)
+            if robot_x is None:
+                self.get_logger().warn('Robot is not on a safe cell and no nearby safe cell was found')
+                return None
+
+        reachable_cells, dists = self.get_reachable_cells_and_distance(safe_free_mask, robot_x, robot_y)
         
         free_mask = np.vectorize(self.is_cell_traversable)(grid)
         reachable_mask = reachable_cells
         covered_mask = self.covered if self.covered is not None else np.zeros_like(reachable_mask, dtype=bool)
         uncovered_mask = reachable_mask & free_mask & (~covered_mask)
 
-        #coverage_goal = self.find_coverage_goal(grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
-        #if coverage_goal is not None:
-        #    return coverage_goal
+        num_free = np.count_nonzero(free_mask)
+        num_reachable = np.count_nonzero(reachable_mask)
+        num_covered = np.count_nonzero(covered_mask)
+        num_uncovered = np.count_nonzero(uncovered_mask)
+        reachable_covered_mask = reachable_mask & covered_mask
+        covered_pct = (100.0 * num_covered / num_free) if num_free > 0 else 0.0
+        reachable_covered_pct = (
+            100.0 * (num_reachable - num_uncovered) / num_reachable
+            if num_reachable > 0 else 0.0
+        )
 
-        frontier_goal = self.find_frontier_goal(grid, width, height, robot_x, robot_y, reachable_mask, origin, res)
-        if frontier_goal is not None:
-            return frontier_goal
+        self.get_logger().info(
+            f"free={num_free}, reachable={num_reachable}, covered={num_covered}, "
+            f"uncovered={num_uncovered}, covered/free={covered_pct:.1f}%, "
+            f"covered/reachable={reachable_covered_pct:.1f}%, "
+            f"reachable_covered={np.count_nonzero(reachable_covered_mask)}"
+        )
 
-        self.get_logger().info('No more frontiers/uncovered cells found. Exploration finished')
+        if self.choose_frontier_goal:
+            self.get_logger().info('Choosing frontier goal...')
+            frontier_goal = self.find_frontier_goal(grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res)
+            if frontier_goal is not None:
+                return frontier_goal
+            else:
+                self.get_logger().info('No frontier goal found. Choosing coverage goal instead...')
+                coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+                if coverage_goal is not None:
+                    return coverage_goal
+        else:
+            self.get_logger().info('Choosing coverage goal...')
+            coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
+            if coverage_goal is not None:
+                return coverage_goal
+            else:
+                self.get_logger().info('No coverage goal found. Choosing frontier goal instead...')
+                frontier_goal = self.find_frontier_goal(grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res)
+                if frontier_goal is not None:
+                    return frontier_goal
+
+        self.get_logger().info('No more frontiers/uncovered cells found. Maze fully explored')
         return None
 
-    def find_coverage_goal(self, grid, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
+    def find_coverage_goal(self, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
         uncovered_cells = self.extract_uncovered_cells(uncovered_mask)
         
         if not uncovered_cells:
@@ -750,7 +960,7 @@ class NavigationNode(Node):
             self.get_logger().warn('No uncovered clusters found')
             return None
 
-        self.get_logger().info(f'uncovered clusters={len(uncovered_clusters)}, ranked_uncovered_clusters={len(ranked_clusters)}')
+        self.get_logger().info(f'#uncovered clusters={len(uncovered_clusters)}, #ranked_uncovered_clusters={len(ranked_clusters)}')
 
         for cluster in ranked_clusters:
             #goal_x, goal_y = self.backoff_goal_cell(cluster, robot_x, robot_y)
@@ -758,17 +968,17 @@ class NavigationNode(Node):
 
             if not (0 <= goal_x < width and 0 <= goal_y < height):
                 continue
-            if not self.is_cell_traversable(grid[goal_y, goal_x]):
+            if not safe_free_mask[goal_y, goal_x]:
                 continue
 
             self.get_logger().info(f'selected uncovered cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
 
             return self.create_pose(goal_x, goal_y, res, origin)
 
-        self.get_logger().warn('Uncovered clusters exist, but no valid backed-off goal was found')
+        self.get_logger().warn('Uncovered clusters exist, but no valid goal was found')
         return None
 
-    def find_frontier_goal(self, grid, width, height, robot_x, robot_y, reachable_mask, origin, res):
+    def find_frontier_goal(self, grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res):
         frontier_cells = self.extract_frontier_cells(grid, width, height, reachable_mask)
         
         if not frontier_cells:
@@ -789,7 +999,7 @@ class NavigationNode(Node):
 
             if not (0 <= goal_x < width and 0 <= goal_y < height):
                 continue
-            if not self.is_cell_traversable(grid[goal_y, goal_x]):
+            if not safe_free_mask[goal_y, goal_x]:
                 continue
 
             self.get_logger().info(f'selected frontier cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
@@ -814,9 +1024,11 @@ def main():
     rclpy.init()
     node = NavigationNode()
 
-    executor = MultiThreadedExecutor()
+    # Wait for all nodes to be ready before starting
+    #node.wait_for_all_nodes_ready()
+
+    executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(node)
-    executor.add_node(node.navigator)
 
     try:
         node.wait_until_ready(executor)
@@ -828,7 +1040,6 @@ def main():
         except Exception:
             pass
 
-        node.navigator.destroy_node()
         node.destroy_node()
 
         if rclpy.ok():

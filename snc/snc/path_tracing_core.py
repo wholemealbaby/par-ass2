@@ -4,11 +4,66 @@ Core algorithmic logic for path tracing that can be tested independently of ROS2
 """
 
 import math
-from geometry_msgs.msg import PoseStamped, TransformStamped, Quaternion
-from tf_transformations import euler_from_quaternion, quaternion_from_euler
+from geometry_msgs.msg import PoseStamped, Quaternion
 
 SAMPLE_FAILED = 0
 SAMPLE_SKIPPED = 2
+
+import numpy as np
+
+def quaternion_from_euler(ai, aj, ak):
+    """
+    Converts Euler angles to a quaternion.
+    ai, aj, ak : roll, pitch, yaw (in radians)
+    Returns: [x, y, z, w]
+    """
+    ai /= 2.0
+    aj /= 2.0
+    ak /= 2.0
+    ci = np.cos(ai)
+    si = np.sin(ai)
+    cj = np.cos(aj)
+    sj = np.sin(aj)
+    ck = np.cos(ak)
+    sk = np.sin(ak)
+    cc = ci * ck
+    cs = ci * sk
+    sc = si * ck
+    ss = si * sk
+
+    x = si * cj * ck - ci * sj * sk
+    y = ci * sj * ck + si * cj * sk
+    z = ci * cj * sk - si * sj * ck
+    w = ci * cj * ck + si * sj * sk
+
+    return np.array([x, y, z, w])
+
+def euler_from_quaternion(quaternion):
+    """
+    Converts a quaternion to Euler angles (roll, pitch, yaw).
+    quaternion : [x, y, z, w]
+    Returns: (roll, pitch, yaw)
+    """
+    x, y, z, w = quaternion
+
+    # Roll (x-axis rotation)
+    sinr_cosp = 2 * (w * x + y * z)
+    cosr_cosp = 1 - 2 * (x * x + y * y)
+    roll = np.arctan2(sinr_cosp, cosr_cosp)
+
+    # Pitch (y-axis rotation)
+    sinp = 2 * (w * y - z * x)
+    if np.abs(sinp) >= 1:
+        pitch = np.copysign(np.pi / 2, sinp) # use 90 degrees if out of range
+    else:
+        pitch = np.arcsin(sinp)
+
+    # Yaw (z-axis rotation)
+    siny_cosp = 2 * (w * z + x * y)
+    cosy_cosp = 1 - 2 * (y * y + z * z)
+    yaw = np.arctan2(siny_cosp, cosy_cosp)
+
+    return roll, pitch, yaw
 
 def calculate_distance(x1, y1, x2, y2):
     """Calculate Euclidean distance between two points."""
@@ -85,6 +140,15 @@ def construct_pose_stamped(transform, clock, frame_id='map'):
     
     return pose
 
+def euler_from_quaternion_msg(q_msg):
+    """
+    Converts a ROS Quaternion message to Euler angles.
+    """
+    # Extract values from the ROS message
+    q = [q_msg.x, q_msg.y, q_msg.z, q_msg.w]
+    
+    # Return (roll, pitch, yaw) in radians
+    return euler_from_quaternion(q)
 
 def get_yaw_from_transform(t):
     """
@@ -182,8 +246,17 @@ def invert_quaternions(waypoints):
     
     return inverted_waypoints
 
+def normalize_angle(angle):
+    # Reduce the angle to [-2pi, 2pi]
+    angle = angle % (2 * math.pi)
+    
+    # Force into [-pi, pi]
+    if angle > math.pi:
+        angle -= 2 * math.pi
+        
+    return angle
 
-def thin_waypoint_list(waypoints, waypoint_spacing_m):
+def thin_waypoint_list(waypoints, waypoint_spacing_m, angle_threshold_deg):
     """
     Thin the waypoint list: if consecutive points are < waypoint_spacing_m apart, 
     skip intermediates to prevent Nav2 goal thrashing.
@@ -200,25 +273,26 @@ def thin_waypoint_list(waypoints, waypoint_spacing_m):
     
     thinned_waypoints = [waypoints[0]]  # Always keep the first waypoint
     
+    thinned = [waypoints[0]]
     for i in range(1, len(waypoints)):
-        # Calculate distance to the last waypoint in our thinned list
-        last_wp = thinned_waypoints[-1]
-        current_wp = waypoints[i]
+        last = thinned[-1]
+        curr = waypoints[i]
         
-        dist = calculate_distance(
-            last_wp.pose.position.x,
-            last_wp.pose.position.y,
-            current_wp.pose.position.x,
-            current_wp.pose.position.y
-        )
+        dist = calculate_distance(last.pose.position.x, last.pose.position.y, 
+                                  curr.pose.position.x, curr.pose.position.y)
         
-        # If distance is greater than threshold, keep this waypoint
-        if dist >= waypoint_spacing_m:
-            thinned_waypoints.append(current_wp)
-    
+        # Calculate yaw diff
+        _, _, last_yaw = euler_from_quaternion_msg(last.pose.orientation)
+        _, _, curr_yaw = euler_from_quaternion_msg(curr.pose.orientation)
+        angle_diff = abs(math.degrees(normalize_angle(curr_yaw - last_yaw)))
+
+        # Keep if moved far enough OR turned significantly
+        if dist >= waypoint_spacing_m or angle_diff >= angle_threshold_deg:
+            thinned.append(curr)
+       
     return thinned_waypoints
 
-def calculate_return_trajectory(breadcrumbs):
+def calculate_return_trajectory(breadcrumbs, waypoint_spacing_m, angle_threshold_deg):
     """
     Calculate the return trajectory by reversing the explore breadcrumbs and 
     inverting the quaternions so the robot faces forward along the return path.
@@ -227,11 +301,4 @@ def calculate_return_trajectory(breadcrumbs):
         breadcrumbs: List of PoseStamped objects representing the explore path
     """
     reversed_breadcrumbs = reverse_waypoint_list(breadcrumbs)
-    return invert_quaternions(reversed_breadcrumbs)
-
-# Import here to avoid circular imports
-try:
-    import tf_transformations
-except ImportError:
-    # This module should only be imported when running tests
-    pass
+    return thin_waypoint_list(invert_quaternions(reversed_breadcrumbs), waypoint_spacing_m, angle_threshold_deg)

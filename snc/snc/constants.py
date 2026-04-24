@@ -1,6 +1,7 @@
 from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
 from find_object_2d.msg import ObjectsStamped
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 
 # Mapping of hazard names to their ID 
 # from the assignment specification
@@ -48,6 +49,8 @@ START_CHALLENGE_BUFFER_SIZE = 1
 OBJECTS_TOPIC = "/objectsStamped"
 OBJECTS_BUFFER_SIZE = 20
 OBJECTS_INTERFACE = ObjectsStamped
+
+TEST_SYNC_CHECK_TIMEOUT = 120.0  # seconds
 
 # # Topic for Node 3 to pub all breadcrumbs taken during exploration
 # # for Node 1 to improve exploration
@@ -103,3 +106,23 @@ TRIGGER_HOME_BUFFER_SIZE = 1
 SNC_STATUS_TOPIC = '/snc_status'
 SNC_STATUS_INTERFACE = String
 SNC_STATUS_BUFFER_SIZE = 1
+
+# Startup synchronization topic - all nodes publish their readiness here
+STARTUP_SYNC_TOPIC = '/snc_startup_sync'
+STARTUP_SYNC_INTERFACE = String
+STARTUP_SYNC_BUFFER_SIZE = 1
+
+# QoS profile for startup sync with latching to ensure late subscribers receive messages
+STARTUP_SYNC_QOS = QoSProfile(
+    depth=STARTUP_SYNC_BUFFER_SIZE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL
+)
+
+# QoS profile for trigger topics to match ros2 topic pub default behavior
+TRIGGER_QOS = QoSProfile(
+    depth=1,
+    reliability=ReliabilityPolicy.RELIABLE,
+    history=HistoryPolicy.KEEP_LAST
+)
+
+COVERAGE_TOPIC = '/covered_cells_marker'

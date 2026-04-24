@@ -14,6 +14,7 @@ setup(
             ['resource/' + package_name]),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
         ('share/' + package_name, ['package.xml']),
+         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -31,8 +32,8 @@ setup(
             'navigation_node = snc.navigation_node:main',
             'marker_detection_node = snc.marker_detection_node:main',
             'path_tracing_node = snc.path_tracing_node:main',
+            'twist_mux = snc.twist_mux:main',
             'best_effort_repeater = snc.best_effort_repeater:main',
-            'trigger_listener = snc.trigger_listener:main',
         ],
     },
 )
