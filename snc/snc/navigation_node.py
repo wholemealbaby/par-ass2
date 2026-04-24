@@ -954,7 +954,7 @@ class NavigationNode(Node):
                     return frontier_goal
 
         self.get_logger().info('No more frontiers/uncovered cells found. Maze fully explored')
-        self.state = STATE_DONE
+        self.return_pub.publish(Empty())
         return None
 
     def find_coverage_goal(self, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
