@@ -933,17 +933,17 @@ class NavigationNode(Node):
         )
 
         if self.choose_frontier_goal:
-            self.get_logger().info('Choosing frontier goal...')
+            #self.get_logger().info('Choosing frontier goal...')
             frontier_goal = self.find_frontier_goal(grid, safe_free_mask, width, height, robot_x, robot_y, reachable_mask, origin, res)
             if frontier_goal is not None:
                 return frontier_goal
             else:
-                self.get_logger().info('No frontier goal found. Choosing coverage goal instead...')
+                #self.get_logger().info('No frontier goal found. Choosing coverage goal instead...')
                 coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
                 if coverage_goal is not None:
                     return coverage_goal
         else:
-            self.get_logger().info('Choosing coverage goal...')
+            #self.get_logger().info('Choosing coverage goal...')
             coverage_goal = self.find_coverage_goal(safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res)
             if coverage_goal is not None:
                 return coverage_goal
@@ -954,6 +954,7 @@ class NavigationNode(Node):
                     return frontier_goal
 
         self.get_logger().info('No more frontiers/uncovered cells found. Maze fully explored')
+        self.state = STATE_DONE
         return None
 
     def find_coverage_goal(self, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
