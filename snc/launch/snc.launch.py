@@ -8,12 +8,12 @@ def generate_launch_description():
     # Read package name from environment variable with fallback
     package_name = os.environ.get('SNC_PACKAGE_NAME', 'snc')
 
-    # # Declare launch arguments
-    # testing_mode_arg = DeclareLaunchArgument(
-    #     'testing_mode',
-    #     default_value='false',
-    #     description='When true, blocks all Twist commands to prevent robot movement during testing'
-    # )
+    # Declare launch arguments
+    testing_mode_arg = DeclareLaunchArgument(
+        'testing_mode',
+        default_value='false',
+        description='When true, blocks all Twist commands to prevent robot movement during testing'
+    )
 
     # Get launch configuration
     testing_mode = LaunchConfiguration('testing_mode')
