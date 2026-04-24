@@ -122,11 +122,13 @@ class TwistMuxNode(Node):
         
         # Track latest Twist messages from each source
         self.latest_cmd_vel = None
+        self.latest_cmd_vel_nav2 = None
         self.latest_teleop = None
         self.latest_manual = None
         
         # Track which sources have published
         self.has_cmd_vel = False
+        self.has_cmd_vel_nav2 = False
         self.has_teleop = False
         self.has_manual = False
         
@@ -145,11 +147,19 @@ class TwistMuxNode(Node):
         )
         
         # Subscribers for each input source
-        # Note: cmd_vel_topic parameter is now used for the input topic (should be /cmd_vel_raw)
+        # cmd_vel_topic parameter is now used for the input topic (should be /cmd_vel_raw)
         self.sub_cmd_vel = self.create_subscription(
             Twist,
             self.cmd_vel_topic,
             self.cmd_vel_callback,
+            10
+        )
+        
+        # Additional subscription to /cmd_vel for Nav2 commands
+        self.sub_cmd_vel_nav2 = self.create_subscription(
+            Twist,
+            '/cmd_vel',
+            self.cmd_vel_nav2_callback,
             10
         )
         
@@ -196,10 +206,16 @@ class TwistMuxNode(Node):
         return rclpy.parameter.SetParametersResult(successful=True)
     
     def cmd_vel_callback(self, msg: Twist) -> None:
-        """Callback for primary cmd_vel source."""
+        """Callback for primary cmd_vel source (from navigation_node)."""
         self.latest_cmd_vel = msg
         self.has_cmd_vel = True
-        self.get_logger().debug('Received cmd_vel')
+        self.get_logger().debug('Received cmd_vel from navigation_node')
+    
+    def cmd_vel_nav2_callback(self, msg: Twist) -> None:
+        """Callback for Nav2 cmd_vel source."""
+        self.latest_cmd_vel_nav2 = msg
+        self.has_cmd_vel_nav2 = True
+        self.get_logger().debug('Received cmd_vel from Nav2')
     
     def teleop_callback(self, msg: Twist) -> None:
         """Callback for teleop input."""
@@ -224,7 +240,7 @@ class TwistMuxNode(Node):
             return
         
         # Determine which command to publish based on priority
-        # Priority: teleop > manual > cmd_vel
+        # Priority: teleop > manual > cmd_vel_nav2 > cmd_vel
         cmd_to_publish = None
         source_name = None
         
@@ -234,6 +250,9 @@ class TwistMuxNode(Node):
         elif self.has_manual and not self.lock_manual:
             cmd_to_publish = self.latest_manual
             source_name = 'manual'
+        elif self.has_cmd_vel_nav2:
+            cmd_to_publish = self.latest_cmd_vel_nav2
+            source_name = 'cmd_vel_nav2'
         elif self.has_cmd_vel:
             cmd_to_publish = self.latest_cmd_vel
             source_name = 'cmd_vel'
