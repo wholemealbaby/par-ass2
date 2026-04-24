@@ -90,7 +90,7 @@ class NavigationNode(Node):
         self.is_ready = False
 
         self.state = STATE_IDLE
-        self.started = False
+        self.exploration_active = False
         self.exploration_start_time = None
         self.hazard_ids = set()
         self.pending_resume_after_spin = False
@@ -360,6 +360,7 @@ class NavigationNode(Node):
         if cmd == 'STOP':
             self.cancel_navigation()
             self.state = STATE_IDLE
+            self.exploration_active = False
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
@@ -369,6 +370,7 @@ class NavigationNode(Node):
         if cmd == 'RESUME':
             if self.state in [STATE_IDLE, STATE_TELEOP]:
                 self.state = STATE_EXPLORING
+                self.exploration_active = True
                 response.success = True
                 response.state = self.state
                 response.hazards_found = len(self.hazard_ids)
@@ -378,6 +380,7 @@ class NavigationNode(Node):
         if cmd == 'TELEOP':
             self.cancel_navigation()
             self.state = STATE_TELEOP
+            self.exploration_active = False
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
@@ -536,7 +539,7 @@ class NavigationNode(Node):
 
     # ---------- exploration control ----------
     def start_exploration(self):
-        self.started = True
+        self.exploration_active = True
         self.goal_active = False
         self.no_frontier_count = 0
         self.pending_resume_after_spin = False
@@ -623,7 +626,7 @@ class NavigationNode(Node):
 
         self.update_spin()
 
-        if self.state != STATE_EXPLORING:
+        if self.state != STATE_EXPLORING or not self.exploration_active:
             return
 
         if self.exploration_start_time is not None:
