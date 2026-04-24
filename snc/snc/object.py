@@ -8,11 +8,11 @@ from snc.constants import OBJECT_MAP
 
 # Camera calibration values for OAK-D camera on ROSbot PRO 3.
 # To get exact values:  ros2 topic echo /oak/rgb/camera_info --once
-FOCAL_LENGTH_X = 554.0       # fx  (pixels)
-FOCAL_LENGTH_Y = 554.0       # fy  (pixels)
-PRINCIPAL_POINT_X = 320.0    # cx  (pixels) — usually image_width  / 2
-PRINCIPAL_POINT_Y = 240.0    # cy  (pixels) — usually image_height / 2
-IMAGE_WIDTH = 640
+FOCAL_LENGTH_X = 617.3269653320312       # fx  (pixels)
+FOCAL_LENGTH_Y = 616.7692260742188       # fy  (pixels)
+PRINCIPAL_POINT_X = 395.5665588378906    # cx  (pixels)
+PRINCIPAL_POINT_Y = 235.69529724121094    # cy  (pixels)
+IMAGE_WIDTH = 768
 LASER_WINDOW_DEG = 5.0
 
 class DetectedObject:

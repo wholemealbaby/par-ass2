@@ -2,6 +2,10 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, LogInfo
 from launch.substitutions import LaunchConfiguration, EnvironmentVariable
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
+ 
+objects_path = os.path.join(get_package_share_directory('snc'), 'resource', 'hazards')
 
 def generate_launch_description():
 
@@ -34,11 +38,8 @@ def generate_launch_description():
         
         # Path where you have saved the existing trained images
         # Uses the path to the AIIL Workspace, but this could be set to anywhere
-        LogInfo(msg=['AIIL_CHECKOUT_DIR: ', EnvironmentVariable(name='AIIL_CHECKOUT_DIR')]),
-        DeclareLaunchArgument('objects_path',
-                                default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '/src/par_coursework/g30/snc/resource/hazards/'],
-                                # default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '/humble_workspace/src/par_coursework/g30/snc/resource/hazards/'],
-                                description='Directory containing objects to load on initialization.'),
+        # LogInfo(msg=['AIIL_CHECKOUT_DIR: ', EnvironmentVariable(name='AIIL_CHECKOUT_DIR')]),
+        DeclareLaunchArgument('objects_path', default_value=objects_path, description='Directory containing objects to load on initialization.'),
         
         # Find Object 2D Setting. By default just use the standard settings, but you can copy and tweak this file if you wish
         DeclareLaunchArgument('settings_path', default_value='~/.ros/find_object_2d.ini', description='Config file.'),      
