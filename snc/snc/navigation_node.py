@@ -858,6 +858,9 @@ class NavigationNode(Node):
         return best_cell
 
     def find_navigation_goal(self, map_msg, robot_pose):
+
+        if self.state != STATE_EXPLORING or self.exploration_active == False:
+            return None
         width = map_msg.info.width
         height = map_msg.info.height
         res = map_msg.info.resolution
