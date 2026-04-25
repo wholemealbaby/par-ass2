@@ -110,10 +110,10 @@ def generate_launch_description():
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '0'),
- 
+  
         # Builds map → odom → base_link TF
         slam_toolbox_node,
- 
+  
         # Application nodes
         navigation_node,
         marker_detection_node,

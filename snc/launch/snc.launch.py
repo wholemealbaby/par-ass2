@@ -6,6 +6,7 @@ def generate_launch_description():
     # Read package name from environment variable with fallback
     package_name = os.environ.get('SNC_PACKAGE_NAME', 'snc')
 
+
     # Node 1: Navigation Node
     navigation_node = Node(
         package=package_name,

@@ -8,7 +8,6 @@ import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
 from rclpy.duration import Duration
-from rclpy.executors import MultiThreadedExecutor
 
 from tf2_ros import Buffer, TransformListener, TransformException
 
@@ -30,19 +29,15 @@ from snc.constants import (
     SNC_STATUS_BUFFER_SIZE,
     TRIGGER_HOME_TOPIC,
     TRIGGER_HOME_INTERFACE,
-    TRIGGER_HOME_BUFFER_SIZE,
     TRIGGER_START_TOPIC,
     TRIGGER_START_INTERFACE,
-    TRIGGER_START_BUFFER_SIZE,
     TRIGGER_TELEOP_TOPIC,
     TRIGGER_TELEOP_INTERFACE,
-    TRIGGER_TELEOP_BUFFER_SIZE,
     HAZARD_SIGNAL_TOPIC,
-    STARTUP_SYNC_TOPIC,
-    STARTUP_SYNC_INTERFACE,
-    STARTUP_SYNC_BUFFER_SIZE,
-    STARTUP_SYNC_QOS,
     TRIGGER_QOS,
+    COVERAGE_TOPIC,
+    COVERAGE_INTERFACE,
+    COVERAGE_QOS,
 )
 
 MAP_UNKNOWN = -1
@@ -71,7 +66,7 @@ class NavigationNode(Node):
 
         self.declare_parameter('planner_frequency', 1.0)
         self.declare_parameter('status_frequency', 1.0)
-        self.declare_parameter('exploration_timeout_sec', 2000.0)
+        self.declare_parameter('exploration_timeout_sec', 240.0)
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 50)
@@ -90,7 +85,7 @@ class NavigationNode(Node):
         self.is_ready = False
 
         self.state = STATE_IDLE
-        self.started = False
+        self.exploration_active = False
         self.exploration_start_time = None
         self.hazard_ids = set()
         self.pending_resume_after_spin = False
@@ -163,26 +158,6 @@ class NavigationNode(Node):
             SNC_STATUS_BUFFER_SIZE
         )
 
-        # Startup synchronization publisher - publishes node readiness
-        self.pub_startup_sync = self.create_publisher(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            STARTUP_SYNC_QOS
-        )
-
-        # Startup synchronization subscriber - waits for all nodes to be ready
-        self.sub_startup_sync = self.create_subscription(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            self.startup_sync_callback,
-            STARTUP_SYNC_QOS
-        )
-
-        # Track which nodes have published readiness
-        self.nodes_ready = set()
-        self.node_name = self.get_name()  # Use actual node name
-        self.all_nodes_ready = False
-
         self.return_pub = self.create_publisher(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
@@ -190,15 +165,15 @@ class NavigationNode(Node):
         )
 
         self.cmd_vel_pub = self.create_publisher(
-            Twist, 
-            '/cmd_vel', 
+            Twist,
+            '/cmd_vel',
             10
         )
         
         self.coverage_marker_pub = self.create_publisher(
-            Marker, 
-            '/covered_cells_marker',
-            1    
+            COVERAGE_INTERFACE,
+            COVERAGE_TOPIC,
+            COVERAGE_QOS
         )
         self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
 
@@ -221,13 +196,15 @@ class NavigationNode(Node):
         self.get_logger().info('Exploration node created')
 
     # ---------- readiness ----------
-    def wait_until_ready(self, executor: MultiThreadedExecutor):
+    def wait_until_ready(self, executor: rclpy.executors.SingleThreadedExecutor):
         self.get_logger().info('Waiting for Nav2 to become active...')
+        
+        # blocking: wait for Nav2 status while spinning
+        self.get_logger().info('Waiting for Nav2 to become active...')
+        # This method internally handles the waiting/spinning logic
         self.navigator.waitUntilNav2Active(localizer='slam_toolbox')
-        self.get_logger().info('Nav2 is active')
+        self.get_logger().info('Nav2 is active and ready!')
 
-        # Set is_ready early so other nodes can proceed with startup sync
-        self.is_ready = True
         self.get_logger().info('Exploration node is ready')
 
         self.get_logger().info(
@@ -258,42 +235,7 @@ class NavigationNode(Node):
                 break
 
         self.get_logger().info('Occupancy grid received, ready for exploration')
-
-    def startup_sync_callback(self, msg):
-        """Callback for startup synchronization topic. Tracks which nodes have published readiness."""
-        if self.all_nodes_ready:
-            return
-        
-        # Extract node name from the message data
-        node_name = msg.data if hasattr(msg, 'data') else str(msg)
-        if node_name and node_name != self.node_name:
-            self.nodes_ready.add(node_name)
-            self.get_logger().info(f'Received ready signal from: {node_name}. Ready nodes: {len(self.nodes_ready) + 1}/3')
-            
-            # Check if all expected nodes are ready (3 nodes: path_tracing, navigation, marker_detection)
-            if len(self.nodes_ready) + 1 >= 2:  # +1 for self
-                self.all_nodes_ready = True
-                self.get_logger().info('All nodes are ready! Starting startup synchronization complete.')
-    
-    def wait_for_all_nodes_ready(self):
-        """Wait for all nodes to publish their readiness on the startup sync topic."""
-        self.get_logger().info('Waiting for all nodes to be ready...')
-        
-        # Publish this node's readiness
-        self.pub_startup_sync.publish(String(data=self.node_name))
-        
-        # Use a separate executor to process callbacks during startup sync
-        executor = rclpy.executors.SingleThreadedExecutor()
-        executor.add_node(self)
-        
-        try:
-            while rclpy.ok() and not self.all_nodes_ready:
-                executor.spin_once(timeout_sec=0.1)
-        finally:
-            executor.remove_node(self)
-            executor.shutdown()
-        
-        self.get_logger().info('All nodes ready, proceeding with initialization.')
+        self.is_ready = True
 
     # ---------- callbacks ----------
     def map_callback(self, msg: OccupancyGrid):
@@ -360,6 +302,8 @@ class NavigationNode(Node):
         if cmd == 'STOP':
             self.cancel_navigation()
             self.state = STATE_IDLE
+            self.exploration_active = False
+            self.goal_active = False
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
@@ -369,6 +313,7 @@ class NavigationNode(Node):
         if cmd == 'RESUME':
             if self.state in [STATE_IDLE, STATE_TELEOP]:
                 self.state = STATE_EXPLORING
+                self.exploration_active = True
                 response.success = True
                 response.state = self.state
                 response.hazards_found = len(self.hazard_ids)
@@ -378,6 +323,7 @@ class NavigationNode(Node):
         if cmd == 'TELEOP':
             self.cancel_navigation()
             self.state = STATE_TELEOP
+            self.exploration_active = False
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
@@ -536,7 +482,7 @@ class NavigationNode(Node):
 
     # ---------- exploration control ----------
     def start_exploration(self):
-        self.started = True
+        self.exploration_active = True
         self.goal_active = False
         self.no_frontier_count = 0
         self.pending_resume_after_spin = False
@@ -592,6 +538,7 @@ class NavigationNode(Node):
         if self.pending_resume_after_spin:
             self.pending_resume_after_spin = False
             self.state = STATE_EXPLORING
+            self.exploration_active = True
             self.get_logger().info('Spin complete, resuming exploration')
 
     # ---------- robot pose ----------
@@ -623,7 +570,7 @@ class NavigationNode(Node):
 
         self.update_spin()
 
-        if self.state != STATE_EXPLORING:
+        if self.state != STATE_EXPLORING or not self.exploration_active:
             return
 
         if self.exploration_start_time is not None:
@@ -643,6 +590,10 @@ class NavigationNode(Node):
             result = self.navigator.getResult()
             self.goal_active = False
 
+            if self.state != STATE_EXPLORING or not self.exploration_active:
+                self.get_logger().info('Goal cleared, staying IDLE as requested.')
+                return
+            
             if result == TaskResult.SUCCEEDED:
                 self.get_logger().info('Frontier reached, replanning...')
             else:
@@ -660,7 +611,7 @@ class NavigationNode(Node):
                 f'No frontier found ({self.no_frontier_count}/{self.no_frontier_limit})'
             )
             if self.no_frontier_count >= self.no_frontier_limit:
-                self.trigger_return_home('No frontiers left')
+                self.trigger_return_home('No frontiers left. Maze fully explored. Triggering return home procedure...')
             return
 
         self.no_frontier_count = 0
@@ -944,6 +895,7 @@ class NavigationNode(Node):
                     return frontier_goal
 
         self.get_logger().info('No more frontiers/uncovered cells found. Maze fully explored')
+
         return None
 
     def find_coverage_goal(self, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
@@ -973,7 +925,10 @@ class NavigationNode(Node):
 
             self.get_logger().info(f'selected uncovered cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
 
-            return self.create_pose(goal_x, goal_y, res, origin)
+            if self.exploration_active:
+                return self.create_pose(goal_x, goal_y, res, origin)
+            else:
+                return None
 
         self.get_logger().warn('Uncovered clusters exist, but no valid goal was found')
         return None
@@ -1004,7 +959,10 @@ class NavigationNode(Node):
 
             self.get_logger().info(f'selected frontier cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
 
-            return self.create_pose(goal_x, goal_y, res, origin)
+            if self.exploration_active:
+                return self.create_pose(goal_x, goal_y, res, origin)
+            else:
+                return None
 
         self.get_logger().warn('Frontier clusters exist, but no valid backed-off goal was found')
         return None
@@ -1023,9 +981,6 @@ class NavigationNode(Node):
 def main():
     rclpy.init()
     node = NavigationNode()
-
-    # Wait for all nodes to be ready before starting
-    #node.wait_for_all_nodes_ready()
 
     executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(node)
