@@ -19,12 +19,16 @@ def generate_launch_description():
     testing_mode = LaunchConfiguration('testing_mode')
 
     # Node 1: Navigation Node
+    # Remap Nav2's cmd_vel output to /cmd_vel_nav so it goes through the Mux
     navigation_node = Node(
         package=package_name,
         executable='navigation_node',
         name='navigation_node_ex',
         output='screen',
-        parameters=[]
+        parameters=[],
+        remappings=[
+            ('cmd_vel', 'cmd_vel_nav'),  # Remap Nav2 output to go through Mux
+        ]
     )
 
     # Node 2: Marker Detection Node
@@ -48,6 +52,8 @@ def generate_launch_description():
     )
 
     # Node 4: Twist Mux Node with Testing Mode Lock
+    # Subscribes to /cmd_vel_nav (Nav2 remapped) and /cmd_vel_raw (manual commands)
+    # Publishes to /cmd_vel only when testing_mode=False
     twist_mux_node = Node(
         package=package_name,
         executable='twist_mux',
@@ -57,7 +63,8 @@ def generate_launch_description():
             {'testing_mode': testing_mode},
             {'lock_teleop': True},
             {'lock_manual': True},
-            {'cmd_vel_topic': '/cmd_vel_raw'},  # Changed from /cmd_vel to /cmd_vel_raw
+            {'cmd_vel_nav_topic': '/cmd_vel_nav'},  # Nav2 output remapped here
+            {'cmd_vel_raw_topic': '/cmd_vel_raw'},  # Manual navigation commands
             {'cmd_vel_teleop_topic': '/cmd_vel_teleop'},
             {'cmd_vel_manual_topic': '/cmd_vel_manual'}
         ]
