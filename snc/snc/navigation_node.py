@@ -199,10 +199,10 @@ class NavigationNode(Node):
     def wait_until_ready(self, executor: rclpy.executors.SingleThreadedExecutor):
         self.get_logger().info('Waiting for Nav2 to become active...')
         
-        # Non-blocking: manually poll Nav2 status while spinning
+        # blocking: wait for Nav2 status while spinning
         # This allows callbacks (map, TF, etc.) to be processed during wait
         while rclpy.ok():
-            if self.navigator.isNav2Active():
+            if self.navigator.waitUntilNav2Active(navigator=’bt_navigator, localizer=’amcl’):
                 break
             self.get_logger().info('Nav2 not active yet, spinning...', once_every_sec=2)
             executor.spin_once(timeout_sec=0.1)
