@@ -74,7 +74,7 @@ class NavigationNode(Node):
 
         self.declare_parameter('planner_frequency', 1.0)
         self.declare_parameter('status_frequency', 1.0)
-        self.declare_parameter('exploration_timeout_sec', 2000.0)
+        self.declare_parameter('exploration_timeout_sec', 240.0)
         self.declare_parameter('spin_angular_speed', 0.8)
         self.declare_parameter('spin_angle_deg', 360.0)
         self.declare_parameter('min_frontier_cluster_size', 50)
