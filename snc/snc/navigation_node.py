@@ -57,146 +57,146 @@ class NavigationNode(Node):
     def __init__(self):
         super().__init__('navigation_node')
 
-        self.navigator = BasicNavigator()
+        # self.navigator = BasicNavigator()
 
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+        # self.tf_buffer = Buffer()
+        # self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        self.global_frame = 'map'
-        self.robot_base_frame = 'base_link'
+        # self.global_frame = 'map'
+        # self.robot_base_frame = 'base_link'
 
-        self.declare_parameter('planner_frequency', 1.0)
-        self.declare_parameter('status_frequency', 1.0)
-        self.declare_parameter('exploration_timeout_sec', 240.0)
-        self.declare_parameter('spin_angular_speed', 0.8)
-        self.declare_parameter('spin_angle_deg', 360.0)
-        self.declare_parameter('min_frontier_cluster_size', 50)
-        self.declare_parameter('frontier_standoff_m', 0.1)
+        # self.declare_parameter('planner_frequency', 1.0)
+        # self.declare_parameter('status_frequency', 1.0)
+        # self.declare_parameter('exploration_timeout_sec', 240.0)
+        # self.declare_parameter('spin_angular_speed', 0.8)
+        # self.declare_parameter('spin_angle_deg', 360.0)
+        # self.declare_parameter('min_frontier_cluster_size', 50)
+        # self.declare_parameter('frontier_standoff_m', 0.1)
 
-        self.planner_frequency = float(self.get_parameter('planner_frequency').value)
-        self.status_frequency = float(self.get_parameter('status_frequency').value)
-        self.exploration_timeout_sec = float(self.get_parameter('exploration_timeout_sec').value)
-        self.spin_angular_speed = float(self.get_parameter('spin_angular_speed').value)
-        self.spin_angle_deg = float(self.get_parameter('spin_angle_deg').value)
-        self.min_frontier_cluster_size = int(self.get_parameter('min_frontier_cluster_size').value)
-        self.frontier_standoff_m = float(self.get_parameter('frontier_standoff_m').value)
+        # self.planner_frequency = float(self.get_parameter('planner_frequency').value)
+        # self.status_frequency = float(self.get_parameter('status_frequency').value)
+        # self.exploration_timeout_sec = float(self.get_parameter('exploration_timeout_sec').value)
+        # self.spin_angular_speed = float(self.get_parameter('spin_angular_speed').value)
+        # self.spin_angle_deg = float(self.get_parameter('spin_angle_deg').value)
+        # self.min_frontier_cluster_size = int(self.get_parameter('min_frontier_cluster_size').value)
+        # self.frontier_standoff_m = float(self.get_parameter('frontier_standoff_m').value)
 
-        self.latest_map = None
-        self.goal_active = False
-        self.is_ready = False
+        # self.latest_map = None
+        # self.goal_active = False
+        # self.is_ready = False
 
-        self.state = STATE_IDLE
-        self.exploration_active = False
-        self.exploration_start_time = None
-        self.hazard_ids = set()
-        self.pending_resume_after_spin = False
+        # self.state = STATE_IDLE
+        # self.exploration_active = False
+        # self.exploration_start_time = None
+        # self.hazard_ids = set()
+        # self.pending_resume_after_spin = False
 
-        self.spin_end_time = None
-        self.no_frontier_count = 0
-        self.no_frontier_limit = 5
+        # self.spin_end_time = None
+        # self.no_frontier_count = 0
+        # self.no_frontier_limit = 5
 
-        self.covered = None
-        self.last_path_len = 0
-        self.latest_path_msg = None
-        self.covered_map_info = None
-        self.last_processed_cell = None
-        self.robot_radius_m = 0.15
-        self.safety_margin_m = 0.05
-        self.choose_frontier_goal = True
-        self.coverage_percentage = 0
+        # self.covered = None
+        # self.last_path_len = 0
+        # self.latest_path_msg = None
+        # self.covered_map_info = None
+        # self.last_processed_cell = None
+        # self.robot_radius_m = 0.15
+        # self.safety_margin_m = 0.05
+        # self.choose_frontier_goal = True
+        # self.coverage_percentage = 0
 
-        map_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=1,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
-        )
+        # map_qos = QoSProfile(
+        #     history=HistoryPolicy.KEEP_LAST,
+        #     depth=1,
+        #     reliability=ReliabilityPolicy.RELIABLE,
+        #     durability=DurabilityPolicy.TRANSIENT_LOCAL,
+        # )
 
-        self.map_sub = self.create_subscription(
-            OccupancyGrid,
-            '/map',
-            self.map_callback,
-            map_qos
-        )
+        # self.map_sub = self.create_subscription(
+        #     OccupancyGrid,
+        #     '/map',
+        #     self.map_callback,
+        #     map_qos
+        # )
 
-        self.start_sub = self.create_subscription(
-            TRIGGER_START_INTERFACE,
-            TRIGGER_START_TOPIC,
-            self.start_callback,
-            TRIGGER_QOS
-        )
+        # self.start_sub = self.create_subscription(
+        #     TRIGGER_START_INTERFACE,
+        #     TRIGGER_START_TOPIC,
+        #     self.start_callback,
+        #     TRIGGER_QOS
+        # )
 
-        self.hazard_signal_sub = self.create_subscription(
-            Empty,
-            HAZARD_SIGNAL_TOPIC,
-            self.hazard_signal_callback,
-            10
-        )
+        # self.hazard_signal_sub = self.create_subscription(
+        #     Empty,
+        #     HAZARD_SIGNAL_TOPIC,
+        #     self.hazard_signal_callback,
+        #     10
+        # )
 
-        self.teleop_sub = self.create_subscription(
-            TRIGGER_TELEOP_INTERFACE,
-            TRIGGER_TELEOP_TOPIC,
-            self.teleop_callback,
-            TRIGGER_QOS
-        )
+        # self.teleop_sub = self.create_subscription(
+        #     TRIGGER_TELEOP_INTERFACE,
+        #     TRIGGER_TELEOP_TOPIC,
+        #     self.teleop_callback,
+        #     TRIGGER_QOS
+        # )
 
-        self.hazards_sub = self.create_subscription(
-            MarkerArray,
-            '/hazards',
-            self.hazards_callback,
-            10
-        )
+        # self.hazards_sub = self.create_subscription(
+        #     MarkerArray,
+        #     '/hazards',
+        #     self.hazards_callback,
+        #     10
+        # )
 
-        self.path_tracing_sub = self.create_subscription(
-            PATH_EXPLORE_INTERFACE,
-            PATH_EXPLORE_TOPIC,
-            self.path_explore_callback,
-            PATH_EXPLORE_BUFFER_SIZE
-        )
+        # self.path_tracing_sub = self.create_subscription(
+        #     PATH_EXPLORE_INTERFACE,
+        #     PATH_EXPLORE_TOPIC,
+        #     self.path_explore_callback,
+        #     PATH_EXPLORE_BUFFER_SIZE
+        # )
 
-        self.return_home_sub = self.create_subscription(
-            TRIGGER_HOME_INTERFACE,
-            TRIGGER_HOME_TOPIC,
-            self.return_home_callback,
-            TRIGGER_HOME_BUFFER_SIZE    
-        )
+        # self.return_home_sub = self.create_subscription(
+        #     TRIGGER_HOME_INTERFACE,
+        #     TRIGGER_HOME_TOPIC,
+        #     self.return_home_callback,
+        #     TRIGGER_HOME_BUFFER_SIZE    
+        # )
 
-        self.status_pub = self.create_publisher(
-            SNC_STATUS_INTERFACE, 
-            SNC_STATUS_TOPIC, 
-            SNC_STATUS_BUFFER_SIZE
-        )
+        # self.status_pub = self.create_publisher(
+        #     SNC_STATUS_INTERFACE, 
+        #     SNC_STATUS_TOPIC, 
+        #     SNC_STATUS_BUFFER_SIZE
+        # )
 
-        self.return_pub = self.create_publisher(
-            TRIGGER_HOME_INTERFACE,
-            TRIGGER_HOME_TOPIC,
-            TRIGGER_QOS
-        )
+        # self.return_pub = self.create_publisher(
+        #     TRIGGER_HOME_INTERFACE,
+        #     TRIGGER_HOME_TOPIC,
+        #     TRIGGER_QOS
+        # )
 
-        self.cmd_vel_pub = self.create_publisher(
-            Twist,
-            '/cmd_vel',
-            10
-        )
+        # self.cmd_vel_pub = self.create_publisher(
+        #     Twist,
+        #     '/cmd_vel',
+        #     10
+        # )
         
-        self.coverage_marker_pub = self.create_publisher(
-            COVERAGE_INTERFACE,
-            COVERAGE_TOPIC,
-            COVERAGE_QOS
-        )
-        self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
+        # self.coverage_marker_pub = self.create_publisher(
+        #     COVERAGE_INTERFACE,
+        #     COVERAGE_TOPIC,
+        #     COVERAGE_QOS
+        # )
+        # self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
 
-        self.plan_timer = self.create_timer(
-            1.0 / self.planner_frequency,
-            self.plan_step
-        )
+        # self.plan_timer = self.create_timer(
+        #     1.0 / self.planner_frequency,
+        #     self.plan_step
+        # )
 
-        self.status_timer = self.create_timer(
-            1.0 / self.status_frequency,
-            self.publish_status
-        )
+        # self.status_timer = self.create_timer(
+        #     1.0 / self.status_frequency,
+        #     self.publish_status
+        # )
 
-        self.get_logger().info('Exploration node created')
+        # self.get_logger().info('Exploration node created')
 
     # ---------- readiness ----------
     def wait_until_ready(self, executor: rclpy.executors.SingleThreadedExecutor):        
@@ -938,7 +938,7 @@ def main():
     executor.add_node(node)
 
     try:
-        node.wait_until_ready(executor)
+        #node.wait_until_ready(executor)
         while rclpy.ok():
             executor.spin_once(timeout_sec=0.1)
     finally:
