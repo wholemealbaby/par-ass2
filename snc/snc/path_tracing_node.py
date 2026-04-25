@@ -70,7 +70,7 @@ class PathTracingNode(Node):
         params = params or {}
         
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
-        self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
+        self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.35)
         self.waypoint_rotation_min = math.radians(params.get('waypoint_rotation_min', 15))
         
         self.tf_buffer = Buffer()
@@ -303,7 +303,7 @@ class PathTracingNode(Node):
         self.get_clock().sleep_for(Duration(seconds=.5))
         
         self.get_logger().info('  Navigating Home...')
-        #self.nav.followPath(self.return_path)
+        self.nav.followPath(self.return_path)
 
     
     def wait_for_robot_pose(self):
