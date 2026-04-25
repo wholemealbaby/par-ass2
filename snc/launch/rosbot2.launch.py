@@ -41,22 +41,6 @@ def generate_launch_description():
         parameters=[]
     )
 
-    # Node 4: Twist Mux Node with Testing Mode Lock
-    twist_mux_node = Node(
-        package=package_name,
-        executable='twist_mux',
-        name='twist_mux_node',
-        output='screen',
-        parameters=[
-            {'testing_mode': False},
-            {'lock_teleop': True},
-            {'lock_manual': True},
-            {'cmd_vel_topic': '/cmd_vel'},
-            {'cmd_vel_teleop_topic': '/cmd_vel_teleop'},
-            {'cmd_vel_manual_topic': '/cmd_vel_manual'}
-        ]
-    )
-
     # SLAM Toolbox Node - Configured for ROSbot 2
     # Uses base_link as the robot base frame and odom as the odometry frame
     slam_toolbox_node = Node(
@@ -110,16 +94,15 @@ def generate_launch_description():
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '0'),
- 
+  
         # Builds map → odom → base_link TF
         slam_toolbox_node,
- 
+  
         # Application nodes
         navigation_node,
         marker_detection_node,
         path_tracing_node,
-        twist_mux_node,
- 
+  
         # Object detection
         find_object_node,
         best_effort_repeater_node,
