@@ -667,7 +667,7 @@ class NavigationNode(Node):
                 f'No frontier found ({self.no_frontier_count}/{self.no_frontier_limit})'
             )
             if self.no_frontier_count >= self.no_frontier_limit:
-                self.trigger_return_home('No frontiers left')
+                self.trigger_return_home('No frontiers left. Maze fully explored. Triggering return home procedure...')
             return
 
         self.no_frontier_count = 0
@@ -951,6 +951,7 @@ class NavigationNode(Node):
                     return frontier_goal
 
         self.get_logger().info('No more frontiers/uncovered cells found. Maze fully explored')
+
         return None
 
     def find_coverage_goal(self, safe_free_mask, width, height, robot_x, robot_y, dists, uncovered_mask, origin, res):
@@ -980,7 +981,10 @@ class NavigationNode(Node):
 
             self.get_logger().info(f'selected uncovered cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
 
-            return self.create_pose(goal_x, goal_y, res, origin)
+            if self.exploration_active:
+                return self.create_pose(goal_x, goal_y, res, origin)
+            else:
+                return None
 
         self.get_logger().warn('Uncovered clusters exist, but no valid goal was found')
         return None
@@ -1011,7 +1015,10 @@ class NavigationNode(Node):
 
             self.get_logger().info(f'selected frontier cluster size={len(cluster)}, goal=({goal_x},{goal_y})')
 
-            return self.create_pose(goal_x, goal_y, res, origin)
+            if self.exploration_active:
+                return self.create_pose(goal_x, goal_y, res, origin)
+            else:
+                return None
 
         self.get_logger().warn('Frontier clusters exist, but no valid backed-off goal was found')
         return None
