@@ -31,8 +31,6 @@ from snc.constants import (
     START_CHALLENGE_BUFFER_SIZE,
     TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE,
     SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE,
-    STARTUP_SYNC_TOPIC, STARTUP_SYNC_INTERFACE, STARTUP_SYNC_BUFFER_SIZE,
-    STARTUP_SYNC_QOS,
     TRIGGER_QOS,
 )
 import math
@@ -67,22 +65,13 @@ class PathTracingNode(Node):
 
         # Navigator
         self.nav = nav
-        # Controller client
-        self.client = self.create_client(ExplorationControl, '/snc_exploration_control')
 
         # Configure parameters with defaults
         params = params or {}
         
-        # Declare and get parameters
-        self.declare_parameter('testing_mode', False)
-        self.testing_mode = params.get('testing_mode', self.get_parameter('testing_mode').value)
-        self.get_logger().info(f'Testing mode: {self.testing_mode}')
-    
-        
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
-        self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
+        self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.35)
         self.waypoint_rotation_min = math.radians(params.get('waypoint_rotation_min', 15))
-        self.started = False # Flag to indicate if path tracing has started, prevents pose sampling before the challenge starts
         
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -99,26 +88,6 @@ class PathTracingNode(Node):
             SNC_STATUS_TOPIC,
             SNC_STATUS_BUFFER_SIZE
         )
-
-        # Startup synchronization publisher - publishes node readiness
-        self.pub_startup_sync = self.create_publisher(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            STARTUP_SYNC_QOS
-        )
-
-        # Startup synchronization subscriber - waits for all nodes to be ready
-        self.sub_startup_sync = self.create_subscription(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            self.startup_sync_callback,
-            STARTUP_SYNC_QOS
-        )
-
-        # Track which nodes have published readiness
-        self.nodes_ready = set()
-        self.node_name = self.get_name()  # Use actual node name
-        self.all_nodes_ready = False
 
         # Start challenge subscription
         self.sub_start_challenge = self.create_subscription(
@@ -170,56 +139,10 @@ class PathTracingNode(Node):
 
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
     
-    def startup_sync_callback(self, msg):
-        """Callback for startup synchronization topic. Tracks which nodes have published readiness."""
-        if self.all_nodes_ready:
-            return
-        
-        # Extract node name from the message data
-        node_name = msg.data if hasattr(msg, 'data') else str(msg)
-        if node_name and node_name != self.node_name:
-            self.nodes_ready.add(node_name)
-            self.get_logger().info(f'Received ready signal from: {node_name}. Ready nodes: {len(self.nodes_ready) + 1}/3')
-            
-            # Check if all expected nodes are ready (3 nodes: path_tracing, navigation, marker_detection)
-            if len(self.nodes_ready) >= 2:  # +1 for self
-                self.all_nodes_ready = True
-                self.get_logger().info('All nodes are ready! Starting startup synchronization complete.')
-    
-    def wait_for_all_nodes_ready(self):
-        """Wait for all nodes to publish their readiness on the startup sync topic."""
-        self.get_logger().info('-' * 60)
-        self.get_logger().info('PHASE 1: WAITING FOR NODE SYNCHRONIZATION')
-        self.get_logger().info('-' * 60)
-        self.get_logger().info('Publishing readiness signal...')
-        
-        # Publish this node's readiness
-        self.pub_startup_sync.publish(String(data=self.node_name))
-        
-        # Use a separate executor to avoid conflict with main rclpy.spin()
-        executor = rclpy.executors.SingleThreadedExecutor()
-        executor.add_node(self)
-        
-        nodes_ready_count = 0
-        while rclpy.ok() and not self.all_nodes_ready:
-            executor.spin_once(timeout_sec=0.1)
-            current_ready = len(self.nodes_ready)
-            if current_ready > nodes_ready_count:
-                nodes_ready_count = current_ready
-                self.get_logger().info(f'  ✓ Node ready: {self.node_name} ({nodes_ready_count + 1}/3 nodes ready)')
-        
-        executor.remove_node(self)
-        executor.shutdown()
-        
-        self.get_logger().info('-' * 60)
-        self.get_logger().info('PHASE 1 COMPLETE: All nodes synchronized')
-        self.get_logger().info('-' * 60)
-    
     def teleop_trigger_callback(self, _):
-        """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
+        """Callback for the teleop trigger, which allows manual control of the robot without path tracing.
         """
-        self.get_logger().info("Teleop trigger received. Entering testing mode (disabling exploration controller and navigation).")
-        self.stop_exploration()
+        self.nav.cancelTask()
     
     def start_challenge_callback(self, _):
         """Callback for the start challenge trigger, which allows starting the path tracing without waiting for the transform to become available. Useful for testing.
@@ -230,8 +153,6 @@ class PathTracingNode(Node):
         self.get_logger().info('Start challenge trigger received. Beginning path exploration...')
         # Start the pose sampling timer immediately without waiting for TF
         self.sample_pose_timer.reset()
-        self.started = True
-        self.start_exploration()
         self.get_logger().info('  ✓ Path exploration active - recording waypoints')
 
     def check_base_link_map_transform_possible(self):
@@ -249,8 +170,6 @@ class PathTracingNode(Node):
         # Check that the transform is possible
         if not self.check_base_link_map_transform_possible():
             return
-        if not self.started:
-            return
 
         pose = self.get_robot_pose_in_map_frame()
         if pose == SAMPLE_SKIPPED or pose == SAMPLE_FAILED:
@@ -261,11 +180,19 @@ class PathTracingNode(Node):
         if self.return_triggered:
             self.return_breadcrumbs.append(pose)
             self.get_logger().info(f'  Return: {len(self.return_breadcrumbs)} waypoints recorded')
-            self.pub_path_return.publish(Path(header=pose.header, poses=self.return_breadcrumbs))
+            if len(self.return_breadcrumbs) > 0:  # Only publish if we have waypoints
+                # Use the header from the most recent breadcrumb and update the timestamp to current
+                path_msg = Path(header=self.return_breadcrumbs[-1].header, poses=self.return_breadcrumbs)
+                path_msg.header.stamp = self.get_clock().now().to_msg()
+                self.pub_path_return.publish(path_msg)
         else:
             self.explore_breadcrumbs.append(pose)
             self.get_logger().info(f'  Explore: {len(self.explore_breadcrumbs)} waypoints recorded')
-            self.pub_path_explore.publish(Path(header=pose.header, poses=self.explore_breadcrumbs))
+            if len(self.explore_breadcrumbs) > 0:  # Only publish if we have waypoints
+                # Use the header from the most recent breadcrumb and update the timestamp to current
+                path_msg = Path(header=self.explore_breadcrumbs[-1].header, poses=self.explore_breadcrumbs)
+                path_msg.header.stamp = self.get_clock().now().to_msg()
+                self.pub_path_explore.publish(path_msg)
 
     def get_robot_pose_in_map_frame(self, tf_buffer=None, clock=None):
         """
@@ -337,7 +264,7 @@ class PathTracingNode(Node):
         
         This callback coordinates the shutdown sequence:
         1. Update status message
-        2. Stop exploration (awaiting completion) - only if not in testing mode
+        2. Stop exploration (awaiting completion) 
         3. Start return trajectory following
         """
         self.get_logger().info('-' * 60)
@@ -347,7 +274,6 @@ class PathTracingNode(Node):
         
         self.pub_status.publish(String(data="STOPPING FOR HOME"))
 
-        self.stop_exploration()
         self.get_logger().info('Exploration stopped, calculating return trajectory...')
         self.start_return_sequence()
 
@@ -391,63 +317,12 @@ class PathTracingNode(Node):
         
         self.get_logger().info("Transform found! Starting path tracing.")
 
-    def _call_service(self, command):
-        """
-        Internal helper to call the exploration service.
-        
-        Args:
-            command: The command string (START, STOP, RESUME, TELEOP)
-            
-        Returns:
-            The service response or None if service call fails
-        """
-
-        if not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error(f"Service not available: {command}")
-            return
-        
-        request = ExplorationControl.Request()
-        request.command = command
-        
-        future = self.client.call_async(request)
-
-        future.add_done_callback(self._service_response_callback)
-
-    def _service_response_callback(self, future):
-        try:
-            response = future.result()
-            self.get_logger().info("Service call succeeded")
-        except Exception as e:
-            self.get_logger().error(f"Service call failed: {e}")
-
-    def stop_exploration(self):
-        """Stops the exploration process."""
-        self.get_logger().info("Requesting exploration STOP...")
-        return self._call_service("STOP")
-
-    def start_exploration(self):
-        """Starts the exploration process with all frontiers unexplored."""
-        self.get_logger().info("Requesting exploration START...")
-        return self._call_service("START")
-
-    def resume(self):
-        """Resumes the exploration process, allowing it to continue from where it left off."""
-        self.get_logger().info("Requesting exploration RESUME...")
-        return self._call_service("RESUME")
-    
-    def teleop(self):
-        """Switches to teleop control."""
-        self.get_logger().info("Requesting teleop control...")
-        return self._call_service("TELEOP")
 
 def main(args=None):
     rclpy.init(args=args)
     
     nav = BasicNavigator(node_name='path_tracing_node')
     node = PathTracingNode(nav)
-
-    # Wait for all nodes to be ready before starting
-    node.wait_for_all_nodes_ready()
 
     try:
         rclpy.spin(node)

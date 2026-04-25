@@ -1,6 +1,7 @@
 from std_msgs.msg import Empty, String
 from nav_msgs.msg import Path
 from find_object_2d.msg import ObjectsStamped
+from visualization_msgs.msg import Marker
 from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 
 # Mapping of hazard names to their ID 
@@ -27,7 +28,7 @@ OBJECT_MAP = {
     "Start": 1,
     "Flammable Gas": 2,
     "Poison": 3,
-    "Non-flammable Gas": 4,
+    "Non-Flammable Gas": 4,
     "Flammable Solid": 5,
     "Oxidizer": 6,
     "Inhalation Hazard": 7,
@@ -125,4 +126,18 @@ TRIGGER_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST
 )
 
+# Hazard marker topic for visualizing detected hazards
+HAZARD_MARKER_TOPIC = '/hazards'
+HAZARD_MARKER_BUFFER_SIZE = 10
+HAZARD_MARKER_INTERFACE = Marker
+
 COVERAGE_TOPIC = '/covered_cells_marker'
+COVERAGE_BUFFER_SIZE = 1
+COVERAGE_INTERFACE = Marker
+
+# QoS profile for coverage marker to ensure RViz can subscribe correctly
+COVERAGE_QOS = QoSProfile(
+    depth=COVERAGE_BUFFER_SIZE,
+    reliability=ReliabilityPolicy.RELIABLE,
+    history=HistoryPolicy.KEEP_LAST
+)

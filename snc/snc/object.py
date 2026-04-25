@@ -116,16 +116,40 @@ class DetectedObject:
 
         return ps
 
+    # def get_map_pose(self, tf_buffer, target_frame: str = "map") -> PoseStamped:
+    #     """
+    #     Transform the camera-frame pose into target_frame (default: map).
+ 
+    #     Waits up to 0.5 s for the TF transform before giving up.
+ 
+    #     :param tf_buffer: tf2_ros.Buffer
+    #     :param target_frame: destination TF frame name
+    #     :return: PoseStamped in target_frame, or None on failure
+    #     """
+    #     source_frame = self.pose_stamped.header.frame_id
+    #     if not source_frame:
+    #         print(
+    #             "[DetectedObject] pose_stamped.header.frame_id is empty. "
+    #             "Check: ros2 topic echo /oak/rgb/image_raw/compressed --once | grep frame_id"
+    #         )
+    #         return None
+ 
+    #     try:
+    #         tf_buffer.can_transform(
+    #             target_frame,
+    #             source_frame,
+    #             self.pose_stamped.header.stamp,
+    #             timeout=Duration(seconds=0.5),
+    #         )
+    #         return tf_buffer.transform(self.pose_stamped, target_frame)
+    #     except Exception as e:
+    #         print(
+    #             f"[DetectedObject] TF transform failed: "
+    #             f"{source_frame} -> {target_frame}: {e}"
+    #         )
+    #         return None
+
     def get_map_pose(self, tf_buffer, target_frame: str = "map") -> PoseStamped:
-        """
-        Transform the camera-frame pose into target_frame (default: map).
- 
-        Waits up to 0.5 s for the TF transform before giving up.
- 
-        :param tf_buffer: tf2_ros.Buffer
-        :param target_frame: destination TF frame name
-        :return: PoseStamped in target_frame, or None on failure
-        """
         source_frame = self.pose_stamped.header.frame_id
         if not source_frame:
             print(
@@ -133,22 +157,70 @@ class DetectedObject:
                 "Check: ros2 topic echo /oak/rgb/image_raw/compressed --once | grep frame_id"
             )
             return None
- 
+    
         try:
-            tf_buffer.can_transform(
-                target_frame,
-                source_frame,
-                self.pose_stamped.header.stamp,
+            # Look up the transform from camera frame to map frame
+            transform = tf_buffer.lookup_transform(
+                target_frame,                           # target  (map)
+                source_frame,                           # source  (camera optical frame)
+                self.pose_stamped.header.stamp,         # time of the detection
                 timeout=Duration(seconds=0.5),
             )
-            return tf_buffer.transform(self.pose_stamped, target_frame)
+    
+            # Extract translation and rotation from the transform
+            tx = transform.transform.translation.x
+            ty = transform.transform.translation.y
+            tz = transform.transform.translation.z
+            rx = transform.transform.rotation.x
+            ry = transform.transform.rotation.y
+            rz = transform.transform.rotation.z
+            rw = transform.transform.rotation.w
+    
+            # Manually apply the transform to the camera-frame position
+            # using quaternion rotation: p_map = q * p_cam * q_inv + t
+            cx = self.pose_stamped.pose.position.x
+            cy = self.pose_stamped.pose.position.y
+            cz = self.pose_stamped.pose.position.z
+    
+            # Rotate the position vector using the quaternion
+            # Formula: v' = q * v * q_conjugate
+            # Expanded to avoid external libraries:
+            px = (1 - 2*(ry**2 + rz**2)) * cx + 2*(rx*ry - rz*rw) * cy + 2*(rx*rz + ry*rw) * cz
+            py = 2*(rx*ry + rz*rw) * cx + (1 - 2*(rx**2 + rz**2)) * cy + 2*(ry*rz - rx*rw) * cz
+            pz = 2*(rx*rz - ry*rw) * cx + 2*(ry*rz + rx*rw) * cy + (1 - 2*(rx**2 + ry**2)) * cz
+    
+            # Add translation
+            map_x = px + tx
+            map_y = py + ty
+            map_z = pz + tz
+    
+            # Build the result PoseStamped in the map frame
+            result = PoseStamped()
+            result.header.frame_id = target_frame
+            result.header.stamp = self.pose_stamped.header.stamp
+            result.pose.position.x = map_x
+            result.pose.position.y = map_y
+            result.pose.position.z = map_z
+    
+            # Combine quaternions: q_map = q_transform * q_camera
+            ox = self.pose_stamped.pose.orientation.x
+            oy = self.pose_stamped.pose.orientation.y
+            oz = self.pose_stamped.pose.orientation.z
+            ow = self.pose_stamped.pose.orientation.w
+    
+            result.pose.orientation.x = rw*ox + rx*ow + ry*oz - rz*oy
+            result.pose.orientation.y = rw*oy - rx*oz + ry*ow + rz*ox
+            result.pose.orientation.z = rw*oz + rx*oy - ry*ox + rz*ow
+            result.pose.orientation.w = rw*ow - rx*ox - ry*oy - rz*oz
+    
+            return result
+    
         except Exception as e:
             print(
-                f"[DetectedObject] TF transform failed: "
+                f"[DetectedObject] TF lookup_transform failed: "
                 f"{source_frame} -> {target_frame}: {e}"
             )
             return None
-
 
 class ObjectHandler:
     def __init__(self):

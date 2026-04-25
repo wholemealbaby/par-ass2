@@ -25,6 +25,7 @@ except ImportError:
             SNC_STATUS_TOPIC = '/snc_status'
             STARTUP_SYNC_TOPIC = '/snc_startup_sync'
             COVERAGE_TOPIC = '/covered_cells_marker'
+            HAZARD_MARKER_TOPIC = '/hazards'
 
 def record_bag():
     # 1. Define the topic list from your constants
@@ -41,18 +42,23 @@ def record_bag():
         c.TRIGGER_HOME_TOPIC,
         c.SNC_STATUS_TOPIC,
         c.STARTUP_SYNC_TOPIC,
-        c.COVERAGE_TOPIC
+        c.COVERAGE_TOPIC,
+        c.HAZARD_MARKER_TOPIC
     ]
 
     # 2. Clean and deduplicate topic list
     topics_to_record = list(set(filter(None, topics_to_record)))
 
-    # 3. Create a unique bag name using a timestamp
+    # 3. Define the output directory and create it if it doesn't exist
+    output_dir = os.path.expanduser("~/Documents/par-as2-runs")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 4. Create a unique bag name using a timestamp
     # Format: snc_run_20260423_143005
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    bag_name = f"snc_run_{timestamp}"
+    bag_name = os.path.join(output_dir, f"snc_run_{timestamp}")
     
-    # 4. Construct the command
+    # 5. Construct the command
     # Using MCAP for better compatibility with Foxglove/Studio
     cmd = [
         "ros2", "bag", "record", 
@@ -62,7 +68,7 @@ def record_bag():
 
     print("-" * 40)
     print(f"RECORDER STARTED at {timestamp}")
-    print(f"Output: {os.path.abspath(bag_name)}")
+    print(f"Output: {bag_name}")
     print(f"Recording {len(topics_to_record)} topics...")
     print("-" * 40)
     print("Press Ctrl+C to stop recording.")
@@ -80,7 +86,7 @@ def record_bag():
         print("Finishing recording... please wait.")
         process.send_signal(signal.SIGINT)
         process.wait()
-        print(f"Bag successfully saved to: {bag_name}")
+        print(f"Bag successfully saved to: {os.path.abspath(bag_name)}")
         print("-" * 40)
 
 if __name__ == "__main__":
