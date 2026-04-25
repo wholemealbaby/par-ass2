@@ -27,6 +27,7 @@ from snc.constants import (
     SNC_STATUS_TOPIC,
     SNC_STATUS_INTERFACE,
     SNC_STATUS_BUFFER_SIZE,
+    TRIGGER_HOME_BUFFER_SIZE,
     TRIGGER_HOME_TOPIC,
     TRIGGER_HOME_INTERFACE,
     TRIGGER_START_TOPIC,
@@ -102,6 +103,7 @@ class NavigationNode(Node):
         self.robot_radius_m = 0.15
         self.safety_margin_m = 0.05
         self.choose_frontier_goal = True
+        self.coverage_percentage = 0
 
         map_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -152,6 +154,13 @@ class NavigationNode(Node):
             PATH_EXPLORE_BUFFER_SIZE
         )
 
+        self.return_home_sub = self.create_subscription(
+            TRIGGER_HOME_INTERFACE,
+            TRIGGER_HOME_TOPIC,
+            self.return_home_callback,
+            TRIGGER_HOME_BUFFER_SIZE    
+        )
+
         self.status_pub = self.create_publisher(
             SNC_STATUS_INTERFACE, 
             SNC_STATUS_TOPIC, 
@@ -176,12 +185,6 @@ class NavigationNode(Node):
             COVERAGE_QOS
         )
         self.coverage_viz_timer = self.create_timer(1.0, self.publish_coverage_marker)
-
-        self.control_srv = self.create_service(
-            ExplorationControl,
-            '/snc_exploration_control',
-            self.control_service_callback
-        )
 
         self.plan_timer = self.create_timer(
             1.0 / self.planner_frequency,
@@ -241,8 +244,10 @@ class NavigationNode(Node):
 
     def start_callback(self, _msg: Empty):
         if not self.is_ready:
+            self.get_logger().warn('Start trigger received, but node is not ready yet. Try again later...')
             return
         if self.state in [STATE_EXPLORING, STATE_SPINNING]:
+            self.get_logger().warn('Start trigger received, but robot is already in exploring state')
             return
         self.start_exploration()
 
@@ -256,11 +261,10 @@ class NavigationNode(Node):
 
     def teleop_callback(self, _msg: Empty):
         self.get_logger().info('Teleop trigger received')
-        self.cancel_navigation()
-        self.state = STATE_TELEOP
-        self.pending_resume_after_spin = False
+        self.stop_exploration()
 
     def hazards_callback(self, msg: MarkerArray):
+        self.get_logger().info('Hazards callback received')
         before = len(self.hazard_ids)
         for marker in msg.markers:
             self.hazard_ids.add(int(marker.id))
@@ -272,68 +276,17 @@ class NavigationNode(Node):
         if after >= 5 and self.state not in [STATE_RETURNING, STATE_DONE]:
             self.trigger_return_home('5 unique markers confirmed')
 
-    def control_service_callback(self, request, response):
-        cmd = request.command.strip().upper()
+    def return_home_callback(self, _msg: Empty):
+        self.get_logger().info('Return home trigger received')
+        self.stop_exploration()
 
-        if cmd == 'STATUS':
-            response.success = True
-            response.state = self.state
-            response.hazards_found = len(self.hazard_ids)
-            response.message = 'Status returned'
-            return response
-
-        if not self.is_ready:
-            response.success = False
-            response.state = self.state
-            response.hazards_found = len(self.hazard_ids)
-            response.message = 'Node is not ready yet'
-            return response
-
-        if cmd == 'START':
-            self.start_exploration()
-            response.success = True
-            response.state = self.state
-            response.hazards_found = len(self.hazard_ids)
-            response.message = 'Exploration started'
-            return response
-
-        if cmd == 'STOP':
-            self.cancel_navigation()
-            self.state = STATE_IDLE
-            self.exploration_active = False
-            self.goal_active = False
-            response.success = True
-            response.state = self.state
-            response.hazards_found = len(self.hazard_ids)
-            response.message = 'Exploration stopped'
-            return response
-
-        if cmd == 'RESUME':
-            if self.state in [STATE_IDLE, STATE_TELEOP]:
-                self.state = STATE_EXPLORING
-                self.exploration_active = True
-                response.success = True
-                response.state = self.state
-                response.hazards_found = len(self.hazard_ids)
-                response.message = 'Exploration resumed'
-                return response
-
-        if cmd == 'TELEOP':
-            self.cancel_navigation()
-            self.state = STATE_TELEOP
-            self.exploration_active = False
-            response.success = True
-            response.state = self.state
-            response.hazards_found = len(self.hazard_ids)
-            response.message = 'Switched to teleop state'
-            return response
-
-        response.success = False
-        response.state = self.state
-        response.hazards_found = len(self.hazard_ids)
-        response.message = f'Unsupported command: {request.command}'
-        return response
-
+    def stop_exploration(self):
+        self.get_logger().info("Stopping exploration")
+        self.cancel_navigation()
+        self.state = STATE_IDLE
+        self.exploration_active = False
+        self.goal_active = False
+        
     def path_explore_callback(self, msg):
         self.latest_path_msg = msg
 
@@ -506,7 +459,7 @@ class NavigationNode(Node):
 
     def publish_status(self):
         msg = String()
-        msg.data = self.state
+        msg.data = f'State: {self.state},\nMarkers detected (IDs): {self.hazard_ids},\nMaze coverage: {self.coverage_percentage:.1f}%'
         self.status_pub.publish(msg)
 
     # ---------- spin behaviour ----------
@@ -870,6 +823,7 @@ class NavigationNode(Node):
             f"covered/reachable={reachable_covered_pct:.1f}%, "
             f"reachable_covered={np.count_nonzero(reachable_covered_mask)}"
         )
+        self.coverage_percentage = reachable_covered_pct
 
         if self.choose_frontier_goal:
             self.get_logger().info('Choosing frontier goal...')
