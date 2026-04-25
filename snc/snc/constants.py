@@ -28,7 +28,7 @@ OBJECT_MAP = {
     "Start": 1,
     "Flammable Gas": 2,
     "Poison": 3,
-    "Non-flammable Gas": 4,
+    "Non-Flammable Gas": 4,
     "Flammable Solid": 5,
     "Oxidizer": 6,
     "Inhalation Hazard": 7,
