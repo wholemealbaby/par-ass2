@@ -198,7 +198,15 @@ class NavigationNode(Node):
     # ---------- readiness ----------
     def wait_until_ready(self, executor: rclpy.executors.SingleThreadedExecutor):
         self.get_logger().info('Waiting for Nav2 to become active...')
-        self.navigator.waitUntilNav2Active(localizer='slam_toolbox')
+        
+        # Non-blocking: manually poll Nav2 status while spinning
+        # This allows callbacks (map, TF, etc.) to be processed during wait
+        while rclpy.ok():
+            if self.navigator.nav2Active():
+                break
+            self.get_logger().info('Nav2 not active yet, spinning...', once_every_sec=2)
+            executor.spin_once(timeout_sec=0.1)
+        
         self.get_logger().info('Nav2 is active')
 
         self.get_logger().info('Exploration node is ready')
