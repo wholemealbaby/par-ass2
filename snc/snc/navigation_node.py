@@ -167,7 +167,7 @@ class NavigationNode(Node):
 
         self.cmd_vel_pub = self.create_publisher(
             Twist,
-            '/cmd_vel_raw',
+            '/cmd_vel',
             10
         )
         
