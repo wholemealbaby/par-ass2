@@ -364,6 +364,7 @@ class NavigationNode(Node):
             self.cancel_navigation()
             self.state = STATE_IDLE
             self.exploration_active = False
+            self.goal_active = False
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
@@ -650,6 +651,10 @@ class NavigationNode(Node):
             result = self.navigator.getResult()
             self.goal_active = False
 
+            if self.state != STATE_EXPLORING or not self.exploration_active:
+                self.get_logger().info('Goal cleared, staying IDLE as requested.')
+                return
+            
             if result == TaskResult.SUCCEEDED:
                 self.get_logger().info('Frontier reached, replanning...')
             else:
