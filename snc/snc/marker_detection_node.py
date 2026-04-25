@@ -79,13 +79,6 @@ class MarkerDetectionNode(Node):
             OBJECTS_BUFFER_SIZE,
         )
 
-        # Publisher: signal that the start marker has been seen
-        self.pub_start_challenge = self.create_publisher(
-            START_CHALLENGE_INTERFACE,
-            START_CHALLENGE_TOPIC,
-            START_CHALLENGE_BUFFER_SIZE,
-        )
-
         # Laser scan — secondary sensor for hazard depth
         self.sub_laser = self.create_subscription(
             LaserScan,
@@ -110,10 +103,10 @@ class MarkerDetectionNode(Node):
             TRIGGER_QOS,
         )
 
-        self.pub_start_challenge = self.create_publisher(
-            START_CHALLENGE_INTERFACE,
-            START_CHALLENGE_TOPIC,
-            START_CHALLENGE_BUFFER_SIZE,
+        self.pub_trigger_start = self.create_publisher(
+            TRIGGER_START_INTERFACE,
+            TRIGGER_START_TOPIC,
+            TRIGGER_START_BUFFER_SIZE,
         )
  
         self.pub_go_home = self.create_publisher(
@@ -179,10 +172,10 @@ class MarkerDetectionNode(Node):
             self.trigger_go_home()
 
     def trigger_start(self) -> None:
-        """Set the start flag and publish an Empty message to /snc_start."""
+        """Set the start flag and publish an Empty message to /trigger_start."""
         self.start_marker_detected = True
-        self.pub_start_challenge.publish(Empty())
-        self.get_logger().info('Start marker detected! Published to /snc_start.')
+        self.pub_trigger_start.publish(Empty())
+        self.get_logger().info('Start marker detected! Published to /trigger_start.')
         
     def trigger_go_home(self) -> None:
         """Publish to /go_home and set the flag."""
