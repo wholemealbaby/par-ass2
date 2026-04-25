@@ -16,13 +16,13 @@ def generate_launch_description():
     )
 
     # Node 2: Marker Detection Node
-    # marker_detection_node = Node(
-    #     package=package_name,
-    #     executable='marker_detection_node',
-    #     name='marker_detection_node_ex',
-    #     output='screen',
-    #     parameters=[]
-    # )
+    marker_detection_node = Node(
+        package=package_name,
+        executable='marker_detection_node',
+        name='marker_detection_node_ex',
+        output='screen',
+        parameters=[]
+    )
 
     # Node 3: Path Tracing Node
     path_tracing_node = Node(
