@@ -8,7 +8,6 @@ import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
 from rclpy.duration import Duration
-from rclpy.executors import MultiThreadedExecutor
 
 from tf2_ros import Buffer, TransformListener, TransformException
 
@@ -57,7 +56,7 @@ class NavigationNode(Node):
     def __init__(self):
         super().__init__('navigation_node')
 
-        self.navigator = BasicNavigator()
+        self.navigator = BasicNavigator(node=self)
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -197,7 +196,7 @@ class NavigationNode(Node):
         self.get_logger().info('Exploration node created')
 
     # ---------- readiness ----------
-    def wait_until_ready(self, executor: MultiThreadedExecutor):
+    def wait_until_ready(self, executor: rclpy.executors.SingleThreadedExecutor):
         self.get_logger().info('Waiting for Nav2 to become active...')
         self.navigator.waitUntilNav2Active(localizer='slam_toolbox')
         self.get_logger().info('Nav2 is active')
