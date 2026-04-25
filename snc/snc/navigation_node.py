@@ -196,9 +196,7 @@ class NavigationNode(Node):
         self.get_logger().info('Exploration node created')
 
     # ---------- readiness ----------
-    def wait_until_ready(self, executor: rclpy.executors.SingleThreadedExecutor):
-        self.get_logger().info('Waiting for Nav2 to become active...')
-        
+    def wait_until_ready(self, executor: rclpy.executors.SingleThreadedExecutor):        
         # blocking: wait for Nav2 status while spinning
         self.get_logger().info('Waiting for Nav2 to become active...')
         # This method internally handles the waiting/spinning logic
