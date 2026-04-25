@@ -25,6 +25,7 @@ except ImportError:
             SNC_STATUS_TOPIC = '/snc_status'
             STARTUP_SYNC_TOPIC = '/snc_startup_sync'
             COVERAGE_TOPIC = '/covered_cells_marker'
+            HAZARD_MARKER_TOPIC = '/hazards'
 
 def record_bag():
     # 1. Define the topic list from your constants
@@ -41,7 +42,8 @@ def record_bag():
         c.TRIGGER_HOME_TOPIC,
         c.SNC_STATUS_TOPIC,
         c.STARTUP_SYNC_TOPIC,
-        c.COVERAGE_TOPIC
+        c.COVERAGE_TOPIC,
+        c.HAZARD_MARKER_TOPIC
     ]
 
     # 2. Clean and deduplicate topic list

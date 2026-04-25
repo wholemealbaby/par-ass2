@@ -126,6 +126,11 @@ TRIGGER_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST
 )
 
+# Hazard marker topic for visualizing detected hazards
+HAZARD_MARKER_TOPIC = '/hazards'
+HAZARD_MARKER_BUFFER_SIZE = 10
+HAZARD_MARKER_INTERFACE = Marker
+
 COVERAGE_TOPIC = '/covered_cells_marker'
 COVERAGE_BUFFER_SIZE = 1
 COVERAGE_INTERFACE = Marker
