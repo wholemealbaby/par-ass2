@@ -204,7 +204,7 @@ class NavigationNode(Node):
         while rclpy.ok():
             if self.navigator.waitUntilNav2Active(localizer='slam_toolbox'):
                 break
-            self.get_logger().info('Nav2 not active yet, spinning...', once_every_sec=2)
+            self.get_logger().info('Nav2 not active yet, spinning...')
             executor.spin_once(timeout_sec=0.1)
         
         self.get_logger().info('Nav2 is active')
