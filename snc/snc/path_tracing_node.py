@@ -303,7 +303,7 @@ class PathTracingNode(Node):
         self.get_clock().sleep_for(Duration(seconds=.5))
         
         self.get_logger().info('  Navigating Home...')
-        self.nav.followPath(self.return_path)
+        #self.nav.followPath(self.return_path)
 
     
     def wait_for_robot_pose(self):
