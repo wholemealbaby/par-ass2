@@ -71,12 +71,6 @@ class PathTracingNode(Node):
         # Configure parameters with defaults
         params = params or {}
         
-        # Declare and get parameters
-        self.declare_parameter('testing_mode', False)
-        self.testing_mode = params.get('testing_mode', self.get_parameter('testing_mode').value)
-        self.get_logger().info(f'Testing mode: {self.testing_mode}')
-    
-        
         self.pose_sample_interval_s = params.get('pose_sample_interval_s', 0.5)
         self.waypoint_spacing_min = params.get('waypoint_spacing_min', 0.15)
         self.waypoint_rotation_min = math.radians(params.get('waypoint_rotation_min', 15))
@@ -148,9 +142,9 @@ class PathTracingNode(Node):
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
     
     def teleop_trigger_callback(self, _):
-        """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
+        """Callback for the teleop trigger, which allows manual control of the robot without path tracing.
         """
-        self.get_logger().info("Teleop trigger received. Entering testing mode (disabling exploration controller and navigation).")
+        self.get_logger().info("Teleop trigger received.")
         self.stop_exploration()
     
     def start_challenge_callback(self, _):
@@ -274,7 +268,7 @@ class PathTracingNode(Node):
         
         This callback coordinates the shutdown sequence:
         1. Update status message
-        2. Stop exploration (awaiting completion) - only if not in testing mode
+        2. Stop exploration (awaiting completion) 
         3. Start return trajectory following
         """
         self.get_logger().info('-' * 60)
