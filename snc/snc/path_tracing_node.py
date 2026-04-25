@@ -437,9 +437,28 @@ class PathTracingNode(Node):
         return self._call_service("STOP")
 
     def start_exploration(self):
-        """Starts the exploration process with all frontiers unexplored."""
-        self.get_logger().info("Requesting exploration START...")
-        return self._call_service("START")
+        """Starts the exploration process without blocking."""
+        if not self.client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error("Service not available: START")
+            return
+        
+        request = ExplorationControl.Request()
+        request.command = "START"
+        
+        # This returns a future immediately and does NOT block
+        self.future = self.client.call_async(request)
+        
+        # Add a callback to handle the result when it eventually arrives
+        self.future.add_done_callback(self.exploration_response_callback)
+        self.get_logger().info("Requesting exploration START (async)...")
+
+    def exploration_response_callback(self, future):
+        """Handle the result of the service call once it returns."""
+        try:
+            response = future.result()
+            self.get_logger().info(f"Service call succeeded: {response.message}")
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
 
     def resume(self):
         """Resumes the exploration process, allowing it to continue from where it left off."""
