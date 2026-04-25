@@ -30,18 +30,11 @@ from snc.constants import (
     SNC_STATUS_BUFFER_SIZE,
     TRIGGER_HOME_TOPIC,
     TRIGGER_HOME_INTERFACE,
-    TRIGGER_HOME_BUFFER_SIZE,
     TRIGGER_START_TOPIC,
     TRIGGER_START_INTERFACE,
-    TRIGGER_START_BUFFER_SIZE,
     TRIGGER_TELEOP_TOPIC,
     TRIGGER_TELEOP_INTERFACE,
-    TRIGGER_TELEOP_BUFFER_SIZE,
     HAZARD_SIGNAL_TOPIC,
-    STARTUP_SYNC_TOPIC,
-    STARTUP_SYNC_INTERFACE,
-    STARTUP_SYNC_BUFFER_SIZE,
-    STARTUP_SYNC_QOS,
     TRIGGER_QOS,
     COVERAGE_TOPIC,
     COVERAGE_INTERFACE,
@@ -166,26 +159,6 @@ class NavigationNode(Node):
             SNC_STATUS_BUFFER_SIZE
         )
 
-        # Startup synchronization publisher - publishes node readiness
-        self.pub_startup_sync = self.create_publisher(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            STARTUP_SYNC_QOS
-        )
-
-        # Startup synchronization subscriber - waits for all nodes to be ready
-        self.sub_startup_sync = self.create_subscription(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            self.startup_sync_callback,
-            STARTUP_SYNC_QOS
-        )
-
-        # Track which nodes have published readiness
-        self.nodes_ready = set()
-        self.node_name = self.get_name()  # Use actual node name
-        self.all_nodes_ready = False
-
         self.return_pub = self.create_publisher(
             TRIGGER_HOME_INTERFACE,
             TRIGGER_HOME_TOPIC,
@@ -229,8 +202,6 @@ class NavigationNode(Node):
         self.navigator.waitUntilNav2Active(localizer='slam_toolbox')
         self.get_logger().info('Nav2 is active')
 
-        # Set is_ready early so other nodes can proceed with startup sync
-        self.is_ready = True
         self.get_logger().info('Exploration node is ready')
 
         self.get_logger().info(
@@ -261,42 +232,7 @@ class NavigationNode(Node):
                 break
 
         self.get_logger().info('Occupancy grid received, ready for exploration')
-
-    def startup_sync_callback(self, msg):
-        """Callback for startup synchronization topic. Tracks which nodes have published readiness."""
-        if self.all_nodes_ready:
-            return
-        
-        # Extract node name from the message data
-        node_name = msg.data if hasattr(msg, 'data') else str(msg)
-        if node_name and node_name != self.node_name:
-            self.nodes_ready.add(node_name)
-            self.get_logger().info(f'Received ready signal from: {node_name}. Ready nodes: {len(self.nodes_ready) + 1}/3')
-            
-            # Check if all expected nodes are ready (3 nodes: path_tracing, navigation, marker_detection)
-            if len(self.nodes_ready) + 1 >= 2:  # +1 for self
-                self.all_nodes_ready = True
-                self.get_logger().info('All nodes are ready! Starting startup synchronization complete.')
-    
-    def wait_for_all_nodes_ready(self):
-        """Wait for all nodes to publish their readiness on the startup sync topic."""
-        self.get_logger().info('Waiting for all nodes to be ready...')
-        
-        # Publish this node's readiness
-        self.pub_startup_sync.publish(String(data=self.node_name))
-        
-        # Use a separate executor to process callbacks during startup sync
-        executor = rclpy.executors.SingleThreadedExecutor()
-        executor.add_node(self)
-        
-        try:
-            while rclpy.ok() and not self.all_nodes_ready:
-                executor.spin_once(timeout_sec=0.1)
-        finally:
-            executor.remove_node(self)
-            executor.shutdown()
-        
-        self.get_logger().info('All nodes ready, proceeding with initialization.')
+        self.is_ready = True
 
     # ---------- callbacks ----------
     def map_callback(self, msg: OccupancyGrid):
@@ -1042,9 +978,6 @@ class NavigationNode(Node):
 def main():
     rclpy.init()
     node = NavigationNode()
-
-    # Wait for all nodes to be ready before starting
-    #node.wait_for_all_nodes_ready()
 
     executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(node)
