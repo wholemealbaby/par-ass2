@@ -65,8 +65,6 @@ class PathTracingNode(Node):
 
         # Navigator
         self.nav = nav
-        # Controller client
-        self.client = self.create_client(ExplorationControl, '/snc_exploration_control')
 
         # Configure parameters with defaults
         params = params or {}
@@ -144,8 +142,7 @@ class PathTracingNode(Node):
     def teleop_trigger_callback(self, _):
         """Callback for the teleop trigger, which allows manual control of the robot without path tracing.
         """
-        self.get_logger().info("Teleop trigger received.")
-        self.stop_exploration()
+        self.nav.cancelTask()
     
     def start_challenge_callback(self, _):
         """Callback for the start challenge trigger, which allows starting the path tracing without waiting for the transform to become available. Useful for testing.
@@ -156,7 +153,6 @@ class PathTracingNode(Node):
         self.get_logger().info('Start challenge trigger received. Beginning path exploration...')
         # Start the pose sampling timer immediately without waiting for TF
         self.sample_pose_timer.reset()
-        self.start_exploration()
         self.get_logger().info('  ✓ Path exploration active - recording waypoints')
 
     def check_base_link_map_transform_possible(self):
@@ -278,7 +274,6 @@ class PathTracingNode(Node):
         
         self.pub_status.publish(String(data="STOPPING FOR HOME"))
 
-        self.stop_exploration()
         self.get_logger().info('Exploration stopped, calculating return trajectory...')
         self.start_return_sequence()
 
@@ -322,80 +317,6 @@ class PathTracingNode(Node):
         
         self.get_logger().info("Transform found! Starting path tracing.")
 
-    def _call_service(self, command):
-        """
-        Internal helper to call the exploration service.
-        
-        Args:
-            command: The command string (START, STOP, RESUME, TELEOP)
-            
-        Returns:
-            The service response or None if service call fails
-        """
-
-        if not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error(f"Service not available: {command}")
-            return None
-        
-        request = ExplorationControl.Request()
-        request.command = command
-        
-        # Use synchronous service call to ensure the service completes before returning
-        future = self.client.call_async(request)
-        
-        # Wait for the service to complete
-        while rclpy.ok():
-            if future.done():
-                try:
-                    response = future.result()
-                    self.get_logger().info(f"Service call '{command}' succeeded: {response.message}")
-                    return response
-                except Exception as e:
-                    self.get_logger().error(f"Service call '{command}' failed: {e}")
-                    return None
-            # Spin briefly to process the service response
-            rclpy.spin_once(self, timeout_sec=0.1)
-        
-        return None
-
-    def stop_exploration(self):
-        """Stops the exploration process."""
-        self.get_logger().info("Requesting exploration STOP...")
-        return self._call_service("STOP")
-
-    def start_exploration(self):
-        """Starts the exploration process without blocking."""
-        if not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error("Service not available: START")
-            return
-        
-        request = ExplorationControl.Request()
-        request.command = "START"
-        
-        # This returns a future immediately and does NOT block
-        self.future = self.client.call_async(request)
-        
-        # Add a callback to handle the result when it eventually arrives
-        self.future.add_done_callback(self.exploration_response_callback)
-        self.get_logger().info("Requesting exploration START (async)...")
-
-    def exploration_response_callback(self, future):
-        """Handle the result of the service call once it returns."""
-        try:
-            response = future.result()
-            self.get_logger().info(f"Service call succeeded: {response.message}")
-        except Exception as e:
-            self.get_logger().error(f"Service call failed: {e}")
-
-    def resume(self):
-        """Resumes the exploration process, allowing it to continue from where it left off."""
-        self.get_logger().info("Requesting exploration RESUME...")
-        return self._call_service("RESUME")
-    
-    def teleop(self):
-        """Switches to teleop control."""
-        self.get_logger().info("Requesting teleop control...")
-        return self._call_service("TELEOP")
 
 def main(args=None):
     rclpy.init(args=args)

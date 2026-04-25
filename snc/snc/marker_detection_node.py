@@ -210,7 +210,7 @@ class MarkerDetectionNode(Node):
                     f'(depth_source={hazard.depth_source}) — skipping'
                 )
                 continue
- 
+            self.get_logger().debug(f'Found hazard: {hazard.name}')
             # Register as confirmed unique hazard on first successful pose
             if hazard.name not in self.confirmed_hazards:
                 self.confirmed_hazards.add(hazard.name)
