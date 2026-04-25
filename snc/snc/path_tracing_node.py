@@ -31,8 +31,6 @@ from snc.constants import (
     START_CHALLENGE_BUFFER_SIZE,
     TRIGGER_HOME_TOPIC, TRIGGER_HOME_BUFFER_SIZE, TRIGGER_HOME_INTERFACE,
     SNC_STATUS_TOPIC, SNC_STATUS_INTERFACE, SNC_STATUS_BUFFER_SIZE,
-    STARTUP_SYNC_TOPIC, STARTUP_SYNC_INTERFACE, STARTUP_SYNC_BUFFER_SIZE,
-    STARTUP_SYNC_QOS,
     TRIGGER_QOS,
 )
 import math
@@ -99,26 +97,6 @@ class PathTracingNode(Node):
             SNC_STATUS_BUFFER_SIZE
         )
 
-        # Startup synchronization publisher - publishes node readiness
-        self.pub_startup_sync = self.create_publisher(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            STARTUP_SYNC_QOS
-        )
-
-        # Startup synchronization subscriber - waits for all nodes to be ready
-        self.sub_startup_sync = self.create_subscription(
-            STARTUP_SYNC_INTERFACE,
-            STARTUP_SYNC_TOPIC,
-            self.startup_sync_callback,
-            STARTUP_SYNC_QOS
-        )
-
-        # Track which nodes have published readiness
-        self.nodes_ready = set()
-        self.node_name = self.get_name()  # Use actual node name
-        self.all_nodes_ready = False
-
         # Start challenge subscription
         self.sub_start_challenge = self.create_subscription(
             START_CHALLENGE_INTERFACE,
@@ -168,51 +146,6 @@ class PathTracingNode(Node):
         )
 
         self.sample_pose_timer = self.create_timer(self.pose_sample_interval_s, self.sample_pose_callback)
-    
-    def startup_sync_callback(self, msg):
-        """Callback for startup synchronization topic. Tracks which nodes have published readiness."""
-        if self.all_nodes_ready:
-            return
-        
-        # Extract node name from the message data
-        node_name = msg.data if hasattr(msg, 'data') else str(msg)
-        if node_name and node_name != self.node_name:
-            self.nodes_ready.add(node_name)
-            self.get_logger().info(f'Received ready signal from: {node_name}. Ready nodes: {len(self.nodes_ready) + 1}/3')
-            
-            # Check if all expected nodes are ready (3 nodes: path_tracing, navigation, marker_detection)
-            if len(self.nodes_ready) >= 2:  # +1 for self
-                self.all_nodes_ready = True
-                self.get_logger().info('All nodes are ready! Starting startup synchronization complete.')
-    
-    def wait_for_all_nodes_ready(self):
-        """Wait for all nodes to publish their readiness on the startup sync topic."""
-        self.get_logger().info('-' * 60)
-        self.get_logger().info('PHASE 1: WAITING FOR NODE SYNCHRONIZATION')
-        self.get_logger().info('-' * 60)
-        self.get_logger().info('Publishing readiness signal...')
-        
-        # Publish this node's readiness
-        self.pub_startup_sync.publish(String(data=self.node_name))
-        
-        # Use a separate executor to avoid conflict with main rclpy.spin()
-        executor = rclpy.executors.SingleThreadedExecutor()
-        executor.add_node(self)
-        
-        nodes_ready_count = 0
-        while rclpy.ok() and not self.all_nodes_ready:
-            executor.spin_once(timeout_sec=0.1)
-            current_ready = len(self.nodes_ready)
-            if current_ready > nodes_ready_count:
-                nodes_ready_count = current_ready
-                self.get_logger().info(f'  ✓ Node ready: {self.node_name} ({nodes_ready_count + 1}/3 nodes ready)')
-        
-        executor.remove_node(self)
-        executor.shutdown()
-        
-        self.get_logger().info('-' * 60)
-        self.get_logger().info('PHASE 1 COMPLETE: All nodes synchronized')
-        self.get_logger().info('-' * 60)
     
     def teleop_trigger_callback(self, _):
         """Callback for the teleop trigger, which allows manual control of the robot without path tracing. Sets testing mode to true to disable exploration controller and navigation.
@@ -475,9 +408,6 @@ def main(args=None):
     
     nav = BasicNavigator(node_name='path_tracing_node')
     node = PathTracingNode(nav)
-
-    # Wait for all nodes to be ready before starting
-    node.wait_for_all_nodes_ready()
 
     try:
         rclpy.spin(node)
