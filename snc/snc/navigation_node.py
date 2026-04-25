@@ -200,14 +200,10 @@ class NavigationNode(Node):
         self.get_logger().info('Waiting for Nav2 to become active...')
         
         # blocking: wait for Nav2 status while spinning
-        # This allows callbacks (map, TF, etc.) to be processed during wait
-        while rclpy.ok():
-            if self.navigator.waitUntilNav2Active(localizer='slam_toolbox'):
-                break
-            self.get_logger().info('Nav2 not active yet, spinning...')
-            executor.spin_once(timeout_sec=0.1)
-        
-        self.get_logger().info('Nav2 is active')
+        self.get_logger().info('Waiting for Nav2 to become active...')
+        # This method internally handles the waiting/spinning logic
+        self.navigator.waitUntilNav2Active(localizer='slam_toolbox')
+        self.get_logger().info('Nav2 is active and ready!')
 
         self.get_logger().info('Exploration node is ready')
 
