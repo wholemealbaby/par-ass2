@@ -12,13 +12,17 @@ The SNC (Search and Clear) package provides a complete system for autonomous rob
 snc/
 ├── launch/                    # Launch files
 │   ├── snc.launch.py         # Main launch file for real hardware
-│   └── sim.launch.py         # Simulation launch file (Gazebo)
+│   ├── master.launch.py      # Master launch file combining components
+│   └── find_object.launch.py # Find object 2D launch file
 ├── snc/                      # Python package
 │   ├── __init__.py
 │   ├── constants.py          # Constants and hazard mappings
 │   ├── navigation_node.py    # Navigation control node
 │   ├── marker_detection_node.py  # Hazard marker detection
-│   └── path_tracing_node.py  # Path recording and tracing
+│   ├── path_tracing_node.py  # Path recording and tracing
+│   ├── twist_mux.py          # Twist multiplexer for command routing
+│   ├── mock_topics.py        # Mock topics for testing
+│   └── best_effort_repeater.py  # Repeater for QoS conversion
 ├── config/
 │   └── params.yml            # Node parameters
 ├── test/                     # Test files
@@ -27,9 +31,75 @@ snc/
 └── setup.cfg
 ```
 
+## Configuration Modes
+
+### 1. Demo Mode
+
+**Purpose**: 
+A simplified configuration for demonstration purposes that removes complex integrations and focuses on core functionality.
+
+**Nodes Included**:
+- `navigation_node` - Main navigation controller for autonomous exploration
+- `marker_detection_node` - Hazard marker detection using computer vision
+- `path_tracing_node` - Records and traces robot's path for return navigation
+
+**Configuration**:
+- Includes twist_mux node configured for demo operations
+- No mock topics publisher
+- Direct integration with hardware or simulation
+
+**Launch Command**:
+```bash
+ros2 launch snc snc.launch.py
+```
+
+### 2. Live Testing with Twist Mux
+
+**Purpose**:
+Configuration for live testing with command control locking. This mode prevents robot movements during testing phases.
+
+**Nodes Included**:
+- `navigation_node` - Main navigation controller
+- `marker_detection_node` - Hazard marker detection
+- `path_tracing_node` - Path recording and tracing
+- `twist_mux` - Command multiplexer with testing mode lock
+
+**Configuration**:
+- Twist mux configured with testing mode enabled
+- All movement commands blocked when testing_mode=True
+- Used for safe testing of navigation and detection algorithms
+
+**Launch Command**:
+```bash
+ros2 launch snc master.launch.py
+```
+
+### 3. Integration with Mock Topics
+
+**Purpose**:
+Configuration for integration testing using mock topics that simulate real sensor data without requiring actual hardware.
+
+**Nodes Included**:
+- `navigation_node` - Main navigation controller
+- `marker_detection_node` - Hazard marker detection
+- `path_tracing_node` - Path recording and tracing
+- `mock_topics` - Mock topic publisher for testing
+- `twist_mux` - Command multiplexer
+- `find_object_2d` - Object detection system
+
+**Configuration**:
+- Includes mock topics publisher for simulated data
+- Integration with find_object_2D for testing detection algorithms
+- Full simulation environment ready for testing
+
+**Launch Command**:
+```bash
+ros2 launch snc master.launch.py
+```
+
 ## Nodes
 
-### 1. Navigation Node (`navigation_node`)
+### Navigation Node (`navigation_node`)
 - **Purpose**: Main navigation controller for autonomous exploration
 - **Functionality**: 
   - Coordinates robot movement through waypoints
@@ -39,7 +109,7 @@ snc/
   - `waypoint_spacing_min`: Minimum distance between waypoints (default: 0.15m)
   - `spin_duration_s`: Duration for rotation/spin maneuvers (default: 2.0s)
 
-### 2. Marker Detection Node (`marker_detection_node`)
+### Marker Detection Node (`marker_detection_node`)
 - **Purpose**: Detects and classifies hazard markers using computer vision
 - **Functionality**:
   - Processes camera feed to identify hazard markers
@@ -48,7 +118,7 @@ snc/
 - **Parameters**:
   - `marker_confidence_threshold`: Confidence threshold for detection (default: 0.8)
 
-### 3. Path Tracing Node (`path_tracing_node`)
+### Path Tracing Node (`path_tracing_node`)
 - **Purpose**: Records and traces robot's path for return navigation
 - **Functionality**:
   - Samples robot pose at regular intervals
@@ -56,6 +126,20 @@ snc/
   - Provides waypoints for return path
 - **Parameters**:
   - `pose_sample_interval_s`: Time interval for pose sampling (default: 0.5s)
+
+### Twist Mux Node (`twist_mux`)
+- **Purpose**: Central multiplexer for cmd_vel sources with testing mode lock
+- **Functionality**:
+  - Routes multiple Twist command sources to single output
+  - Blocks all commands when testing_mode=True
+  - Ensures safe testing without unintended robot movement
+- **Input Topics**:
+  - `/cmd_vel_nav` - Nav2 navigation source (remapped from /cmd_vel)
+  - `/cmd_vel_raw` - Manual navigation commands (from NavigationNode)
+  - `/cmd_vel_teleop` - Teleop keyboard/joystick input
+  - `/cmd_vel_manual` - Manual override input
+- **Output Topic**:
+  - `/cmd_vel` - Only published when testing_mode=False (robot motor input)
 
 ## Hazard Classification
 
@@ -82,6 +166,10 @@ The package recognizes 13 hazard categories defined in `constants.py`:
 - `/snc/hazard_signal`: Published when hazards are detected
 - `/snc/robot_pose`: Current robot pose information  
 - `/snc/return_waypoints`: Waypoints for return navigation
+- `/objectsStamped`: Published by find_object_2d with hazard detection results
+- `/snc_start`: Start signal for the challenge
+- `/path_return`: Return path for navigation
+- `/path_explore`: Exploration path for navigation
 
 ## Dependencies
 
@@ -138,6 +226,11 @@ ros2 launch snc sim.launch.py
 ros2 launch snc snc.launch.py
 ```
 
+#### For Testing with Twist Mux:
+```bash
+ros2 launch snc master.launch.py
+```
+
 ### Running Individual Nodes
 
 You can also run nodes individually:
@@ -151,6 +244,12 @@ ros2 run snc marker_detection_node
 
 # Path tracing node
 ros2 run snc path_tracing_node
+
+# Twist mux node
+ros2 run snc twist_mux
+
+# Mock topics publisher
+ros2 run snc mock_topics
 ```
 
 ### Configuration
@@ -158,10 +257,6 @@ ros2 run snc path_tracing_node
 Edit `config/params.yml` to adjust node parameters:
 
 ```yaml
-/marker_detection_node:
-  ros__parameters:
-    marker_confidence_threshold: 0.8
-    
 /navigation_node:
   ros__parameters:
     waypoint_spacing_min: 0.15
@@ -170,6 +265,10 @@ Edit `config/params.yml` to adjust node parameters:
 /path_tracing_node:
   ros__parameters:
     pose_sample_interval_s: 0.5
+    
+/marker_detection_node:
+  ros__parameters:
+    marker_confidence_threshold: 0.8
 ```
 
 ## Testing
@@ -185,20 +284,9 @@ Available tests:
 - `test_flake8.py` - Python style checking
 - `test_pep257.py` - Docstring style checking
 
-## Integration with Other Systems
-
-The SNC package is designed to work with:
-
-1. **Nav2 Navigation Stack**: For autonomous navigation and path planning
-2. **SLAM Toolbox**: For simultaneous localization and mapping
-3. **Find Object 2D**: For visual marker detection
-4. **AIIL Gazebo**: For simulation environments
-
 ## Development
 
 ### Adding New Hazard Types
-
-To add new hazard types:
 
 1. Update `hazard_names_map` in `snc/constants.py`
 2. Add corresponding marker images to the detection system
