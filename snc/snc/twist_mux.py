@@ -27,6 +27,9 @@ from rcl_interfaces.msg import ParameterDescriptor, ParameterType, FloatingPoint
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
 
+"""DISABLED AND DEPRECATED AFTER DEMO: 
+This node was used during development to safely test the Nav2 integration by 
+blocking all movement commands when testing_mode=True."""
 
 class TwistMuxNode(Node):
     """
