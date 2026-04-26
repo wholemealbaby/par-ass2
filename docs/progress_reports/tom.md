@@ -27,7 +27,7 @@ April 10:
   - the calculation uses two thresholds to thin waypoints a minimum distance and a minimum rotation angle. If either of these thresholds is met the waypoint is valid and will be included in the return trajectory. The return trajectory is path based
 April 11
 - added a test script for node three to monitor published paths and simulate home trigger. Node 3 is behaving as expected.
-- implemented a dev container to use the tf_transformations and transform3d dependencies
+- implemented a dev container (tf_transformations dependency removed)
 April 13 
 - Began working on contingentcies, implemented a trigger listener node to listen to keyboard strokes however had issues detecting keyboard strokes in the headless terminal especially when it was launched as a node and is wrapped by ros2
 - Added stub test scripts for nodes 1 and 2 for later use
