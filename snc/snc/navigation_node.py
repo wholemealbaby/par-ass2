@@ -161,6 +161,13 @@ class NavigationNode(Node):
             self.path_explore_callback,
             PATH_EXPLORE_BUFFER_SIZE
         )
+        
+        self.return_home_sub = self.create_subscription(
+            TRIGGER_HOME_INTERFACE,
+            TRIGGER_HOME_TOPIC,
+            self.return_home_callback,
+            10  
+        )
 
         self.status_pub = self.create_publisher(
             SNC_STATUS_INTERFACE, 
@@ -257,7 +264,15 @@ class NavigationNode(Node):
         if self.state in [STATE_EXPLORING, STATE_SPINNING]:
             return
         self.start_exploration()
-
+        
+    def return_home_callback(self, _msg: Empty):
+        self.stop_exploration()
+        self.state = STATE_RETURNING
+            
+    def stop_exploration(self):
+            self.cancel_navigation()
+            self.exploration_active = False
+            
     def hazard_signal_callback(self, _msg: Empty):
         if self.state != STATE_EXPLORING:
             return
@@ -310,10 +325,7 @@ class NavigationNode(Node):
             return response
 
         if cmd == 'STOP':
-            self.cancel_navigation()
-            self.state = STATE_IDLE
-            self.exploration_active = False
-            self.goal_active = False
+            self.stop_exploration()
             response.success = True
             response.state = self.state
             response.hazards_found = len(self.hazard_ids)
