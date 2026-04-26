@@ -244,7 +244,7 @@ class TestPathTracingCore(unittest.TestCase):
         mock_transform.transform.rotation.z = 0.0
         mock_transform.transform.rotation.w = 1.0
         
-        # Mock euler_from_quaternion (imported directly from tf_transformations)
+        # Mock euler_from_quaternion (imported from local path_tracing_core module)
         with patch('snc.path_tracing_core.euler_from_quaternion') as mock_euler:
             mock_euler.return_value = [0.0, 0.0, 0.0]  # roll, pitch, yaw
             
@@ -267,7 +267,7 @@ class TestPathTracingCore(unittest.TestCase):
         mock_transform.transform.rotation.z = math.sin(math.radians(45))
         mock_transform.transform.rotation.w = math.cos(math.radians(45))
         
-        # Mock euler_from_quaternion (imported directly from tf_transformations)
+        # Mock euler_from_quaternion (imported from local path_tracing_core module)
         with patch('snc.path_tracing_core.euler_from_quaternion') as mock_euler:
             mock_euler.return_value = [0.0, 0.0, math.radians(90)]
             
@@ -450,9 +450,9 @@ class TestPathTracingCore(unittest.TestCase):
        return_trajectory = calculate_return_trajectory(breadcrumbs)
        
        # The return trajectory should be:
-       # 1. Reversed breadcrumbs (so waypoints are in reverse order)
-       # 2. With inverted quaternions
-       # 3. Thinned with a 0.5 meter spacing
+       # Reversed breadcrumbs (so waypoints are in reverse order)
+       # With inverted quaternions
+       # Thinned with a 0.5 meter spacing
        
        # Since we're testing integration of the 3 functions, we just verify it returns a list
        # and has the expected basic structure

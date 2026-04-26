@@ -81,7 +81,7 @@ class DetectedObject:
         # Map camera angle into laser frame.
         # On ROSbot PRO 3 the laser is forward-facing and aligned with the
         # camera so a direct negation is used (right in camera = negative laser
-        # angle).  Adjust if your physical setup differs.
+        # angle).  ~~
         laser_angle = -object_angle
  
         window = math.radians(LASER_WINDOW_DEG)
@@ -116,40 +116,9 @@ class DetectedObject:
 
         return ps
 
-    # def get_map_pose(self, tf_buffer, target_frame: str = "map") -> PoseStamped:
-    #     """
-    #     Transform the camera-frame pose into target_frame (default: map).
- 
-    #     Waits up to 0.5 s for the TF transform before giving up.
- 
-    #     :param tf_buffer: tf2_ros.Buffer
-    #     :param target_frame: destination TF frame name
-    #     :return: PoseStamped in target_frame, or None on failure
-    #     """
-    #     source_frame = self.pose_stamped.header.frame_id
-    #     if not source_frame:
-    #         print(
-    #             "[DetectedObject] pose_stamped.header.frame_id is empty. "
-    #             "Check: ros2 topic echo /oak/rgb/image_raw/compressed --once | grep frame_id"
-    #         )
-    #         return None
- 
-    #     try:
-    #         tf_buffer.can_transform(
-    #             target_frame,
-    #             source_frame,
-    #             self.pose_stamped.header.stamp,
-    #             timeout=Duration(seconds=0.5),
-    #         )
-    #         return tf_buffer.transform(self.pose_stamped, target_frame)
-    #     except Exception as e:
-    #         print(
-    #             f"[DetectedObject] TF transform failed: "
-    #             f"{source_frame} -> {target_frame}: {e}"
-    #         )
-    #         return None
 
     def get_map_pose(self, tf_buffer, target_frame: str = "map") -> PoseStamped:
+        """Transform the object's camera-frame pose into the map frame using TF."""
         source_frame = self.pose_stamped.header.frame_id
         if not source_frame:
             print(

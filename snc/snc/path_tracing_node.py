@@ -263,9 +263,7 @@ class PathTracingNode(Node):
         The single point of truth for the 'Home' event.
         
         This callback coordinates the shutdown sequence:
-        1. Update status message
-        2. Stop exploration (awaiting completion) 
-        3. Start return trajectory following
+        Updates status message, stops exploration, and starts return trajectory following.
         """
         self.get_logger().info('-' * 60)
         self.get_logger().info('PHASE 3: RETURN HOME TRIGGERED')

@@ -53,6 +53,13 @@ STATE_DONE = 'STATUS_DONE'
 
 
 class NavigationNode(Node):
+    """
+    Navigation node for autonomous exploration and hazard detection.
+    
+    This node manages robot navigation, exploration strategies, and integrates
+    with Nav2 for path planning and execution.
+    """
+
     def __init__(self):
         super().__init__('navigation_node')
 
@@ -64,6 +71,7 @@ class NavigationNode(Node):
         self.global_frame = 'map'
         self.robot_base_frame = 'base_link'
 
+        # Declare parameters with default values
         self.declare_parameter('planner_frequency', 1.0)
         self.declare_parameter('status_frequency', 1.0)
         self.declare_parameter('exploration_timeout_sec', 240.0)
@@ -72,6 +80,7 @@ class NavigationNode(Node):
         self.declare_parameter('min_frontier_cluster_size', 50)
         self.declare_parameter('frontier_standoff_m', 0.1)
 
+        # Retrieve parameter values
         self.planner_frequency = float(self.get_parameter('planner_frequency').value)
         self.status_frequency = float(self.get_parameter('status_frequency').value)
         self.exploration_timeout_sec = float(self.get_parameter('exploration_timeout_sec').value)
@@ -80,6 +89,7 @@ class NavigationNode(Node):
         self.min_frontier_cluster_size = int(self.get_parameter('min_frontier_cluster_size').value)
         self.frontier_standoff_m = float(self.get_parameter('frontier_standoff_m').value)
 
+        # Instance variables
         self.latest_map = None
         self.goal_active = False
         self.is_ready = False

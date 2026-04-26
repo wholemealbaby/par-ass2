@@ -28,7 +28,7 @@ except ImportError:
             HAZARD_MARKER_TOPIC = '/hazards'
 
 def record_bag():
-    # 1. Define the topic list from your constants
+    
     topics_to_record = [
         c.START_CHALLENGE_TOPIC,
         c.OBJECTS_TOPIC,
@@ -46,19 +46,19 @@ def record_bag():
         c.HAZARD_MARKER_TOPIC
     ]
 
-    # 2. Clean and deduplicate topic list
+    # Clean and deduplicate topic list
     topics_to_record = list(set(filter(None, topics_to_record)))
 
-    # 3. Define the output directory and create it if it doesn't exist
+    # Define the output directory and create it if it doesn't exist
     output_dir = os.path.expanduser("~/Documents/par-as2-runs")
     os.makedirs(output_dir, exist_ok=True)
     
-    # 4. Create a unique bag name using a timestamp
+    # Create a unique bag name using a timestamp
     # Format: snc_run_20260423_143005
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     bag_name = os.path.join(output_dir, f"snc_run_{timestamp}")
     
-    # 5. Construct the command
+    # Construct the command
     # Using MCAP for better compatibility with Foxglove/Studio
     cmd = [
         "ros2", "bag", "record", 

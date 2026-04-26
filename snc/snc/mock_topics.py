@@ -6,7 +6,7 @@ from geometry_msgs.msg import PoseStamped
 from find_object_2d.msg import ObjectsStamped
 import time
 
-# Attempt to import your constants
+# Attempt to import constants
 try:
     import snc.constants as c
 except ImportError:
@@ -20,13 +20,11 @@ except ImportError:
             PATH_EXPLORE_TOPIC = '/path_explore'
             SNC_STATUS_TOPIC = '/snc_status'
             COVERAGE_TOPIC = '/covered_cells_marker'
-            # Add others as needed for your local test
 
 class MockSNCNode(Node):
     def __init__(self):
         super().__init__('mock_snc_publisher')
         
-        # Define publishers based on your interface constants
         self.pub_start = self.create_publisher(Empty, c.START_CHALLENGE_TOPIC, 10)
         self.pub_status = self.create_publisher(String, c.SNC_STATUS_TOPIC, 10)
         self.pub_path = self.create_publisher(Path, c.PATH_EXPLORE_TOPIC, 10)
@@ -35,17 +33,17 @@ class MockSNCNode(Node):
     def run_test(self):
         print("Sending test messages...")
 
-        # 1. Send Empty (Start Signal)
+        # Send Empty (Start Signal)
         self.pub_start.publish(Empty())
         print(f"Sent: Empty to {c.START_CHALLENGE_TOPIC}")
 
-        # 2. Send String (Status)
+        # Send String (Status)
         msg_status = String()
         msg_status.data = "Testing Recorder: All systems nominal."
         self.pub_status.publish(msg_status)
         print(f"Sent: String to {c.SNC_STATUS_TOPIC}")
 
-        # 3. Send Path (Navigation)
+        # Send Path (Navigation)
         msg_path = Path()
         msg_path.header.frame_id = "map"
         msg_path.header.stamp = self.get_clock().now().to_msg()
@@ -57,11 +55,11 @@ class MockSNCNode(Node):
         self.pub_path.publish(msg_path)
         print(f"Sent: Path to {c.PATH_EXPLORE_TOPIC}")
 
-        # 4. Send ObjectsStamped (Vision)
+        # Send ObjectsStamped (Vision)
         msg_obj = ObjectsStamped()
         msg_obj.header.stamp = self.get_clock().now().to_msg()
         # Mocking finding object ID 11 (Explosive)
-        msg_obj.objects.data = [11.0, 100.0, 100.0, 50.0, 50.0] 
+        msg_obj.objects.data = [11.0, 100.0, 100.0, 50.0, 50.0]
         self.pub_objects.publish(msg_obj)
         print(f"Sent: ObjectsStamped to {c.OBJECTS_TOPIC}")
 

@@ -33,8 +33,8 @@ def generate_launch_description():
         DeclareLaunchArgument('use_compressed', default_value=use_compressed, description='Determine if compressed image is to be used'),
         
         # Path where you have saved the existing trained images
-        # Uses the path to the AIIL Workspace, but this could be set to anywhere
-        LogInfo(msg=['AIIL_CHECKOUT_DIR: ', EnvironmentVariable(name='AIIL_CHECKOUT_DIR')]),
+        # Uses the path to the workspace, but this could be set to anywhere
+        LogInfo(msg=['WORKSPACE_DIR: ', EnvironmentVariable(name='AIIL_CHECKOUT_DIR')]),
         DeclareLaunchArgument('objects_path',
                                 default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '/src/par_coursework/g30/snc/resource/hazards/'],
                                 # default_value=[EnvironmentVariable(name='AIIL_CHECKOUT_DIR'), '/humble_workspace/src/par_coursework/g30/snc/resource/hazards/'],
