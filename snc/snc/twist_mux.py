@@ -10,12 +10,13 @@ Usage:
     - When testing_mode=False: Commands are passed through normally
 
 Input Topics:
-    - /cmd_vel (default) - Primary navigation/cmd_vel source
+    - /cmd_vel_nav (default) - Nav2 navigation source (remapped from /cmd_vel)
+    - /cmd_vel_raw - Manual navigation commands (from NavigationNode)
     - /cmd_vel_teleop - Teleop keyboard/joystick input
     - /cmd_vel_manual - Manual override input
 
 Output Topic:
-    - /cmd_vel_authorized - Only published when testing_mode=False
+    - /cmd_vel - Only published when testing_mode=False (robot motor input)
 """
 
 import rclpy
@@ -74,13 +75,25 @@ class TwistMuxNode(Node):
             )
         )
         
+        # Nav2 input topic (remapped from /cmd_vel)
         self.declare_parameter(
-            'cmd_vel_topic',
-            '/cmd_vel',
+            'cmd_vel_nav_topic',
+            '/cmd_vel_nav',
             ParameterDescriptor(
-                name='cmd_vel_topic',
+                name='cmd_vel_nav_topic',
                 type=ParameterType.PARAMETER_STRING,
-                description='Primary cmd_vel input topic',
+                description='Nav2 cmd_vel input topic (remapped from /cmd_vel)',
+                read_only=False
+            )
+        )
+        
+        self.declare_parameter(
+            'cmd_vel_raw_topic',
+            '/cmd_vel_raw',
+            ParameterDescriptor(
+                name='cmd_vel_raw_topic',
+                type=ParameterType.PARAMETER_STRING,
+                description='Manual navigation cmd_vel input topic',
                 read_only=False
             )
         )
@@ -112,28 +125,33 @@ class TwistMuxNode(Node):
         self.lock_teleop = self.get_parameter('lock_teleop').value
         self.lock_manual = self.get_parameter('lock_manual').value
         
-        self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').value
+        self.cmd_vel_nav_topic = self.get_parameter('cmd_vel_nav_topic').value
+        self.cmd_vel_raw_topic = self.get_parameter('cmd_vel_raw_topic').value
         self.cmd_vel_teleop_topic = self.get_parameter('cmd_vel_teleop_topic').value
         self.cmd_vel_manual_topic = self.get_parameter('cmd_vel_manual_topic').value
         
         self.get_logger().info(f'testing_mode: {self.testing_mode}')
         self.get_logger().info(f'lock_teleop: {self.lock_teleop}')
         self.get_logger().info(f'lock_manual: {self.lock_manual}')
+        self.get_logger().info(f'cmd_vel_nav_topic: {self.cmd_vel_nav_topic}')
+        self.get_logger().info(f'cmd_vel_raw_topic: {self.cmd_vel_raw_topic}')
         
         # Track latest Twist messages from each source
-        self.latest_cmd_vel = None
+        self.latest_cmd_vel_nav = None
+        self.latest_cmd_vel_raw = None
         self.latest_teleop = None
         self.latest_manual = None
         
         # Track which sources have published
-        self.has_cmd_vel = False
+        self.has_cmd_vel_nav = False
+        self.has_cmd_vel_raw = False
         self.has_teleop = False
         self.has_manual = False
         
-        # Publisher for authorized cmd_vel
+        # Publisher for authorized cmd_vel (publishes to /cmd_vel to control the robot)
         self.pub_authorized = self.create_publisher(
             Twist,
-            '/cmd_vel_authorized',
+            '/cmd_vel',
             10
         )
         
@@ -145,10 +163,17 @@ class TwistMuxNode(Node):
         )
         
         # Subscribers for each input source
-        self.sub_cmd_vel = self.create_subscription(
+        self.sub_cmd_vel_nav = self.create_subscription(
             Twist,
-            self.cmd_vel_topic,
-            self.cmd_vel_callback,
+            self.cmd_vel_nav_topic,
+            self.cmd_vel_nav_callback,
+            10
+        )
+        
+        self.sub_cmd_vel_raw = self.create_subscription(
+            Twist,
+            self.cmd_vel_raw_topic,
+            self.cmd_vel_raw_callback,
             10
         )
         
@@ -194,11 +219,17 @@ class TwistMuxNode(Node):
         
         return rclpy.parameter.SetParametersResult(successful=True)
     
-    def cmd_vel_callback(self, msg: Twist) -> None:
-        """Callback for primary cmd_vel source."""
-        self.latest_cmd_vel = msg
-        self.has_cmd_vel = True
-        self.get_logger().debug('Received cmd_vel')
+    def cmd_vel_nav_callback(self, msg: Twist) -> None:
+        """Callback for Nav2 cmd_vel source."""
+        self.latest_cmd_vel_nav = msg
+        self.has_cmd_vel_nav = True
+        self.get_logger().debug('Received cmd_vel_nav (Nav2)')
+    
+    def cmd_vel_raw_callback(self, msg: Twist) -> None:
+        """Callback for manual navigation cmd_vel source."""
+        self.latest_cmd_vel_raw = msg
+        self.has_cmd_vel_raw = True
+        self.get_logger().debug('Received cmd_vel_raw')
     
     def teleop_callback(self, msg: Twist) -> None:
         """Callback for teleop input."""
@@ -223,7 +254,7 @@ class TwistMuxNode(Node):
             return
         
         # Determine which command to publish based on priority
-        # Priority: teleop > manual > cmd_vel
+        # Priority: teleop > manual > cmd_vel_nav > cmd_vel_raw
         cmd_to_publish = None
         source_name = None
         
@@ -233,9 +264,12 @@ class TwistMuxNode(Node):
         elif self.has_manual and not self.lock_manual:
             cmd_to_publish = self.latest_manual
             source_name = 'manual'
-        elif self.has_cmd_vel:
-            cmd_to_publish = self.latest_cmd_vel
-            source_name = 'cmd_vel'
+        elif self.has_cmd_vel_nav:
+            cmd_to_publish = self.latest_cmd_vel_nav
+            source_name = 'nav2'
+        elif self.has_cmd_vel_raw:
+            cmd_to_publish = self.latest_cmd_vel_raw
+            source_name = 'manual_nav'
         
         if cmd_to_publish is not None:
             self.pub_authorized.publish(cmd_to_publish)
