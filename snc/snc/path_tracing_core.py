@@ -290,7 +290,7 @@ def thin_waypoint_list(waypoints, waypoint_spacing_m, angle_threshold_deg):
         if dist >= waypoint_spacing_m or angle_diff >= angle_threshold_deg:
             thinned.append(curr)
        
-    return thinned_waypoints
+    return thinned
 
 def calculate_return_trajectory(breadcrumbs, waypoint_spacing_m, angle_threshold_deg):
     """
